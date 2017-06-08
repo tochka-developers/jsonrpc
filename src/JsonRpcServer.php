@@ -96,11 +96,11 @@ class JsonRpcServer
      */
     protected function auth(\Illuminate\Http\Request $request)
     {
-        if (!$key = $request->header(config('jsonrpc.accessHeaderName'))) {
+        if (!$key = $request->header(config('jsonrpc.accessHeaderName', 'Access-Key'))) {
             throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
         }
 
-        $service = array_search($key, config('jsonrpc.keys'), true);
+        $service = array_search($key, config('jsonrpc.keys', []), true);
 
         if ($service === false) {
             throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);

@@ -3,7 +3,7 @@
 namespace Tochka\JsonRpc\Exceptions;
 
 use Illuminate\Contracts\Debug\ExceptionHandler;
-use Request;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tochka\JsonRpc\Facades\JsonRpcLog;
@@ -29,7 +29,9 @@ class JsonRpcHandler
             $error->message = $e->getMessage();
         }
 
-        JsonRpcLog::error(sprintf('JsonRpcException %d: %s', $error->code, $error->message), [Request::getContent()]);
+        /** @var Request $request */
+        $request = app(Request::class);
+        JsonRpcLog::error(sprintf('JsonRpcException %d: %s', $error->code, $error->message), [$request->getContent()]);
 
         $handler = app(ExceptionHandler::class);
         $handler->report($e);
