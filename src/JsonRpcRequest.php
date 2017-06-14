@@ -19,7 +19,7 @@ class JsonRpcRequest
     public function __construct(\StdClass $call)
     {
         $this->call = $call;
-        $this->id = $call->id ?? null;
+        $this->id = !empty($call->id) ? $call->id : null;
     }
 
     public function handle()

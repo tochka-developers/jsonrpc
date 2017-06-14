@@ -17,7 +17,7 @@ class JsonRpcHandler
         if ($e instanceof HttpException) {
             /** @var HttpException $statusCode */
             $error->code = $e->getStatusCode();
-            $error->message = !empty($e->getMessage()) ? $e->getMessage() : (Response::$statusTexts[$e->getStatusCode()] ?? 'Unknown error');
+            $error->message = !empty($e->getMessage()) ? $e->getMessage() : (!empty(Response::$statusTexts[$e->getStatusCode()]) ? Response::$statusTexts[$e->getStatusCode()] : 'Unknown error');
         } elseif ($e instanceof JsonRpcException) {
             $error->code = $e->getCode();
             $error->message = $e->getMessage();

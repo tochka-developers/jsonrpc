@@ -48,7 +48,7 @@ class MethodClosureMiddleware
 
         $request->controller = $controller;
         $request->method = $method;
-        $request->params = array_values((array) $request->call->params) ?? [];
+        $request->params = array_values((array) $request->call->params);
 
         return true;
     }

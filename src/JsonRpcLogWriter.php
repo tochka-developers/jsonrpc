@@ -29,7 +29,7 @@ class JsonRpcLogWriter extends Writer
      * Creator for convenient reuse of some Writer functions
      * @return Monolog
      */
-    public function createLogger(): Monolog
+    public function createLogger()
     {
         $path = storage_path(config('jsonrpc.log_path', 'logs/jsonrpc/activity.log'));
         $numOfKeepFiles = config('jsonrpc.log_max_files', 10);
