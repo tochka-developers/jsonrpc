@@ -2,7 +2,6 @@
     "name": "tochka-developers/jsonrpc",
     "description": "JsonRpc extension for Laravel",
     "license": "MIT",
-    "version": "1.0.6",
     "authors": [
         {
             "name": "Pavel Babushkin",

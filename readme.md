@@ -8,7 +8,7 @@
 ```php
 php artisan vendor:publish
 ```
-- Configuration (`app/config/jsonrpc.php`)
+- Configuration (`config/jsonrpc.php`)
 - Use JsonRpcServer in your routes.php, like this:
 ```php
 Route::any('/v1/public/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
