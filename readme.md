@@ -9,7 +9,7 @@ php artisan vendor:publish
 ```
 For Lumen:
 Copy `config/jsonrpc.php` from package to `config/jsonrpc.php` in project
-4. Enable facades in app. In file `bootstrap/app.php` add:
+4. Just for Lumen. Enable facades in app. In file `bootstrap/app.php` add:
 ```php
 $app->withFacades();
 ```
@@ -28,7 +28,11 @@ $app->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochk
 });
 ```
 ## Controllers naming rules and routing logic
-Controllers namespace is `App\Http\Controllers\App\` by default. So, your controllers should be placed in `app/Http/Controllers/App` folder. Controllers should have `Controller` suffix(for example `ClientController`). Imagine that `ClientController` has `getInfoById()` method with param `$clientCode`, your request could be like:
+Controllers namespace is `App\Http\Controllers\App\` by default. 
+So, your controllers should be placed in `app/Http/Controllers/App` folder. 
+Controllers namespace may be changed in your `config/jsonrpc.php` config file.
+Controllers should have `Controller` suffix(for example `ClientController`). 
+Imagine that `ClientController` has `getInfoById()` method with param `$clientCode`, your request could be like:
 ```
 {"jsonrpc":"2.0", "method":"client_getInfoById","id":15,"params":{"clientCode":"100500"}}
 ```
