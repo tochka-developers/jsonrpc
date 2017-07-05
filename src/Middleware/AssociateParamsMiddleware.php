@@ -56,12 +56,15 @@ class AssociateParamsMiddleware
                     case 'bool':
                         $parameterType = 'boolean';
                         break;
+                    case 'StdClass':
+                        $parameterType = 'object';
+                        break;
                 }
 
                 if (gettype($value) !== $parameterType) {
                     $errors[] = [
                         'code' => 'invalid_parameter',
-                        'message' => 'Передан агрумент неверного типа',
+                        'message' => 'Передан аргумент неверного типа',
                         'object_name' => $parameter->getName()
                     ];
                 }
