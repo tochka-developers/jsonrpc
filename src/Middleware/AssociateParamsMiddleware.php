@@ -16,7 +16,7 @@ class AssociateParamsMiddleware
      */
     public function handle($request)
     {
-        $api_params = (array)$request->call->params ?? [];
+        $api_params = !empty($request->call->params) ? (array)$request->call->params : [];
 
         // подготавливаем аргументы для вызова метода
         $reflectionMethod = new \ReflectionMethod($request->controller, $request->method);
@@ -25,7 +25,7 @@ class AssociateParamsMiddleware
 
         foreach ($reflectionMethod->getParameters() as $i => $parameter) {
 
-            $value = $api_params[$parameter->getName()] ?? null;
+            $value = !empty($api_params[$parameter->getName()]) ? $api_params[$parameter->getName()] : null;
 
             // если аргумент не передан
             if (null === $value) {
@@ -42,7 +42,7 @@ class AssociateParamsMiddleware
                 }
             } else {
                 // Проверяем тип
-                $parameterType = class_basename((string)$parameter->getType());
+                $parameterType = strtolower(class_basename((string)$parameter->getType()));
                 switch ($parameterType) {
                     case 'int':
                     case 'integer':
@@ -56,7 +56,7 @@ class AssociateParamsMiddleware
                     case 'bool':
                         $parameterType = 'boolean';
                         break;
-                    case 'StdClass':
+                    case 'stdclass':
                         $parameterType = 'object';
                         break;
                 }
@@ -65,7 +65,7 @@ class AssociateParamsMiddleware
                     $errors[] = [
                         'code' => 'invalid_parameter',
                         'message' => 'Передан аргумент неверного типа',
-                        'object_name' => $parameter->getName()
+                        'object_name' => $parameter->getName(),
                     ];
                 }
             }
