@@ -3,10 +3,9 @@
 namespace Tochka\JsonRpc\Middleware;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Tochka\JsonRpc\Facades\JsonRpcLog;
 use Tochka\JsonRpc\JsonRpcRequest;
 
-class ValidateJsonRpcMiddleware
+class ValidateJsonRpcMiddleware implements BaseMiddleware
 {
     /**
      * Handle an incoming request.

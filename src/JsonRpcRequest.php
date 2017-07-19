@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
+use Tochka\JsonRpc\Middleware\BaseMiddleware;
 use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
 
 class JsonRpcRequest
@@ -16,17 +17,21 @@ class JsonRpcRequest
 
     public $service = 'guest';
 
-    public function __construct(\StdClass $call)
+    public $options = [];
+
+    public function __construct(\StdClass $call, $options)
     {
         $this->call = $call;
+        $this->options = $options;
         $this->id = !empty($call->id) ? $call->id : null;
     }
 
     public function handle()
     {
-        $middlewareList = config('jsonrpc.middleware', [MethodClosureMiddleware::class]);
+        $middlewareList = $this->options['middleware'];
 
         foreach ($middlewareList as $className) {
+            /** @var BaseMiddleware $middleware */
             $middleware = new $className();
             $middleware->handle($this);
         }

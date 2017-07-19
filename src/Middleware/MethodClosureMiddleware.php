@@ -3,10 +3,9 @@
 namespace Tochka\JsonRpc\Middleware;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Closure;
 use Tochka\JsonRpc\JsonRpcRequest;
 
-class MethodClosureMiddleware
+class MethodClosureMiddleware implements BaseMiddleware
 {
     /**
      * Handle an incoming request.
@@ -25,7 +24,7 @@ class MethodClosureMiddleware
 
         // если имя вызываемого метода без разделителя - значит ищем его в базовом классе
         if (count($methodArray) === 1) {
-            $controllerName = 'Api';
+            $controllerName = $request->options['controller'];
             $method = $methodCall;
         } else {
             $controllerName = $methodArray[0];
@@ -33,7 +32,7 @@ class MethodClosureMiddleware
             $method = camel_case(implode('_', $methodArray));
         }
 
-        $controllerName = config('jsonrpc.controllerNamespace') . studly_case($controllerName . 'Controller');
+        $controllerName = $request->options['namespace'] . studly_case($controllerName . $request->options['postfix']);
 
         // если нет такого контроллера или метода
         if (!class_exists($controllerName)) {

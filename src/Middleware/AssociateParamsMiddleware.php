@@ -5,7 +5,7 @@ namespace Tochka\JsonRpc\Middleware;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcRequest;
 
-class AssociateParamsMiddleware
+class AssociateParamsMiddleware implements BaseMiddleware
 {
     /**
      * Handle an incoming request.

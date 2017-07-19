@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc;
 
+use Illuminate\Http\Request;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
 use Tochka\JsonRpc\Facades\JsonRpcLog;
@@ -12,8 +13,15 @@ use Tochka\JsonRpc\Facades\JsonRpcLog;
  */
 class JsonRpcServer
 {
-    public function handle(\Illuminate\Http\Request $request)
+    public function handle(Request $request, $options = [])
     {
+        $options = $this->fillOptions($options);
+
+        // SMD-схема
+        if (array_key_exists('smd', $request->all())) {
+            return (new SmdGenerator($options))->get();
+        }
+
         $result = [];
 
         try {
@@ -23,7 +31,7 @@ class JsonRpcServer
             }
 
             // если включена аутентификацию - проверяем ключ доступа
-            if (config('jsonrpc.authValidate', true)) {
+            if ($options['auth']) {
                 $serviceName = $this->auth($request);
             } else {
                 $serviceName = 'guest';
@@ -60,7 +68,7 @@ class JsonRpcServer
                 $answer->jsonrpc = '2.0';
 
                 // создаем запрос
-                $jsonRpcRequest = new JsonRpcRequest($call);
+                $jsonRpcRequest = new JsonRpcRequest($call, $options);
                 $jsonRpcRequest->service = $serviceName;
                 if (null !== $jsonRpcRequest->id) {
                     $answer->id = $jsonRpcRequest->id;
@@ -90,11 +98,11 @@ class JsonRpcServer
 
     /**
      * Проверка заголовка для идентификации сервиса
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      * @return mixed
      * @throws JsonRpcException
      */
-    protected function auth(\Illuminate\Http\Request $request)
+    protected function auth(Request $request)
     {
         if (!$key = $request->header(config('jsonrpc.accessHeaderName', 'Access-Key'))) {
             throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
@@ -109,5 +117,47 @@ class JsonRpcServer
         JsonRpcLog::info('Success auth', compact('service'));
 
         return $service;
+    }
+
+    /**
+     * Заполняет параметры
+     * @param array $options
+     * @return array
+     */
+    protected function fillOptions($options)
+    {
+        if (empty($options['uri'])) {
+            $options['uri'] = '/';
+        }
+
+        if (empty($options['namespace'])) {
+            $options['namespace'] = config('jsonrpc.controllerNamespace', 'App\\Http\\Controllers\\Api\\');
+        }
+
+        if (empty($options['postfix'])) {
+            $options['postfix'] = config('jsonrpc.controllerPostfix', 'Controller');
+        }
+
+        if (empty($options['description'])) {
+            $options['description'] = config('jsonrpc.description', 'JsonRpc Server');
+        }
+
+        if (empty($options['controller'])) {
+            $options['controller'] = config('jsonrpc.defaultController', 'Api');
+        }
+
+        if (empty($options['middleware'])) {
+            $options['middleware'] = config('jsonrpc.middleware', [\Tochka\JsonRpc\Middleware\MethodClosureMiddleware::class]);
+        }
+
+        if (!isset($options['acl'])) {
+            $options['acl'] = config('jsonrpc.acl', []);
+        }
+
+        if (!isset($options['auth'])) {
+            $options['auth'] = config('jsonrpc.authValidate', true);
+        }
+
+        return $options;
     }
 }
