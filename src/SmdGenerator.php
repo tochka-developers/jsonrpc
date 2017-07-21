@@ -250,7 +250,13 @@ class SmdGenerator
             }
             $parameter['optional'] = $param->isOptional();
             if ($parameter['optional']) {
-                $parameter['default'] = $param->getDefaultValue();
+                $default = var_export($param->getDefaultValue(), true);
+
+                if (preg_match('#array#iu', $default)) {
+                    $parameter['default'] = '[]';
+                } else {
+                    $parameter['default'] = $default;
+                }
             }
 
             $result[$param->getName()] = $parameter;
@@ -264,16 +270,15 @@ class SmdGenerator
 
         /** @var DocBlock\Tags\Param $param */
         foreach ($params as $param) {
-            $parameter = ['name' => $param->getVariableName()];
+            $name = (string)$param->getVariableName();
+            $result[$name]['name'] = $name;
 
             if (!empty((string)$param->getDescription())) {
-                $parameter['description'] = (string)$param->getDescription();
+                $result[$name]['description'] = (string)$param->getDescription();
             }
             if (!empty((string)$param->getType())) {
-                $parameter['type'] = (string)$param->getType();
+                $result[$name]['type'] = (string)$param->getType();
             }
-
-            $result[$parameter['name']] = $parameter;
         }
 
         return array_values($result);
