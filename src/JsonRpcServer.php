@@ -31,10 +31,9 @@ class JsonRpcServer
             }
 
             // если включена аутентификацию - проверяем ключ доступа
+            $serviceName = 'guest';
             if ($options['auth']) {
                 $serviceName = $this->auth($request);
-            } else {
-                $serviceName = 'guest';
             }
 
             // получаем тело запроса
@@ -47,7 +46,6 @@ class JsonRpcServer
 
             // декодируем json
             $data = json_decode($json);
-            JsonRpcLog::info('Request', (array)$data);
 
             // если не валидный json
             if (null === $data) {
@@ -77,9 +75,6 @@ class JsonRpcServer
                 // выполняем запрос
                 try {
                     $answer->result = $jsonRpcRequest->handle();
-
-                    $message = sprintf('Successful request to method "%s" (id-%s) with params: ', $jsonRpcRequest->method, $jsonRpcRequest->id);
-                    JsonRpcLog::info($message, $jsonRpcRequest->params);
                 } catch (\Exception $e) {
                     $answer->error = JsonRpcHandler::handle($e);
                 }
