@@ -19,8 +19,6 @@ class JsonRpcRequest
 
     public $options = [];
 
-    public $hideDataLog;
-
     public function __construct(\StdClass $call, $options)
     {
         $this->call = $call;
