@@ -4,7 +4,7 @@ namespace Tochka\JsonRpc;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Middleware\BaseMiddleware;
-use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
+use Tochka\JsonRpc\Helpers\LogHelper;
 
 class JsonRpcRequest
 {
@@ -40,6 +40,12 @@ class JsonRpcRequest
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
         }
 
-        return $this->controller->{$this->method}(...$this->params);
+        LogHelper::log(LogHelper::TYPE_REQUEST, $this);
+
+        $result = $this->controller->{$this->method}(...$this->params);
+
+        LogHelper::log(LogHelper::TYPE_RESPONSE, $this);
+
+        return $result;
     }
 }
