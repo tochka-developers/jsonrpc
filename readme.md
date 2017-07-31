@@ -138,6 +138,59 @@ return $server->handle($request, $options);
 ```
 В указанном примере в методу `foo_bar` будут иметь доступ только клиенты `systemName1` и `systemName2`, а к методу `bar_foo` - все клиенты.
 
+## Скрытие конфиденциальной информации в логах системы
+
+Для того, чтобы убрать конфиденциальную информацию (логины, пароли, токены и пр.) из логов системы нужно в контроллере перепределить массив $hideDataLog.
+```php
+public $hideDataLog = [
+    type => [
+        'method' => [key|bindName]
+    ],
+    type => [
+        'method' => [key|bindName]
+    ],
+];
+```
+*type* - определяет где скрываем данные. Имеет 4 значения:
+LogHelper::TYPE_REQUEST - убрать данные из HTTP запроса
+LogHelper::TYPE_SQL - убрать данные из SQL запроса
+LogHelper::TYPE_EXCEPTION - убрать данные при вызове ошибки
+LogHelper::TYPE_RESPONSE - убрать данные из HTTP ответа
+
+*method* - метод контроллера
+
+*[key|bindName]* - определяет, что именно нужно скрыть при вызове вышеуказанного метода.
+Для LogHelper::TYPE_SQL нужно перечислить названия меток в sql запросе.
+Для остальных номера входных переменных (начиная в нуля)
+
+```php
+class TestController extends ApiController
+{
+
+    public $hideDataLog = [
+        LogHelper::TYPE_REQUEST => [
+            'm1' => [0, 2],
+            'm2' => [0]
+        ],
+        LogHelper::TYPE_SQL => [
+            'm2' => ['bindName1', 'bindName2']
+        ],
+        LogHelper::TYPE_EXCEPTION => [
+            'm1' => [0, 1],
+            'm2' => [0]
+        ],
+        LogHelper::TYPE_RESPONSE => [
+            'm1' => [4],
+            'm2' => [0]
+        ]
+    ];
+
+    public function m1($p0, $p1, $p2, $p3, $p4){}
+    
+    public function m2($p0){}
+}   
+```
+
 ## Как это работает
 Клиент послает валидный JsonRpc2.0-запрос:
 ```json
