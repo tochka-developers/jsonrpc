@@ -41,32 +41,34 @@ class AssociateParamsMiddleware implements BaseMiddleware
                     $value = $parameter->getDefaultValue();
                 }
             } else {
-                // Проверяем тип
-                $parameterType = strtolower(class_basename((string)$parameter->getType()));
-                switch ($parameterType) {
-                    case 'int':
-                    case 'integer':
-                        $parameterType = 'integer';
-                        break;
-                    case 'float':
-                    case 'double':
-                        $parameterType = 'double';
-                        break;
-                    case 'boolean':
-                    case 'bool':
-                        $parameterType = 'boolean';
-                        break;
-                    case 'stdclass':
-                        $parameterType = 'object';
-                        break;
-                }
+                if (version_compare(phpversion(), '7.0', '>')) {
+                    // Проверяем тип
+                    $parameterType = strtolower(class_basename((string)$parameter->getType()));
+                    switch ($parameterType) {
+                        case 'int':
+                        case 'integer':
+                            $parameterType = 'integer';
+                            break;
+                        case 'float':
+                        case 'double':
+                            $parameterType = 'double';
+                            break;
+                        case 'boolean':
+                        case 'bool':
+                            $parameterType = 'boolean';
+                            break;
+                        case 'stdclass':
+                            $parameterType = 'object';
+                            break;
+                    }
 
-                if (gettype($value) !== $parameterType) {
-                    $errors[] = [
-                        'code' => 'invalid_parameter',
-                        'message' => 'Передан аргумент неверного типа',
-                        'object_name' => $parameter->getName(),
-                    ];
+                    if (gettype($value) !== $parameterType) {
+                        $errors[] = [
+                            'code' => 'invalid_parameter',
+                            'message' => 'Передан аргумент неверного типа',
+                            'object_name' => $parameter->getName(),
+                        ];
+                    }
                 }
             }
 
