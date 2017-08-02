@@ -35,7 +35,7 @@ class LogHelper
 
         $jsonRpcRequest = app('JsonRpcRequest');
         $hideIndices = !empty($jsonRpcRequest->controller->hideDataLog) ? $jsonRpcRequest->controller->hideDataLog : false;
-        $method = $jsonRpcRequest->method;
+        $method = !empty($jsonRpcRequest->method) ? $jsonRpcRequest->method : 'Unknown';
 
         switch ($type) {
             case self::TYPE_REQUEST:

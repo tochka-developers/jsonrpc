@@ -16,7 +16,8 @@ class JsonRpcServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //$this->routes();
+        // Необходимая вещь
+        $this->app->instance('JsonRpcRequest', new JsonRpcRequest(new \StdClass, []));
 
         // Кастомный логгер для api
         $this->app->instance('JsonRpcLog', (new JsonRpcLogWriter())->createLogger());

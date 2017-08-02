@@ -47,7 +47,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
         $request->controller = $controller;
         $request->method = $method;
-        $request->params = array_values((array) $request->call->params);
+        $request->params = !empty($request->call->params) ? array_values((array) $request->call->params) : [];
 
         return true;
     }
