@@ -214,7 +214,7 @@ class SmdGenerator
      */
     protected function getShortNameForController($name)
     {
-        return snake_case(str_replace_last($this->options['postfix'], '', class_basename($name)));
+        return camel_case(str_replace_last($this->options['postfix'], '', class_basename($name)));
     }
 
     /**
