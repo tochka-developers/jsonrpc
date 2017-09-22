@@ -25,7 +25,7 @@ class AssociateParamsMiddleware implements BaseMiddleware
 
         foreach ($reflectionMethod->getParameters() as $i => $parameter) {
 
-            $value = !empty($api_params[$parameter->getName()]) ? $api_params[$parameter->getName()] : null;
+            $value = isset($api_params[$parameter->getName()]) ? $api_params[$parameter->getName()] : null;
 
             // если аргумент не передан
             if (null === $value) {
