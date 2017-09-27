@@ -65,9 +65,15 @@ class JsonRpcServiceProvider extends ServiceProvider
     protected function route($uri, $options = [])
     {
         if (is_lumen()) {
-            $this->app->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
-                return $server->handle($request, $options);
-            });
+            if(check_version()){
+                $this->app->router->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
+                    return $server->handle($request, $options);
+                });
+            }else{
+                $this->app->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
+                    return $server->handle($request, $options);
+                });
+            }
         } else {
             Route::post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
                 return $server->handle($request, $options);

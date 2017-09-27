@@ -1,4 +1,4 @@
-# JSON-RPC Server (Laravel 5.4, Lumen 5.4)
+# JSON-RPC Server (Laravel 5.4-5.5, Lumen 5.4-5.5)
 ## Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
 Поддерживает:
@@ -48,12 +48,19 @@ Route::post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Toch
     return $server->handle($request);
 });
 ```
-### Lumen
+### Lumen 5.4
 ```php
 $app->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
     return $server->handle($request);
 });
 ```
+### Lumen 5.5
+```php
+$router->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
+    return $server->handle($request);
+});
+```
+
 Для установки уникальных параметров сервера необходимо передать массив с параметрами в метод `handle`:
 ```php
 return $server->handle($request, $options);
@@ -82,7 +89,7 @@ return $server->handle($request, $options);
 Данный метод более удобен. Для роутинга достаточно перечислить точки входа в параметре `jsonrpc.routes`.
 ```php
 [
-    '/api/v1/jsonrpc'                  // для этой точки входа будут использованы глобальные настройки
+    '/api/v1/jsonrpc',                  // для этой точки входа будут использованы глобальные настройки
     'v2' => [                          // для этой точки входа задаются свои настройки. Если какой-то из параметров не указан - используется глобальный
         'uri' => '/api/v1/jsonrpc',                       // URI (обязательный)
         'namespace' => 'App\\Http\\Controllers\\V2\\',   // Namespace для контроллеров
