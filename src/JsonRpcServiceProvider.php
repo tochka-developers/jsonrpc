@@ -9,8 +9,6 @@ use Tochka\JsonRpc\Exceptions\JsonRpcHandler;
 
 class JsonRpcServiceProvider extends ServiceProvider
 {
-    protected $appNew;
-
     /**
      * Register any application services.
      *
