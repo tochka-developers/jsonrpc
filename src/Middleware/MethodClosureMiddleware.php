@@ -41,7 +41,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
         $controller = app($controllerName);
 
-        if (!method_exists($controller, $method)) {
+        if (!is_callable(array($controller, $method))) {
             throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
 
