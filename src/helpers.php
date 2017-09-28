@@ -24,14 +24,14 @@ if (!function_exists('is_lumen')) {
         return (bool)preg_match('/Lumen/iu', app()->version());
     }
 }
-if (!function_exists('check_version')) {
+if (!function_exists('getVersion')) {
     /**
      * Check framework version
      *
      * @return boolean
      */
-    function check_version()
+    function getVersion()
     {
-        return (bool)version_compare(preg_replace('/.*(([0-9]\.[0-9])[0-9]*).*/ui', '$2', app()->version()), '5.5', '>=');
+        return preg_replace('/.*(([0-9]\.[0-9])[0-9]*).*/ui', '$2', app()->version());
     }
 }

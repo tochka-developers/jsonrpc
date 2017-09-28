@@ -9,6 +9,8 @@ use Tochka\JsonRpc\Exceptions\JsonRpcHandler;
 
 class JsonRpcServiceProvider extends ServiceProvider
 {
+    protected $appNew;
+
     /**
      * Register any application services.
      *
@@ -65,12 +67,13 @@ class JsonRpcServiceProvider extends ServiceProvider
     protected function route($uri, $options = [])
     {
         if (is_lumen()) {
-            if(check_version()){
-                $this->app->router->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
+            $app = $this->app;
+            if (version_compare(getVersion(), '5.5', '>=')) {
+                $app->router->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
                     return $server->handle($request, $options);
                 });
-            }else{
-                $this->app->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
+            } else {
+                $app->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
                     return $server->handle($request, $options);
                 });
             }
