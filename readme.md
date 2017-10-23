@@ -145,6 +145,21 @@ return $server->handle($request, $options);
 ```
 В указанном примере в методу `foo_bar` будут иметь доступ только клиенты `systemName1` и `systemName2`, а к методу `bar_foo` - все клиенты.
 
+## Валидация параметров
+Для валидации входных параметров внутри контроллера можно использовать готовый trait: `Tochka\JsonRpc\Traits\JsonRpcController`
+Подключив данный trait в своем контроллере вы сможете проверить данные с помощью средств валидации Laravel:
+```php
+public function store($title, $body)
+{
+    $validatedData = $this->validate([
+        'title' => 'required|unique:posts|max:255',
+        'body' => 'required',
+    ]);
+
+    // The blog post is valid...
+}
+```
+
 ## Скрытие конфиденциальной информации в логах системы
 
 Для того, чтобы убрать конфиденциальную информацию (логины, пароли, токены и пр.) из логов системы нужно в контроллере перепределить массив $hideDataLog.
