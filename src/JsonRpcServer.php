@@ -13,8 +13,9 @@ use Tochka\JsonRpc\Facades\JsonRpcLog;
  */
 class JsonRpcServer
 {
-    public function handle(Request $request, $options = [])
+    public function handle(Request $request, $options = [], $endpoint = null, $action = null)
     {
+
         $options = $this->fillOptions($options);
 
         // SMD-схема
@@ -40,7 +41,7 @@ class JsonRpcServer
             $json = $request->getContent();
 
             // если запрос пустой
-            if(empty($json)){
+            if (empty($json)) {
                 throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
             }
 
@@ -64,6 +65,14 @@ class JsonRpcServer
                 // создаем ответ
                 $answer = new \stdClass();
                 $answer->jsonrpc = '2.0';
+
+                // добавляем дополнительные параметры если они переданы
+                if (!empty($endpoint)) {
+                    $call->endpoint = $endpoint;
+                }
+                if (!empty($action)) {
+                    $call->action = $action;
+                }
 
                 // создаем запрос
                 $jsonRpcRequest = new JsonRpcRequest($call, $options);
@@ -145,7 +154,8 @@ class JsonRpcServer
         }
 
         if (empty($options['middleware'])) {
-            $options['middleware'] = config('jsonrpc.middleware', [\Tochka\JsonRpc\Middleware\MethodClosureMiddleware::class]);
+            $options['middleware'] = config('jsonrpc.middleware',
+                [\Tochka\JsonRpc\Middleware\MethodClosureMiddleware::class]);
         }
 
         if (!isset($options['acl'])) {
