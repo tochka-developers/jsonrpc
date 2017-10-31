@@ -13,7 +13,7 @@ use Tochka\JsonRpc\Facades\JsonRpcLog;
  */
 class JsonRpcServer
 {
-    public function handle(Request $request, $options = [], $endpoint = null, $action = null)
+    public function handle(Request $request, $options = [])
     {
 
         $options = $this->fillOptions($options);
@@ -66,12 +66,13 @@ class JsonRpcServer
                 $answer = new \stdClass();
                 $answer->jsonrpc = '2.0';
 
-                // добавляем дополнительные параметры если они переданы
-                if (!empty($endpoint)) {
-                    $call->endpoint = $endpoint;
+
+                if (!empty($options['endpoint'])) {
+                    $call->endpoint = $options['endpoint'];
                 }
-                if (!empty($action)) {
-                    $call->action = $action;
+
+                if (!empty($options['action'])) {
+                    $call->action = $options['action'];
                 }
 
                 // создаем запрос
