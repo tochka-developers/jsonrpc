@@ -17,15 +17,15 @@ class MethodClosureMiddleware implements BaseMiddleware
     public function handle($request)
     {
         // смотрим метод, к которому пытаются обратиться
+        $namespace = $request->options['namespace'];
+        $method = $request->call->method;
 
-        if(!empty($request->call->endpoint)) {
-            $method = $request->call->method;
-
+        if (!empty($request->call->endpoint) && !empty($request->call->action)) {
+            $namespace = $request->options['namespace'] . studly_case($request->call->endpoint) . '\\';
+            $controllerName = $request->call->action;
+        } elseif (empty($request->call->action)) {
             $controllerName = $request->call->endpoint;
-            if (!empty($request->call->action)) {
-                $controllerName .= '_' . $request->call->action;
-            }
-        }else {
+        } else {
             $methodCall = $request->call->method;
 
             // парсим имя метода
@@ -40,9 +40,10 @@ class MethodClosureMiddleware implements BaseMiddleware
                 unset($methodArray[0]);
                 $method = camel_case(implode('_', $methodArray));
             }
+
         }
 
-        $controllerName = $request->options['namespace'] . studly_case($controllerName . $request->options['postfix']);
+        $controllerName = $namespace . studly_case($controllerName . $request->options['postfix']);
 
         // если нет такого контроллера или метода
         if (!class_exists($controllerName)) {
@@ -57,7 +58,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
         $request->controller = $controller;
         $request->method = $method;
-        $request->params = !empty($request->call->params) ? array_values((array) $request->call->params) : [];
+        $request->params = !empty($request->call->params) ? array_values((array)$request->call->params) : [];
 
         return true;
     }

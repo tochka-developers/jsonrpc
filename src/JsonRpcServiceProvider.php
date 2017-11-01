@@ -69,13 +69,27 @@ class JsonRpcServiceProvider extends ServiceProvider
             if (version_compare(getVersion(), '5.5', '>=')) {
                 $app = $app->router;
             }
-            $app->post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
-                return $server->handle($request, $options);
-            });
+            $app->post($uri,
+                function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
+                    if (!empty($endpoint)) {
+                        $options['endpoint'] = $endpoint;
+                    }
+                    if (!empty($endpoint)) {
+                        $options['action'] = $action;
+                    }
+                    return $server->handle($request, $options);
+                });
         } else {
-            Route::post($uri, function (Request $request, JsonRpcServer $server) use ($options) {
-                return $server->handle($request, $options);
-            });
+            Route::post($uri,
+                function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
+                    if (!empty($endpoint)) {
+                        $options['endpoint'] = $endpoint;
+                    }
+                    if (!empty($endpoint)) {
+                        $options['action'] = $action;
+                    }
+                    return $server->handle($request, $options);
+                });
         }
     }
 
