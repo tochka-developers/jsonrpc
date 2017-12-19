@@ -8,10 +8,10 @@ use Tochka\JsonRpc\Exceptions\JsonRpcException;
  * Class WebServiceException
  * @package App\Exceptions
  */
-class InternalIntegrationException extends JsonRpcException
+class ExternalIntegrationException extends JsonRpcException
 {
     /**
-     * InternalIntegrationException constructor.
+     * ExternalIntegrationException constructor.
      * @param int $code
      * @param null $message
      * @param null $object_name
@@ -33,6 +33,6 @@ class InternalIntegrationException extends JsonRpcException
             $error['meta'] = $meta;
         }
 
-        parent::__construct(self::CODE_INTERNAL_INTEGRATION_ERROR, null, [$error], $previous);
+        parent::__construct(self::CODE_EXTERNAL_INTEGRATION_ERROR, null, [$error], $previous);
     }
 }
