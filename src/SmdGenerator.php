@@ -89,7 +89,7 @@ class SmdGenerator
         $result['services'] = $this->getServicesInfo();
 
         if (!empty($this->enumObjects)) {
-            $result['enum'] = $this->enumObjects;
+            $result['enumObjects'] = $this->enumObjects;
         }
 
         if (!empty($this->objects)) {
