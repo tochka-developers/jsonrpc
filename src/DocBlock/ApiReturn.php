@@ -8,25 +8,25 @@ use phpDocumentor\Reflection\DocBlock\Tags\BaseTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Factory\StaticMethod;
 use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\TypeResolver;
+use Tochka\JsonRpc\DocBlock\TypeResolver as CustomTypeResolver;
 use phpDocumentor\Reflection\Types\Context as TypeContext;
 use Webmozart\Assert\Assert;
 
 /**
- * Reflection class for the {@}param tag in a Docblock.
+ * Reflection class for the {@}apiReturn tag in a Docblock.
  */
 class ApiReturn extends BaseTag implements StaticMethod
 {
+    const REGEXP = '/(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)/is';
+
     /** @var string */
     protected $name = 'apiReturn';
 
     /** @var Type */
-    private $type;
+    protected $type;
 
     /** @var string */
-    private $variableName = '';
-
-    /** @var bool determines whether this is a variadic argument */
-    private $isVariadic = false;
+    protected $variableName = '';
 
     /**
      * @param string $variableName
@@ -34,14 +34,12 @@ class ApiReturn extends BaseTag implements StaticMethod
      * @param bool $isVariadic
      * @param Description $description
      */
-    public function __construct($variableName, Type $type = null, $isVariadic = false, Description $description = null)
+    public function __construct($variableName, Type $type = null, Description $description = null)
     {
         Assert::string($variableName);
-        Assert::boolean($isVariadic);
 
         $this->variableName = $variableName;
         $this->type = $type;
-        $this->isVariadic = $isVariadic;
         $this->description = $description;
     }
 
@@ -58,35 +56,13 @@ class ApiReturn extends BaseTag implements StaticMethod
         Assert::stringNotEmpty($body);
         Assert::allNotNull([$typeResolver, $descriptionFactory]);
 
-        $parts = preg_split('/(\s+)/Su', $body, 3, PREG_SPLIT_DELIM_CAPTURE);
-        $type = null;
-        $variableName = '';
-        $isVariadic = false;
+        preg_match(self::REGEXP, $body, $parts);
 
-        // if the first item that is encountered is not a variable; it is a type
-        if (isset($parts[0]) && (strlen($parts[0]) > 0) && ($parts[0][0] !== '$')) {
-            $type = $typeResolver->resolve(array_shift($parts), $context);
-            array_shift($parts);
-        }
+        $description = $descriptionFactory->create(trim($parts['description']), $context);
+        $type = CustomTypeResolver::resolve(trim($parts['type']), $parts['typeFormat']);
 
-        // if the next item starts with a $ or ...$ it must be the variable name
-        if (isset($parts[0]) && (strlen($parts[0]) > 0) && ($parts[0][0] == '$' || substr($parts[0], 0, 4) === '...$')) {
-            $variableName = array_shift($parts);
-            array_shift($parts);
-
-            if (substr($variableName, 0, 3) === '...') {
-                $isVariadic = true;
-                $variableName = substr($variableName, 3);
-            }
-
-            if (substr($variableName, 0, 1) === '$') {
-                $variableName = substr($variableName, 1);
-            }
-        }
-
-        $description = $descriptionFactory->create(implode('', $parts), $context);
-
-        return new static($variableName, $type, $isVariadic, $description);
+        /** @var static $param */
+        return new static($parts['variableName'], $type, $description);
     }
 
     /**
@@ -116,19 +92,6 @@ class ApiReturn extends BaseTag implements StaticMethod
      */
     public function __toString()
     {
-        return ($this->type ? $this->type . ' ' : '')
-            . ($this->isVariadic() ? '...' : '')
-            . '$' . $this->variableName
-            . ($this->description ? ' ' . $this->description : '');
-    }
-
-    /**
-     * Returns whether this tag is variadic.
-     *
-     * @return boolean
-     */
-    public function isVariadic()
-    {
-        return $this->isVariadic;
+        return '';
     }
 }

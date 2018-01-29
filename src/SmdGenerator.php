@@ -4,7 +4,13 @@ namespace Tochka\JsonRpc;
 
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\Types\Array_;
+use Tochka\JsonRpc\DocBlock\ApiEnum;
+use Tochka\JsonRpc\DocBlock\ApiObject;
+use Tochka\JsonRpc\DocBlock\ApiParam;
 use Tochka\JsonRpc\DocBlock\ApiReturn;
+use Tochka\JsonRpc\DocBlock\Types\Date;
+use Tochka\JsonRpc\DocBlock\Types\Enum;
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\AssociateParamsMiddleware;
 
@@ -27,22 +33,31 @@ class SmdGenerator
     const API_METHOD_RETURN = 'return';
     const API_METHOD_RETURN_PARAM = 'apiReturn';
     const API_METHOD_TAG = 'apiTag';
+    const API_ENUM = 'apiEnum';
+    const API_OBJECT = 'apiObject';
+    const API_METHOD_DEPRECATED = 'deprecated';
+
+    const DEFAULT_STRUCTURE = [
+        'transport'   => 'POST',
+        'envelope'    => 'JSON-RPC-2.0',
+        'SMDVersion'  => '2.0',
+        'contentType' => 'application/json',
+        'generator'   => 'Tochka/JsonRpc',
+    ];
 
     protected $options = [];
     protected $acl = false;
 
-    protected $default = [
-        'transport' => 'POST',
-        'envelope' => 'JSON-RPC-2.0',
-        'SMDVersion' => '2.0',
-        'contentType' => 'application/json',
-        'generator' => 'Tochka/JsonRpc'
-    ];
+    protected $enumObjects = [];
+    protected $objects = [];
 
     /** @var DocBlockFactory */
-    protected $docFactory = null;
+    protected $docFactory;
     protected $additionalTags = [
         self::API_METHOD_RETURN_PARAM => ApiReturn::class,
+        self::API_METHOD_PARAMS       => ApiParam::class,
+        self::API_ENUM                => ApiEnum::class,
+        self::API_OBJECT              => ApiObject::class,
     ];
 
     public function __construct($options)
@@ -51,29 +66,42 @@ class SmdGenerator
         $this->docFactory = DocBlockFactory::createInstance($this->additionalTags);
     }
 
+    /**
+     * @return array
+     * @throws \ReflectionException
+     */
     public function get()
     {
-        $result = $this->default;
+        $result = self::DEFAULT_STRUCTURE;
 
         $result['target'] = $this->options['uri'];
         $result['description'] = $this->options['description'];
 
         if ($this->options['auth']) {
             $result['additionalHeaders'] = [
-                config('jsonrpc.accessHeaderName') => '<AuthToken>'
+                config('jsonrpc.accessHeaderName') => '<AuthToken>',
             ];
         }
 
-        $result['namedParameters'] = in_array(AssociateParamsMiddleware::class, $this->options['middleware']);
-        $result['acl'] = $this->acl = in_array(AccessControlListMiddleware::class, $this->options['middleware']);
+        $result['namedParameters'] = in_array(AssociateParamsMiddleware::class, $this->options['middleware'], true);
+        $result['acl'] = $this->acl = in_array(AccessControlListMiddleware::class, $this->options['middleware'], true);
 
         $result['services'] = $this->getServicesInfo();
+
+        if (!empty($this->enumObjects)) {
+            $result['enum'] = $this->enumObjects;
+        }
+
+        if (!empty($this->objects)) {
+            $result['objects'] = $this->objects;
+        }
 
         return $result;
     }
 
     /**
      * @return array
+     * @throws \ReflectionException
      */
     protected function getServicesInfo()
     {
@@ -89,6 +117,7 @@ class SmdGenerator
 
             $ignoreMethods = [];
             $group = $this->getShortNameForController($controller);
+            $groupName = null;
 
             if (!empty($docs)) {
                 // парсим блок
@@ -102,18 +131,34 @@ class SmdGenerator
                         return (string)$value;
                     }, $docBlock->getTagsByName(self::API_IGNORE_METHOD));
                 }
+
+                /** @var ApiEnum[] $tags */
+                $tags = $docBlock->getTagsByName(self::API_ENUM);
+                foreach ($tags as $tag) {
+                    $this->enumObjects = $this->getDocForEnum($tag, $this->enumObjects);
+                }
+
+                /** @var ApiObject[] $tags */
+                $tags = $docBlock->getTagsByName(self::API_OBJECT);
+                foreach ($tags as $tag) {
+                    $this->objects = $this->getDocForObject($tag, $this->objects);
+                }
             }
 
             $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
 
             foreach ($methods as $method) {
-                if ($method->getDeclaringClass()->name !== $controller) continue;
-                if (in_array($method->getName(), $ignoreMethods, true)) continue;
+                if ($method->getDeclaringClass()->name !== $controller) {
+                    continue;
+                }
+                if (in_array($method->getName(), $ignoreMethods, true)) {
+                    continue;
+                }
 
                 $service = $this->generateDocForMethod($method);
                 // получаем имя для группы методов
                 $service['group'] = $group;
-                if (!empty($groupName)) {
+                if ($groupName !== null) {
                     $service['groupName'] = $groupName;
                 }
 
@@ -130,20 +175,23 @@ class SmdGenerator
 
     /**
      * @param DocBlock $docBlock
+     *
      * @return string
      */
     protected function getGroupName($docBlock)
     {
         if ($docBlock->hasTag(self::API_GROUP_NAME)) {
             $tags = $docBlock->getTagsByName(self::API_GROUP_NAME);
+
             return (string)$tags[0];
-        } else {
-            return $docBlock->getSummary();
         }
+
+        return $docBlock->getSummary();
     }
 
     /**
      * @param \ReflectionMethod $method
+     *
      * @return array
      */
     protected function generateDocForMethod($method)
@@ -162,6 +210,10 @@ class SmdGenerator
             $result['name'] = $this->getMethodName($method, $docBlock);
             $result['description'] = $this->getMethodDescription($docBlock);
 
+            if ($docBlock->hasTag(self::API_METHOD_DEPRECATED)) {
+                $result['deprecated'] = true;
+            }
+
             if ($docBlock->hasTag(self::API_METHOD_NOTE)) {
                 $result['note'] = (string)$docBlock->getTagsByName(self::API_METHOD_NOTE)[0];
             }
@@ -178,22 +230,39 @@ class SmdGenerator
                 $result['responseExample'] = (string)$docBlock->getTagsByName(self::API_METHOD_RESPONSE_EXAMPLE)[0];
             }
 
+            $enumObjects = [];
+            /** @var ApiEnum[] $tags */
+            $tags = $docBlock->getTagsByName(self::API_ENUM);
+            foreach ($tags as $tag) {
+                $enumObjects = $this->getDocForEnum($tag, $enumObjects);
+            }
+            if (!empty($enumObjects)) {
+                $result['enumObjects'] = $enumObjects;
+            }
+
+            $objects = [];
+            /** @var ApiObject[] $tags */
+            $tags = $docBlock->getTagsByName(self::API_OBJECT);
+            foreach ($tags as $tag) {
+                $objects = $this->getDocForObject($tag, $objects);
+            }
+            if (!empty($objects)) {
+                $result['objects'] = $objects;
+            }
+
             $result['parameters'] = $this->getMethodParameters($method, $docBlock);
             $result['returns'] = $this->getMethodReturn($method, $docBlock);
 
+            /** @var ApiReturn[] $returnParams */
             $returnParams = $docBlock->getTagsByName(self::API_METHOD_RETURN_PARAM);
 
-            /** @var DocBlock\Tags\Param $param */
+            $return = [];
             foreach ($returnParams as $param) {
-                $return = ['name' => $param->getVariableName()];
-                if (!empty((string)$param->getDescription())) {
-                    $return['description'] = (string)$param->getDescription();
-                }
-                if (!empty((string)$param->getType())) {
-                    $return['type'] = (string)$param->getType();
-                }
+                $return = $this->getExtendedReturns($param, $return);
+            }
 
-                $result['returnParams'][] = $return;
+            if (!empty($return)) {
+                $result['returnParameters'] = $return;
             }
 
             $tags = array_map(function ($value) {
@@ -205,11 +274,13 @@ class SmdGenerator
             }
 
         }
+
         return $result;
     }
 
     /**
      * @param string $name
+     *
      * @return string
      */
     protected function getShortNameForController($name)
@@ -219,23 +290,27 @@ class SmdGenerator
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock $docBlock
+     * @param DocBlock          $docBlock
+     *
      * @return string
      */
     protected function getMethodName($method, $docBlock = null)
     {
-        if (!empty($docBlock) && $docBlock->hasTag(self::API_METHOD_NAME)) {
+        if ($docBlock !== null && $docBlock->hasTag(self::API_METHOD_NAME)) {
             $tags = $docBlock->getTagsByName(self::API_METHOD_NAME);
+
             return (string)$tags[0];
-        } else {
-            $controllerName = $method->getDeclaringClass();
-            return $this->getShortNameForController($controllerName->getName()) . '_' . $method->getName();
         }
+
+        $controllerName = $method->getDeclaringClass();
+
+        return $this->getShortNameForController($controllerName->getName()) . '_' . $method->getName();
     }
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock $docBlock
+     * @param DocBlock          $docBlock
+     *
      * @return array
      */
     protected function getMethodParameters($method, $docBlock = null)
@@ -245,14 +320,14 @@ class SmdGenerator
         /** @var \ReflectionParameter $param */
         foreach ($method->getParameters() as $param) {
             $parameter = ['name' => $param->getName()];
-            if (version_compare(phpversion(), '7.0', '>')) {
+            if (PHP_VERSION_ID > 70000) {
                 $parameter['type'] = (string)$param->getType();
             }
             $parameter['optional'] = $param->isOptional();
             if ($parameter['optional']) {
                 $default = var_export($param->getDefaultValue(), true);
 
-                if (preg_match('#array#iu', $default)) {
+                if (false !== stripos($default, 'array')) {
                     $parameter['default'] = '[]';
                 } else {
                     $parameter['default'] = $default;
@@ -262,7 +337,7 @@ class SmdGenerator
             $result[$param->getName()] = $parameter;
         }
 
-        if (empty($docBlock)) {
+        if ($docBlock === null) {
             return array_values($result);
         }
 
@@ -278,30 +353,180 @@ class SmdGenerator
             }
             if (!empty((string)$param->getType())) {
                 $result[$name]['type'] = (string)$param->getType();
+                $result[$name]['types'] = explode('|', (string)$param->getType());
             }
+        }
+
+        /** @var ApiParam[] $params */
+        $params = $docBlock->getTagsByName(self::API_METHOD_PARAMS);
+
+        foreach ($params as $param) {
+            $result = $this->getExtendedParameters($param, $result);
         }
 
         return array_values($result);
     }
 
     /**
+     * @param ApiParam $docBlock
+     * @param array    $current
+     *
+     * @return array
+     */
+    protected function getExtendedParameters($docBlock, array $current = [])
+    {
+        $name = (string)$docBlock->getVariableName();
+
+        $nameParts = explode('.', $name);
+        $variableName = array_shift($nameParts);
+
+        if (!isset($current[$variableName])) {
+            $current[$variableName] = [];
+        }
+        $parameter = &$current[$variableName];
+
+        while ($key = array_shift($nameParts)) {
+            $isArray = false;
+            $variableName = $key;
+            if (substr($variableName, -2) === '[]') {
+                $variableName = substr($variableName, 0, -2);
+                $isArray = true;
+            }
+            if (!isset($parameter['parameters'][$variableName])) {
+                $parameter['parameters'][$variableName] = [];
+            }
+
+            $parameter['type'] = 'object';
+            $parameter['types'] = ['object'];
+
+            $parameter = &$parameter['parameters'][$variableName];
+
+            if ($isArray) {
+                $parameter['array'] = true;
+            }
+        }
+
+        $parameter['name'] = $variableName;
+
+        $type = $docBlock->getType();
+        $parameter['type'] = (string)$type;
+        $parameter['types'] = [(string)$type];
+
+        if ($type instanceof Date) {
+            $parameter['typeFormat'] = $type->getFormat();
+        }
+
+        if ($type instanceof Enum) {
+            $parameter['typeVariants'] = $type->getVariants();
+        }
+
+        if ($type instanceof Array_) {
+            $parameter['array'] = true;
+            $parameter['type'] = (string)$type->getValueType();
+            $parameter['types'] = [(string)$type->getValueType()];
+        }
+
+        $parameter['optional'] = $docBlock->isOptional();
+        if (!empty((string)$docBlock->getDescription())) {
+            $parameter['description'] = (string)$docBlock->getDescription();
+        }
+
+        if ($docBlock->hasDefault()) {
+            $parameter['default'] = $docBlock->getDefaultValue();
+        }
+        if ($docBlock->hasExample()) {
+            $parameter['example'] = $docBlock->getExampleValue();
+        }
+
+        return $current;
+    }
+
+    /**
+     * @param ApiReturn $docBlock
+     * @param array     $current
+     *
+     * @return array
+     */
+    protected function getExtendedReturns($docBlock, array $current = [])
+    {
+        $name = (string)$docBlock->getVariableName();
+
+        $nameParts = explode('.', $name);
+        $variableName = array_shift($nameParts);
+
+        if (!isset($current[$variableName])) {
+            $current[$variableName] = [];
+        }
+        $parameter = &$current[$variableName];
+
+        while ($key = array_shift($nameParts)) {
+            $isArray = false;
+            $variableName = $key;
+            if (substr($variableName, -2) === '[]') {
+                $variableName = substr($variableName, 0, -2);
+                $isArray = true;
+            }
+            if (!isset($parameter['parameters'][$variableName])) {
+                $parameter['parameters'][$variableName] = [];
+            }
+
+            $parameter['type'] = 'object';
+            $parameter['types'] = ['object'];
+
+            $parameter = &$parameter['parameters'][$variableName];
+
+            if ($isArray) {
+                $parameter['array'] = true;
+            }
+        }
+
+        $parameter['name'] = $variableName;
+
+        $type = $docBlock->getType();
+        $parameter['type'] = (string)$type;
+        $parameter['types'] = [(string)$type];
+
+        if ($type instanceof Date) {
+            $parameter['typeFormat'] = $type->getFormat();
+        }
+
+        if ($type instanceof Enum) {
+            $parameter['typeVariants'] = $type->getVariants();
+        }
+
+        if ($type instanceof Array_) {
+            $parameter['array'] = true;
+            $parameter['type'] = (string)$type->getValueType();
+            $parameter['types'] = [(string)$type->getValueType()];
+        }
+
+        if (!empty((string)$docBlock->getDescription())) {
+            $parameter['description'] = (string)$docBlock->getDescription();
+        }
+
+        return $current;
+    }
+
+    /**
      * @param \ReflectionMethod $method
-     * @param DocBlock $docBlock
+     * @param DocBlock          $docBlock
+     *
      * @return array
      */
     protected function getMethodReturn($method, $docBlock = null)
     {
         $result = ['type' => 'mixed'];
 
-        if (version_compare(phpversion(), '7.0', '>')) {
+        if (PHP_VERSION_ID > 70000) {
             $result['type'] = $method->getReturnType();
         }
 
-        if (!empty($docBlock) && $docBlock->hasTag(self::API_METHOD_RETURN)) {
+        if ($docBlock !== null && $docBlock->hasTag(self::API_METHOD_RETURN)) {
             /** @var DocBlock\Tags\Return_ $return */
             $return = $docBlock->getTagsByName(self::API_METHOD_RETURN)[0];
             if (!empty((string)$return->getType())) {
                 $result['type'] = (string)$return->getType();
+                $result['types'] = explode('|', (string)$return->getType());
             }
             if (!empty((string)$return->getDescription())) {
                 $result['description'] = (string)$return->getDescription();
@@ -310,30 +535,77 @@ class SmdGenerator
 
         return $result;
     }
+
     /**
      * @param DocBlock $docBlock
+     *
      * @return string
      */
     protected function getMethodDescription($docBlock)
     {
         if ($docBlock->hasTag(self::API_METHOD_DESCRIPTION)) {
             $tags = $docBlock->getTagsByName(self::API_METHOD_DESCRIPTION);
+
             return (string)$tags[0];
-        } else {
-            return $docBlock->getSummary();
         }
+
+        return $docBlock->getSummary();
+    }
+
+    /**
+     * @param ApiEnum $docBlock
+     * @param array   $objects
+     *
+     * @return array
+     */
+    protected function getDocForEnum($docBlock, array $objects = [])
+    {
+        if (!isset($objects[$docBlock->getTypeName()])) {
+            $objects[$docBlock->getTypeName()] = [
+                'name'   => $docBlock->getTypeName(),
+                'values' => [],
+            ];
+        }
+
+        $objects[$docBlock->getTypeName()]['values'][] = [
+            'value'       => $docBlock->getValue(),
+            'description' => (string)$docBlock->getDescription(),
+        ];
+
+        return $objects;
+    }
+
+    /**
+     * @param ApiObject $docBlock
+     * @param array     $objects
+     *
+     * @return array
+     */
+    protected function getDocForObject($docBlock, array $objects = [])
+    {
+        $objectName = $docBlock->getObjectName();
+        if (!isset($objects[$objectName])) {
+            $objects[$objectName] = [
+                'name'       => $objectName,
+                'parameters' => [],
+            ];
+        }
+
+        $objects[$objectName]['parameters'] = $this->getExtendedParameters($docBlock, $objects[$objectName]['parameters']);
+
+        return $objects;
     }
 
     private function getControllers()
     {
         $namespace = trim($this->options['namespace'], '\\');
-        $files = scandir($this->getNamespaceDirectory($namespace));
+        $files = scandir($this->getNamespaceDirectory($namespace), SCANDIR_SORT_ASCENDING);
 
-        $classes = array_map(function($file) use ($namespace){
+        $classes = array_map(function ($file) use ($namespace) {
             return $namespace . '\\' . str_replace('.php', '', $file);
         }, $files);
 
-        return array_filter($classes, function($possibleClass) {
+        return array_filter($classes, function ($possibleClass) {
             return class_exists($possibleClass);
         });
     }
@@ -343,7 +615,7 @@ class SmdGenerator
         $composerJsonPath = app()->basePath() . DIRECTORY_SEPARATOR . 'composer.json';
         $composerConfig = json_decode(file_get_contents($composerJsonPath));
 
-        return (array) $composerConfig->autoload->{'psr-4'};
+        return (array)$composerConfig->autoload->{'psr-4'};
     }
 
     private function getNamespaceDirectory($namespace)
@@ -358,6 +630,7 @@ class SmdGenerator
 
             if (array_key_exists($possibleNamespace, $composerNamespaces)) {
                 $path = app()->basePath() . DIRECTORY_SEPARATOR . $composerNamespaces[$possibleNamespace] . implode('/', array_reverse($undefinedNamespaceFragments));
+
                 return realpath($path);
             }
 
