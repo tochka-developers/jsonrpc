@@ -19,7 +19,7 @@ class ApiParam extends BaseTag implements StaticMethod
 {
     use VariableValueTrait;
 
-    const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]+\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)/is';
+    const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]+\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
 
     /** @var string */
     protected $name = 'apiParam';
@@ -74,7 +74,8 @@ class ApiParam extends BaseTag implements StaticMethod
 
         preg_match(self::REGEXP, $body, $parts);
 
-        $description = $descriptionFactory->create(trim($parts['description']), $context);
+        $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
+        $description = $descriptionFactory->create($descriptionStr, $context);
         $type = CustomTypeResolver::resolve(trim($parts['type']), $parts['typeFormat']);
 
         /** @var static $param */

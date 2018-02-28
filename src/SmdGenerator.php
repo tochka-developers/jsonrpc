@@ -504,6 +504,10 @@ class SmdGenerator
             $parameter['description'] = (string)$docBlock->getDescription();
         }
 
+        if ($docBlock->isRoot()) {
+            $parameter['is_root'] = true;
+        }
+
         return $current;
     }
 

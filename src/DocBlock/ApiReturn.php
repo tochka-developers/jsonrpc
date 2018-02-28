@@ -17,7 +17,7 @@ use Webmozart\Assert\Assert;
  */
 class ApiReturn extends BaseTag implements StaticMethod
 {
-    const REGEXP = '/(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)/is';
+    const REGEXP = '/((?<is_root>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)?/is';
 
     /** @var string */
     protected $name = 'apiReturn';
@@ -28,19 +28,23 @@ class ApiReturn extends BaseTag implements StaticMethod
     /** @var string */
     protected $variableName = '';
 
+    /** @var bool */
+    protected $is_root = false;
+
     /**
      * @param string $variableName
      * @param Type $type
      * @param bool $isVariadic
      * @param Description $description
      */
-    public function __construct($variableName, Type $type = null, Description $description = null)
+    public function __construct($variableName, Type $type = null, Description $description = null, $is_root = false)
     {
         Assert::string($variableName);
 
         $this->variableName = $variableName;
         $this->type = $type;
         $this->description = $description;
+        $this->is_root = $is_root;
     }
 
     /**
@@ -58,11 +62,13 @@ class ApiReturn extends BaseTag implements StaticMethod
 
         preg_match(self::REGEXP, $body, $parts);
 
-        $description = $descriptionFactory->create(trim($parts['description']), $context);
+        $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
+        $description = $descriptionFactory->create($descriptionStr, $context);
+
         $type = CustomTypeResolver::resolve(trim($parts['type']), $parts['typeFormat']);
 
         /** @var static $param */
-        return new static($parts['variableName'], $type, $description);
+        return new static($parts['variableName'], $type, $description, !empty($parts['is_root']));
     }
 
     /**
@@ -83,6 +89,14 @@ class ApiReturn extends BaseTag implements StaticMethod
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isRoot()
+    {
+        return $this->is_root;
     }
 
     /**
