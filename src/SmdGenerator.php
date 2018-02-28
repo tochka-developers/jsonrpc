@@ -219,7 +219,7 @@ class SmdGenerator
             }
 
             if ($docBlock->hasTag(self::API_METHOD_WARNING)) {
-                $result['warning'] = (string)$docBlock->getTagsByName(self::API_METHOD_NOTE)[0];
+                $result['warning'] = (string)$docBlock->getTagsByName(self::API_METHOD_WARNING)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_REQUEST_EXAMPLE)) {
