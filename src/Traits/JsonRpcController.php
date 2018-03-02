@@ -4,6 +4,7 @@ namespace Tochka\JsonRpc\Traits;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
+use Illuminate\Support\Str;
 use Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
 use Tochka\JsonRpc\JsonRpcRequest;
@@ -11,6 +12,7 @@ use Tochka\JsonRpc\JsonRpcRequest;
 trait JsonRpcController
 {
     protected $arrayRequest;
+    protected $validateMessageBag;
 
     /**
      * Возвращает массив с переданными в запросе параметрами
@@ -61,11 +63,63 @@ trait JsonRpcController
         if ($validBag->any()) {
             if ($noException) {
                 return $validBag;
-            } else {
-                throw new InvalidParametersException($validBag);
             }
+
+            throw new InvalidParametersException($validBag);
         }
 
         return true;
+    }
+
+    /**
+     * Валидирует и фильтрует переданные в контроллер параметры. Возвращает отфильтрованный массив с параметрами
+     * @param array $rules Правила валидации
+     * @param array $messages Сообщения об ошибках
+     * @param bool  $noException Если true - Exception генерироваться не будет
+     *
+     * @return array
+     * @throws \Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException
+     */
+    protected function validateAndFilter($rules, array $messages = [], $noException = false)
+    {
+        $this->validateMessageBag = $this->validateData($this->getArrayRequest(), $rules, $messages, $noException);
+        return $this->extractInputFromRules($this->getArrayRequest(), $rules);
+    }
+
+    /**
+     * Get the request input based on the given validation rules.
+     *
+     * @param  array|\stdClass  $data
+     * @param  array  $rules
+     * @return array
+     */
+    protected function extractInputFromRules($data, array $rules)
+    {
+        if (\is_object($data)) {
+            $data = (array)$data;
+        }
+
+        $result = [];
+
+        $additional = [];
+        foreach ($rules as $rule => $value) {
+            if (Str::contains($rule, '.')) {
+                $attributes = explode('.', $rule);
+                $rule = array_shift($attributes);
+
+                if (array_key_exists($rule, $data)) {
+                    $key = implode('.', $attributes);
+                    $additional[$rule][$key] = $value;
+                }
+            } elseif (array_key_exists($rule, $data)) {
+                $result[$rule] = $data[$rule];
+            }
+        }
+
+        foreach ($additional as $key => $item) {
+            $result[$key] = $this->extractInputFromRules($data[$key], $item);
+        }
+
+        return $result;
     }
 }
