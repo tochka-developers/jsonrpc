@@ -74,7 +74,7 @@ class JsonRpcServiceProvider extends ServiceProvider
                     if (!empty($endpoint)) {
                         $options['endpoint'] = $endpoint;
                     }
-                    if (!empty($endpoint)) {
+                    if (!empty($action)) {
                         $options['action'] = $action;
                     }
                     return $server->handle($request, $options);
@@ -85,7 +85,7 @@ class JsonRpcServiceProvider extends ServiceProvider
                     if (!empty($endpoint)) {
                         $options['endpoint'] = $endpoint;
                     }
-                    if (!empty($endpoint)) {
+                    if (!empty($action)) {
                         $options['action'] = $action;
                     }
                     return $server->handle($request, $options);
