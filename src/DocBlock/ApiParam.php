@@ -8,8 +8,8 @@ use phpDocumentor\Reflection\DocBlock\Tags\BaseTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Factory\StaticMethod;
 use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\TypeResolver;
-use Tochka\JsonRpc\DocBlock\TypeResolver as CustomTypeResolver;
 use phpDocumentor\Reflection\Types\Context as TypeContext;
+use Tochka\JsonRpc\DocBlock\TypeResolver as CustomTypeResolver;
 use Webmozart\Assert\Assert;
 
 /**
@@ -19,7 +19,7 @@ class ApiParam extends BaseTag implements StaticMethod
 {
     use VariableValueTrait;
 
-    const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]+\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
+    const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]*\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
 
     /** @var string */
     protected $name = 'apiParam';
@@ -46,8 +46,8 @@ class ApiParam extends BaseTag implements StaticMethod
     protected $optional = true;
 
     /**
-     * @param string $variableName
-     * @param Type $type
+     * @param string      $variableName
+     * @param Type        $type
      * @param Description $description
      */
     public function __construct($variableName, Type $type = null, Description $description = null)
@@ -60,6 +60,11 @@ class ApiParam extends BaseTag implements StaticMethod
     }
 
     /**
+     * @param                         $body
+     * @param TypeResolver|null       $typeResolver
+     * @param DescriptionFactory|null $descriptionFactory
+     * @param TypeContext|null        $context
+     *
      * @return static
      */
     public static function create(
@@ -74,12 +79,21 @@ class ApiParam extends BaseTag implements StaticMethod
 
         preg_match(self::REGEXP, $body, $parts);
 
-        $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
-        $description = $descriptionFactory->create($descriptionStr, $context);
-        $type = CustomTypeResolver::resolve(trim($parts['type']), $parts['typeFormat']);
+        $description = null;
+
+        if (null !== $descriptionFactory) {
+            $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
+            $description = $descriptionFactory->create($descriptionStr, $context);
+        }
+
+        $typeStr = isset($parts['type']) ? trim($parts['type']) : 'mixed';
+        $typeExtended = isset($parts['typeFormat']) ? $parts['typeFormat'] : null;
+        $variableName = isset($parts['variableName']) ? $parts['variableName'] : 'variable';
+
+        $type = CustomTypeResolver::resolve($typeStr, $typeExtended);
 
         /** @var static $param */
-        $param = new static($parts['variableName'], $type, $description);
+        $param = new static($variableName, $type, $description);
 
         $param->setOptional(empty($parts['require']));
 
@@ -131,6 +145,7 @@ class ApiParam extends BaseTag implements StaticMethod
 
     /**
      * Устанавливает значение по умолчанию
+     *
      * @param $value
      */
     public function setDefault($value)
@@ -159,6 +174,7 @@ class ApiParam extends BaseTag implements StaticMethod
 
     /**
      * Устанавливает пример значения
+     *
      * @param $value
      */
     public function setExample($value)
@@ -178,6 +194,7 @@ class ApiParam extends BaseTag implements StaticMethod
 
     /**
      * Устанавливает необязательность параметра
+     *
      * @param $value
      */
     public function setOptional($value)

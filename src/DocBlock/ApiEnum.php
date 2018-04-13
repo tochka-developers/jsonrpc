@@ -6,7 +6,6 @@ use phpDocumentor\Reflection\DocBlock\Description;
 use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
 use phpDocumentor\Reflection\DocBlock\Tags\BaseTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Factory\StaticMethod;
-use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\TypeResolver;
 use phpDocumentor\Reflection\Types\Context as TypeContext;
 use Webmozart\Assert\Assert;
@@ -27,11 +26,11 @@ class ApiEnum extends BaseTag implements StaticMethod
     protected $typeName = '';
 
     /** @var mixed */
-    protected $value = null;
+    protected $value;
 
     /**
-     * @param string $variableName
-     * @param Type $type
+     * @param string      $typeName
+     * @param mixed       $value
      * @param Description $description
      */
     public function __construct($typeName, $value, Description $description = null)
@@ -58,7 +57,12 @@ class ApiEnum extends BaseTag implements StaticMethod
 
         preg_match(self::REGEXP, $body, $parts);
 
-        $description = $descriptionFactory->create(trim($parts['description']), $context);
+        $description = null;
+
+        if (null !== $descriptionFactory) {
+            $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
+            $description = $descriptionFactory->create($descriptionStr, $context);
+        }
 
         /** @var static $param */
         return new static($parts['typeName'], self::getRealValue($parts['value']), $description);

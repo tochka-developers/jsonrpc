@@ -4,6 +4,7 @@ namespace Tochka\JsonRpc;
 
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\Types\Array_;
 use Tochka\JsonRpc\DocBlock\ApiEnum;
 use Tochka\JsonRpc\DocBlock\ApiObject;
@@ -11,6 +12,7 @@ use Tochka\JsonRpc\DocBlock\ApiParam;
 use Tochka\JsonRpc\DocBlock\ApiReturn;
 use Tochka\JsonRpc\DocBlock\Types\Date;
 use Tochka\JsonRpc\DocBlock\Types\Enum;
+use Tochka\JsonRpc\DocBlock\Types\Object_;
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\AssociateParamsMiddleware;
 
@@ -151,7 +153,7 @@ class SmdGenerator
                 if ($method->getDeclaringClass()->name !== $controller) {
                     continue;
                 }
-                if (in_array($method->getName(), $ignoreMethods, true)) {
+                if (\in_array($method->getName(), $ignoreMethods, true)) {
                     continue;
                 }
 
@@ -325,13 +327,7 @@ class SmdGenerator
             }
             $parameter['optional'] = $param->isOptional();
             if ($parameter['optional']) {
-                $default = var_export($param->getDefaultValue(), true);
-
-                if (false !== stripos($default, 'array')) {
-                    $parameter['default'] = '[]';
-                } else {
-                    $parameter['default'] = $default;
-                }
+                $parameter['default'] = $param->getDefaultValue();
             }
 
             $result[$param->getName()] = $parameter;
@@ -364,6 +360,8 @@ class SmdGenerator
             $result = $this->getExtendedParameters($param, $result);
         }
 
+
+
         return array_values($result);
     }
 
@@ -381,7 +379,7 @@ class SmdGenerator
         $variableName = array_shift($nameParts);
 
         if (!isset($current[$variableName])) {
-            $current[$variableName] = [];
+            $current[$variableName] = ['name' => $variableName];
         }
         $parameter = &$current[$variableName];
 
@@ -408,25 +406,10 @@ class SmdGenerator
 
         $parameter['name'] = $variableName;
 
-        $type = $docBlock->getType();
-        $parameter['type'] = (string)$type;
-        $parameter['types'] = [(string)$type];
-
-        if ($type instanceof Date) {
-            $parameter['typeFormat'] = $type->getFormat();
-        }
-
-        if ($type instanceof Enum) {
-            $parameter['typeVariants'] = $type->getVariants();
-        }
-
-        if ($type instanceof Array_) {
-            $parameter['array'] = true;
-            $parameter['type'] = (string)$type->getValueType();
-            $parameter['types'] = [(string)$type->getValueType()];
-        }
+        $parameter = $this->checkParamType($parameter, $docBlock->getType());
 
         $parameter['optional'] = $docBlock->isOptional();
+
         if (!empty((string)$docBlock->getDescription())) {
             $parameter['description'] = (string)$docBlock->getDescription();
         }
@@ -455,7 +438,7 @@ class SmdGenerator
         $variableName = array_shift($nameParts);
 
         if (!isset($current[$variableName])) {
-            $current[$variableName] = [];
+            $current[$variableName] = ['name' => $variableName];
         }
         $parameter = &$current[$variableName];
 
@@ -482,23 +465,7 @@ class SmdGenerator
 
         $parameter['name'] = $variableName;
 
-        $type = $docBlock->getType();
-        $parameter['type'] = (string)$type;
-        $parameter['types'] = [(string)$type];
-
-        if ($type instanceof Date) {
-            $parameter['typeFormat'] = $type->getFormat();
-        }
-
-        if ($type instanceof Enum) {
-            $parameter['typeVariants'] = $type->getVariants();
-        }
-
-        if ($type instanceof Array_) {
-            $parameter['array'] = true;
-            $parameter['type'] = (string)$type->getValueType();
-            $parameter['types'] = [(string)$type->getValueType()];
-        }
+        $parameter = $this->checkParamType($parameter, $docBlock->getType());
 
         if (!empty((string)$docBlock->getDescription())) {
             $parameter['description'] = (string)$docBlock->getDescription();
@@ -509,6 +476,55 @@ class SmdGenerator
         }
 
         return $current;
+    }
+
+    /**
+     * @param array $parameter
+     * @param Type $type
+     *
+     * @return mixed
+     */
+    protected function checkParamType($parameter, $type)
+    {
+        switch (true) {
+            case $type instanceof Date:
+                $parameter['typeFormat'] = $type->getFormat();
+                $parameter['typeAdditional'] = (string)$type;
+
+                if (empty($parameter['type'])) {
+                    $parameter['type'] = 'string';
+                    $parameter['types'] = ['string'];
+                }
+                break;
+
+            case $type instanceof Enum:
+                $parameter['typeVariants'] = $type->getVariants();
+                $parameter['typeAdditional'] = (string)$type;
+
+                if (empty($parameter['type'])) {
+                    $parameter['type'] = $type->getRealType();
+                    $parameter['types'] = [$type->getRealType()];
+                }
+
+                break;
+
+            case $type instanceof Object_:
+                $parameter['type'] = 'object';
+                $parameter['types'] = ['object'];
+                $parameter['typeAdditional'] = (string)$type->getClassName();
+                break;
+
+            case $type instanceof Array_:
+                $parameter['array'] = true;
+                $parameter = $this->checkParamType($parameter, $type->getValueType());
+                break;
+
+            default:
+                $parameter['type'] = (string)$type;
+                $parameter['types'] = [(string)$type];
+        }
+
+        return $parameter;
     }
 
     /**
@@ -568,11 +584,27 @@ class SmdGenerator
             $objects[$docBlock->getTypeName()] = [
                 'name'   => $docBlock->getTypeName(),
                 'values' => [],
+                'type' => 'int'
             ];
         }
+        $object = &$objects[$docBlock->getTypeName()];
 
-        $objects[$docBlock->getTypeName()]['values'][] = [
-            'value'       => $docBlock->getValue(),
+        $value = $docBlock->getValue();
+
+        switch (true) {
+            case \is_int($value):
+                break;
+            case \is_float($value):
+                if ($object['type'] !== 'string') {
+                    $object['type'] = 'float';
+                }
+                break;
+            default:
+                $object['type'] = 'string';
+        }
+
+        $object['values'][] = [
+            'value'       => $value,
             'description' => (string)$docBlock->getDescription(),
         ];
 

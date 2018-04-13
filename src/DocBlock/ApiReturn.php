@@ -8,8 +8,8 @@ use phpDocumentor\Reflection\DocBlock\Tags\BaseTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Factory\StaticMethod;
 use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\TypeResolver;
-use Tochka\JsonRpc\DocBlock\TypeResolver as CustomTypeResolver;
 use phpDocumentor\Reflection\Types\Context as TypeContext;
+use Tochka\JsonRpc\DocBlock\TypeResolver as CustomTypeResolver;
 use Webmozart\Assert\Assert;
 
 /**
@@ -32,9 +32,9 @@ class ApiReturn extends BaseTag implements StaticMethod
     protected $is_root = false;
 
     /**
-     * @param string $variableName
-     * @param Type $type
-     * @param bool $isVariadic
+     * @param string      $variableName
+     * @param Type        $type
+     * @param bool        $isVariadic
      * @param Description $description
      */
     public function __construct($variableName, Type $type = null, Description $description = null, $is_root = false)
@@ -62,8 +62,12 @@ class ApiReturn extends BaseTag implements StaticMethod
 
         preg_match(self::REGEXP, $body, $parts);
 
-        $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
-        $description = $descriptionFactory->create($descriptionStr, $context);
+        $description = null;
+
+        if (null !== $descriptionFactory) {
+            $descriptionStr = isset($parts['description']) ? trim($parts['description']) : '';
+            $description = $descriptionFactory->create($descriptionStr, $context);
+        }
 
         $type = CustomTypeResolver::resolve(trim($parts['type']), $parts['typeFormat']);
 

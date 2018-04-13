@@ -14,17 +14,47 @@ class Enum implements Type
     use VariableValueTrait;
 
     protected $variants;
+    protected $type;
 
     public function __construct($variants = null)
     {
-        if (preg_match('/^\(.*\)$/iu', $variants)) {
+        $this->type = 'string';
+
+        if (preg_match('/^\(.*\)$/u', $variants)) {
             $variants = trim($variants, '()');
 
             preg_match_all('/(?<values>\"[^\"]*\"|[^,]+)/iu', $variants, $matches, PREG_PATTERN_ORDER);
 
             $variants = [];
+            $type = 0;
+
             foreach ($matches['values'] as $value) {
-                $variants[] = self::getRealValue($value);
+                $realValue = self::getRealValue($value);
+
+                switch (true) {
+                    case \is_int($realValue):
+                        break;
+                    case \is_float($realValue):
+                        if ($type < 2) {
+                            $type = 1;
+                        }
+                        break;
+                    default:
+                        $type = 2;
+                }
+
+                $variants[] = $realValue;
+            }
+
+            switch ($type) {
+                case 0:
+                    $this->type = 'int';
+                    break;
+                case 1:
+                    $this->type = 'float';
+                    break;
+                default:
+                    $this->type = 'string';
             }
         }
 
@@ -34,6 +64,11 @@ class Enum implements Type
     public function getVariants()
     {
         return $this->variants;
+    }
+
+    public function getRealType()
+    {
+        return $this->type;
     }
 
     /**
