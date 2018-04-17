@@ -23,7 +23,7 @@ class MethodClosureMiddleware implements BaseMiddleware
         if (!empty($request->call->endpoint) && !empty($request->call->action)) {
             $namespace = $request->options['namespace'] . studly_case($request->call->endpoint) . '\\';
             $controllerName = $request->call->action;
-        } elseif (empty($request->call->action)) {
+        } elseif (!empty($request->call->endpoint)) {
             $controllerName = $request->call->endpoint;
         } else {
             $methodCall = $request->call->method;
