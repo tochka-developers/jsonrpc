@@ -61,6 +61,25 @@ $router->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \To
 });
 ```
 
+Если планируется передавать имя контроллера в адресе, после точки входа, роутинги дожны быть следующего вида:
+### Laravel
+```php
+Route::post('/api/v1/jsonrpc/{endpoint}[/{action}]', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server, $endpoint, $action = null) {
+    return $server->handle($request, ['endpoint' => $endpoint, 'action' => $action]);
+});
+```
+### Lumen 5.4
+```php
+$app->post('/api/v1/jsonrpc/{endpoint}[/{action}]', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server, $endpoint, $action = null) {
+    return $server->handle($request, ['endpoint' => $endpoint, 'action' => $action]);
+});
+```
+### Lumen 5.5
+```php
+$router->post('/api/v1/jsonrpc/{endpoint}[/{action}]', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server, $endpoint, $action = null) {
+    return $server->handle($request, ['endpoint' => $endpoint, 'action' => $action]);
+});
+```
 Для установки уникальных параметров сервера необходимо передать массив с параметрами в метод `handle`:
 ```php
 return $server->handle($request, $options);
@@ -84,6 +103,8 @@ return $server->handle($request, $options);
 * `acl` (array) - список контроля доступа к методам. Заполняется в виде `имяМетода => [serviceName1, serviceName2]`.
 Игнорируется, если не включен обработчик `AccessControlListMiddleware`.
 Если не указано - берется значение `jsonrpc.acl`
+* `endpoint` (string) - Пространство имён контроллеров. Добавляется к значению параметра namespace.
+* `action` (string) - Имя контроллера. Если не указано и при этом указан endpoint, то endpoint является именем контроллера в пространстве namespace.
 
 ## Автоматический роутинг
 Данный метод более удобен. Для роутинга достаточно перечислить точки входа в параметре `jsonrpc.routes`.
@@ -102,6 +123,23 @@ return $server->handle($request, $options);
     ]
 ]
 ```
+
+Для использования передачи имени контроллера в адресе
+```php
+[
+    'v3' => [                          // для этой точки входа задаются свои настройки. Если какой-то из параметров не указан - используется глобальный
+        'uri' => '/api/v3/jsonrpc/{endpoint}[/{action}]',// URI (обязательный)
+        'namespace' => 'App\\Http\\Controllers\\V3\\',   // Namespace для контроллеров
+        'controller' => 'Api',                           // контроллер по умолчанию
+        'postfix' => 'Controller',                       // суффикс для имен контроллеров
+        'middleware' => [],                              // список обработчиков запросов
+        'auth' => false,                                  // аутентификация сервиса
+        'acl' => [],                                     // Список контроля доступа
+        'description' => 'JsonRpc server V3',             // описание для SMD схемы
+    ]
+]
+```
+
 Каждая точка входа может быть либо строкой с указанием адреса, либо массивом, аналогичном $options.
 
 ## Обработчики (Middleware)
@@ -251,6 +289,28 @@ JsonRpc сервер пытается найти указанный метод `
   "id": 15
  }
 ```
+
+Если настроено получение имени контроллера из точки входа то логика следующая:
+Клиент послает валидный JsonRpc2.0-запрос:
+```json
+{
+  "jsonrpc": "2.0", 
+  "method": "getInfoById",
+  "params": {
+    "clientCode": "100500",
+    "fromAgent" : true
+  },
+  "id": 15
+ }
+```
+На адрес `\client`.
+JsonRpc сервер пытается найти указанный метод `getInfoById`.
+В контроллере: `Сlient`. Если запрос идет на адрес `\client\action` то имя контроллера будет иметь вид `СlientAction`.
+Класс контроллера ищется по указанному пространству имен (параметр `jsonrpc.controllerNamespace`) с указанным суффиксом (по умолчанию `Controller`).
+Для нашего примера сервер попытается подключить класс 'App\Http\Controller\ClientController' или 'App\Http\Controller\СlientActionController' соответственно.
+Если контроллер не существует - клиенту вернется ошибка `Method not found`.
+В найденном контроллере вызывается метод `getInfoById`.
+
 
 ## Несколько вызовов в одном запросе
 По спецификации JsonRpc разрешено вызывать несколько методов в одном запросе. Для этого необходимо валидные JsonRpc2.0-вызовы 
