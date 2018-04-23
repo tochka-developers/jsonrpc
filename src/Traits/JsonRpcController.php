@@ -100,20 +100,36 @@ trait JsonRpcController
         }
 
         $result = [];
-
         $additional = [];
+        $arrays = [];
+        $isGlobalArray = false;
+
         foreach ($rules as $rule => $value) {
             if (Str::contains($rule, '.')) {
                 $attributes = explode('.', $rule);
                 $rule = array_shift($attributes);
+                $key = implode('.', $attributes);
 
-                if (array_key_exists($rule, $data)) {
-                    $key = implode('.', $attributes);
+                if (\is_array($data) && array_key_exists($rule, $data)) {
                     $additional[$rule][$key] = $value;
+                } elseif ($rule === '*' and \is_array($data)) {
+                    $arrays[$key] = $value;
                 }
-            } elseif (array_key_exists($rule, $data)) {
+            } elseif (\is_array($data) && array_key_exists($rule, $data)) {
                 $result[$rule] = $data[$rule];
+            } elseif ($rule === '*' and \is_array($data)) {
+                $isGlobalArray = true;
             }
+        }
+
+        if (!empty($arrays)) {
+            $result = [];
+            foreach ($data as $item) {
+                $result[] = $this->extractInputFromRules($item, $arrays);
+            }
+            return $result;
+        } elseif ($isGlobalArray) {
+            return $data;
         }
 
         foreach ($additional as $key => $item) {
