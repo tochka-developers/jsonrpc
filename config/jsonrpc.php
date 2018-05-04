@@ -88,7 +88,13 @@ return [
     /**
      * Настройки логгирования
      */
-    'log_max_files' => 10,
-    'log_path' => 'logs/jsonrpc/activity.log',
+    'logging_channel' => [
+        'name' => 'JsonRpc',
+        'tap' => [\Tochka\JsonRpc\Log\CustomizeLogger::class],
+        'driver' => 'daily',
+        'level' => 'debug',
+        'path' => storage_path('logs/jsonrpc/activity.log'),
+        'days' => 10,
+    ],
 
 ];
