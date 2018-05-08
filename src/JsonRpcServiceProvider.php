@@ -27,7 +27,7 @@ class JsonRpcServiceProvider extends ServiceProvider
         $path = storage_path(config('jsonrpc.log_path', 'logs/jsonrpc/activity.log'));
         $numOfKeepFiles = config('jsonrpc.log_max_files', 10);
 
-        $handler = new RotatingFileHandler($path, $numOfKeepFiles, $this->parseLevel('debug'), true, 0775);
+        $handler = new RotatingFileHandler($path, $numOfKeepFiles, null, true, 0775);
         $logFormat = "[%datetime%] %level_name%: %message% %context% %extra%\n";
         $handler->setFormatter(new LineFormatter($logFormat, null, true, true));
 

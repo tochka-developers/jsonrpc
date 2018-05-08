@@ -48,13 +48,13 @@ Route::post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Toch
     return $server->handle($request);
 });
 ```
-### Lumen 5.4
+### Laravel 5.4
 ```php
 $app->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
     return $server->handle($request);
 });
 ```
-### Lumen >=5.5
+### Laravel >=5.5
 ```php
 $router->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
     return $server->handle($request);
