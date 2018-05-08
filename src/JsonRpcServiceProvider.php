@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Tochka\JsonRpc\Exceptions\JsonRpcHandler;
+use Monolog\Logger as Monolog;
+use Monolog\Processor\MemoryUsageProcessor;
+use Monolog\Handler\RotatingFileHandler;
+use Monolog\Formatter\LineFormatter;
 
 class JsonRpcServiceProvider extends ServiceProvider
 {
@@ -20,7 +24,19 @@ class JsonRpcServiceProvider extends ServiceProvider
         $this->app->instance('JsonRpcRequest', new JsonRpcRequest(new \StdClass, []));
 
         // Кастомный логгер для api
-        $this->app->instance('JsonRpcLog', (new JsonRpcLogWriter())->createLogger());
+        $path = storage_path(config('jsonrpc.log_path', 'logs/jsonrpc/activity.log'));
+        $numOfKeepFiles = config('jsonrpc.log_max_files', 10);
+
+        $handler = new RotatingFileHandler($path, $numOfKeepFiles, null, true, 0775);
+        $logFormat = "[%datetime%] %level_name%: %message% %context% %extra%\n";
+        $handler->setFormatter(new LineFormatter($logFormat, null, true, true));
+
+        $logger = new Monolog('JsonRpc');
+        $logger->pushHandler($handler);
+        $logger->pushProcessor(new JsonRpcProcessor());
+        $logger->pushProcessor(new MemoryUsageProcessor());
+
+        $this->app->instance('JsonRpcLog', $logger);
 
         // Сервер JsonRpc
         $this->app->singleton('JsonRpcServer', function () {
