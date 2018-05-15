@@ -5,6 +5,7 @@ if (!function_exists('config_path')) {
      * Get the configuration path.
      *
      * @param  string $path
+     *
      * @return string
      */
     function config_path($path = '')
@@ -21,9 +22,10 @@ if (!function_exists('is_lumen')) {
      */
     function is_lumen()
     {
-        return (bool)preg_match('/Lumen/iu', app()->version());
+        return false !== stripos(app()->version(), 'Lumen');
     }
 }
+
 if (!function_exists('getVersion')) {
     /**
      * Check framework version
@@ -32,6 +34,6 @@ if (!function_exists('getVersion')) {
      */
     function getVersion()
     {
-        return preg_replace('/.*(([0-9]\.[0-9])[0-9]*).*/ui', '$2', app()->version());
+        return preg_replace('/.*((\d\.\d)\d*).*/ui', '$2', app()->version());
     }
 }

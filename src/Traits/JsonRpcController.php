@@ -18,45 +18,55 @@ trait JsonRpcController
      * Возвращает массив с переданными в запросе параметрами
      * @return array
      */
-    protected function getArrayRequest()
+    protected function getArrayRequest(): array
     {
         if (null === $this->arrayRequest) {
-            /** @var JsonRpcRequest $request */
-            $request = app('JsonRpcRequest');
-            return ArrayHelper::fromObject($request->call->params);
+            return ArrayHelper::fromObject($this->getRequest()->call->params);
         }
+
         return $this->arrayRequest;
     }
 
     /**
+     * @return JsonRpcRequest
+     */
+    protected function getRequest(): JsonRpcRequest
+    {
+        return app(JsonRpcRequest::class);
+    }
+
+    /**
      * Валидация переданных в контроллер параметров
+     *
      * @param array $rules Правила валидации
      * @param array $messages Сообщения об ошибках
-     * @param bool $noException Если true - Exception генерироваться не будет
+     * @param bool  $noException Если true - Exception генерироваться не будет
+     *
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
      */
-    protected function validate($rules, $messages = [], $noException = false)
+    protected function validate($rules, array $messages = [], $noException = false)
     {
         return $this->validateData($this->getArrayRequest(), $rules, $messages, $noException);
     }
 
     /**
      * Валидация любых данных
+     *
      * @param array|\StdClass $data Данные для валидации
-     * @param array $rules Правила валидации
-     * @param array $messages Сообщения об ошибках
-     * @param bool $noException Если true - Exception генерироваться не будет
+     * @param array           $rules Правила валидации
+     * @param array           $messages Сообщения об ошибках
+     * @param bool            $noException Если true - Exception генерироваться не будет
+     *
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
      */
-    protected function validateData($data, $rules, $messages = [], $noException = false)
+    protected function validateData($data, $rules, array $messages = [], $noException = false)
     {
-        if (is_object($data)) {
+        if (\is_object($data)) {
             $data = ArrayHelper::fromObject($data);
         }
 
-        /** @var Validator $validator */
         $validator = Validator::make($data, $rules, $messages);
         $validBag = $validator->errors();
 
@@ -73,6 +83,7 @@ trait JsonRpcController
 
     /**
      * Валидирует и фильтрует переданные в контроллер параметры. Возвращает отфильтрованный массив с параметрами
+     *
      * @param array $rules Правила валидации
      * @param array $messages Сообщения об ошибках
      * @param bool  $noException Если true - Exception генерироваться не будет
@@ -80,20 +91,22 @@ trait JsonRpcController
      * @return array
      * @throws \Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException
      */
-    protected function validateAndFilter($rules, array $messages = [], $noException = false)
+    protected function validateAndFilter($rules, array $messages = [], $noException = false): array
     {
         $this->validateMessageBag = $this->validateData($this->getArrayRequest(), $rules, $messages, $noException);
+
         return $this->extractInputFromRules($this->getArrayRequest(), $rules);
     }
 
     /**
      * Get the request input based on the given validation rules.
      *
-     * @param  array|\stdClass  $data
-     * @param  array  $rules
+     * @param  array|\stdClass $data
+     * @param  array           $rules
+     *
      * @return array
      */
-    protected function extractInputFromRules($data, array $rules)
+    protected function extractInputFromRules($data, array $rules): array
     {
         if (\is_object($data)) {
             $data = (array)$data;
@@ -112,7 +125,7 @@ trait JsonRpcController
 
                 if (\is_array($data) && array_key_exists($rule, $data)) {
                     $additional[$rule][$key] = $value;
-                } elseif ($rule === '*' and \is_array($data)) {
+                } elseif ($rule === '*' && \is_array($data)) {
                     $arrays[$key] = $value;
                 }
             } elseif (\is_array($data) && array_key_exists($rule, $data)) {
@@ -127,6 +140,7 @@ trait JsonRpcController
             foreach ($data as $item) {
                 $result[] = $this->extractInputFromRules($item, $arrays);
             }
+
             return $result;
         } elseif ($isGlobalArray) {
             return $data;

@@ -35,6 +35,7 @@ return [
      */
     'middleware' => [
         \Tochka\JsonRpc\Middleware\ValidateJsonRpcMiddleware::class,     // валидация на стандарты JsonRPC
+        //\Tochka\JsonRpc\Middleware\ServiceValidationMiddleware::class,   // проверка возможности авторизации под указанным сервисом
         //\Tochka\JsonRpc\Middleware\AccessControlListMiddleware::class,   // проверка доступа системы к методу
         \Tochka\JsonRpc\Middleware\MethodClosureMiddleware::class,       // возвращает контроллер и метод !!REQUIRED!!
         \Tochka\JsonRpc\Middleware\AssociateParamsMiddleware::class,     // ассоциативные параметры
@@ -48,10 +49,23 @@ return [
     ],
 
     /**
+     * Разрешенные сервера, которые могут авторизовываться под указанными сервисами
+     * Работает только при использовании ServiceValidationMiddleware
+     */
+    'servers' => [
+        //'service1' => ['192.168.0.1', '192.168.1.5'],
+        //'service2' => '*',
+    ],
+
+    /**
      * Список контроля доступа
      * Ключи массива - методы, значения - массив с наименованием сервисов, которые имеют доступ к указанному методу
+     * Работает только при использовании AccessControlListMiddleware
      */
-    'acl' => [],
+    'acl' => [
+        //'App\\Http\\TestController1@method' => ['system1', 'system2'],
+        //'App\\Http\\TestController2' => '*',
+    ],
 
     /**
      * Правила роутинга
@@ -86,15 +100,21 @@ return [
     'description' => 'JsonRpc Server',
 
     /**
-     * Настройки логгирования
+     * Настройки логирования
      */
-    'logging_channel' => [
-        'name' => 'JsonRpc',
-        'tap' => [\Tochka\JsonRpc\Log\CustomizeLogger::class],
-        'driver' => 'daily',
-        'level' => 'debug',
-        'path' => storage_path('logs/jsonrpc/activity.log'),
-        'days' => 10,
-    ],
+    'log' => [
+        /**
+         * Канал лога, в который будут записываться все логи
+         */
+        'channel' => 'default',
+
+        /**
+         * Параметры, которые необходимо скрыть из логов
+         */
+        //'hideParams' => [
+        //    'App\\Http\\TestController1@method' => ['password', 'data.phone_number']
+        //    'App\\Http\\TestController2' => ['password', 'data.phone_number']
+        //]
+    ]
 
 ];

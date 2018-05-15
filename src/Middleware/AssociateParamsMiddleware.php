@@ -11,8 +11,10 @@ class AssociateParamsMiddleware implements BaseMiddleware
      * Handle an incoming request.
      *
      * @param  JsonRpcRequest $request
+     *
      * @return mixed
      * @throws JsonRpcException
+     * @throws \ReflectionException
      */
     public function handle($request)
     {
@@ -32,43 +34,41 @@ class AssociateParamsMiddleware implements BaseMiddleware
                 // если он обязателен
                 if (!$parameter->isOptional()) {
                     $errors[] = [
-                        'code' => 'required_field',
-                        'message' => 'Не передан либо пустой обязательный параметр',
-                        'object_name' => $parameter->getName()
+                        'code'        => 'required_field',
+                        'message'     => 'Не передан либо пустой обязательный параметр',
+                        'object_name' => $parameter->getName(),
                     ];
                 } else {
                     // получим значение аргумента по умолчанию
                     $value = $parameter->getDefaultValue();
                 }
             } else {
-                if (version_compare(phpversion(), '7.0', '>')) {
-                    // Проверяем тип
-                    $parameterType = strtolower(class_basename((string)$parameter->getType()));
-                    switch ($parameterType) {
-                        case 'int':
-                        case 'integer':
-                            $parameterType = 'integer';
-                            break;
-                        case 'float':
-                        case 'double':
-                            $parameterType = 'double';
-                            break;
-                        case 'boolean':
-                        case 'bool':
-                            $parameterType = 'boolean';
-                            break;
-                        case 'stdclass':
-                            $parameterType = 'object';
-                            break;
-                    }
+                // Проверяем тип
+                $parameterType = strtolower(class_basename((string)$parameter->getType()));
+                switch ($parameterType) {
+                    case 'int':
+                    case 'integer':
+                        $parameterType = 'integer';
+                        break;
+                    case 'float':
+                    case 'double':
+                        $parameterType = 'double';
+                        break;
+                    case 'boolean':
+                    case 'bool':
+                        $parameterType = 'boolean';
+                        break;
+                    case 'stdclass':
+                        $parameterType = 'object';
+                        break;
+                }
 
-                    if (gettype($value) !== $parameterType) {
-                        $errors[] = [
-                            'code' => 'invalid_parameter',
-                            'message' => 'Передан аргумент неверного типа',
-                            'object_name' => $parameter->getName(),
-                        ];
-                    }
+                if (\gettype($value) !== $parameterType) {
+                    $errors[] = [
+                        'code'        => 'invalid_parameter',
+                        'message'     => 'Передан аргумент неверного типа',
+                        'object_name' => $parameter->getName(),
+                    ];
                 }
             }
 
@@ -76,7 +76,7 @@ class AssociateParamsMiddleware implements BaseMiddleware
             $args[$i] = $value;
         }
 
-        if (count($errors) > 0) {
+        if (\count($errors) > 0) {
             throw new JsonRpcException(JsonRpcException::CODE_INVALID_PARAMETERS, null, $errors);
         }
 

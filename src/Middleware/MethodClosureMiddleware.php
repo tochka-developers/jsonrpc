@@ -11,6 +11,7 @@ class MethodClosureMiddleware implements BaseMiddleware
      * Handle an incoming request.
      *
      * @param  JsonRpcRequest $request
+     *
      * @return mixed
      * @throws JsonRpcException
      */
@@ -32,7 +33,7 @@ class MethodClosureMiddleware implements BaseMiddleware
             $methodArray = explode('_', $methodCall);
 
             // если имя вызываемого метода без разделителя - значит ищем его в базовом классе
-            if (count($methodArray) === 1) {
+            if (\count($methodArray) === 1) {
                 $controllerName = $request->options['controller'];
                 $method = $methodCall;
             } else {
@@ -52,7 +53,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
         $controller = app($controllerName);
 
-        if (!is_callable(array($controller, $method))) {
+        if (!\is_callable([$controller, $method])) {
             throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
 

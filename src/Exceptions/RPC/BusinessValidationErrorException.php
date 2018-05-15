@@ -12,17 +12,18 @@ class BusinessValidationErrorException extends JsonRpcException
 {
     /**
      * BusinessValidationErrorException constructor.
-     * @param int $code
-     * @param null $message
-     * @param null $object_name
-     * @param null $meta
+     *
+     * @param int             $code
+     * @param null            $message
+     * @param null            $object_name
+     * @param null            $meta
      * @param \Exception|null $previous
      */
     public function __construct($code, $message, $object_name = null, $meta = null, \Exception $previous = null)
     {
         $error = [
-            'code' => $code,
-            'message' => $message
+            'code'    => $code,
+            'message' => $message,
         ];
 
         if (null !== $object_name) {

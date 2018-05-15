@@ -2,10 +2,11 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
+use Illuminate\Support\Facades\Request;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcRequest;
 
-class AccessControlListMiddleware implements BaseMiddleware
+class ServiceValidationMiddleware implements BaseMiddleware
 {
     /**
      * Handle an incoming request.
@@ -17,31 +18,29 @@ class AccessControlListMiddleware implements BaseMiddleware
      */
     public function handle($request)
     {
-        $controller = \get_class($request->controller);
-        $method = $request->method;
-
-        $service = $request->service;
-
-        $aclController = $request->options['acl'][$controller] ?? [];
-        $aclMethod = $request->options['acl'][$controller . '@' . $method] ?? [];
+        $allow_ips = config('jsonrpc.servers.' . $request->service);
 
         // если не заданы настройки - по умолчанию запрещаем доступ
-        if (empty($aclController) && empty($aclMethod)) {
+        if (null === $allow_ips) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
         // если разрешено всем
-        if ('*' === $aclController || '*' === $aclMethod) {
+        if ($allow_ips === '*') {
             return true;
         }
 
-        if (!\is_array($aclController) || !\is_array($aclMethod)) {
+        if (!\is_array($allow_ips)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
-        // если нашей системы нет в списке разрешенных
-        if (!\in_array('*', $aclController, true) && !\in_array($service, $aclController, true) &&
-            !\in_array('*', $aclMethod, true) && !\in_array($service, $aclMethod, true)) {
+        // если разрешено всем
+        if (\in_array('*', $allow_ips, true)) {
+            return true;
+        }
+
+        $ip = Request::ip();
+        if (!\in_array($ip, $allow_ips, true)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 

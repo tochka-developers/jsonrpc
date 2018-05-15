@@ -3,9 +3,10 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
-use Tochka\JsonRpc\Facades\JsonRpcLog;
+use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
 
 /**
  * Class JsonRpcServer
@@ -13,7 +14,14 @@ use Tochka\JsonRpc\Facades\JsonRpcLog;
  */
 class JsonRpcServer
 {
-    public function handle(Request $request, $options = [])
+    /**
+     * @param Request $request
+     * @param array   $options
+     *
+     * @return array
+     * @throws \ReflectionException
+     */
+    public function handle(Request $request, $options = []): array
     {
 
         $options = $this->fillOptions($options);
@@ -54,7 +62,7 @@ class JsonRpcServer
             }
 
             // если один вызов - приведем к массиву вызовов
-            if (!is_array($data)) {
+            if (!\is_array($data)) {
                 $calls = [$data];
             } else {
                 $calls = $data;
@@ -101,12 +109,14 @@ class JsonRpcServer
             $result[] = $answer;
         }
 
-        return count($result) > 1 ? $result : (array)$result[0];
+        return \count($result) > 1 ? $result : (array)$result[0];
     }
 
     /**
      * Проверка заголовка для идентификации сервиса
+     *
      * @param Request $request
+     *
      * @return mixed
      * @throws JsonRpcException
      */
@@ -122,17 +132,17 @@ class JsonRpcServer
             throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
         }
 
-        JsonRpcLog::info('Success auth', compact('service'));
-
         return $service;
     }
 
     /**
      * Заполняет параметры
+     *
      * @param array $options
+     *
      * @return array
      */
-    protected function fillOptions($options)
+    protected function fillOptions($options): array
     {
         if (empty($options['uri'])) {
             $options['uri'] = '/';
@@ -155,8 +165,7 @@ class JsonRpcServer
         }
 
         if (empty($options['middleware'])) {
-            $options['middleware'] = config('jsonrpc.middleware',
-                [\Tochka\JsonRpc\Middleware\MethodClosureMiddleware::class]);
+            $options['middleware'] = config('jsonrpc.middleware', [MethodClosureMiddleware::class]);
         }
 
         if (!isset($options['acl'])) {

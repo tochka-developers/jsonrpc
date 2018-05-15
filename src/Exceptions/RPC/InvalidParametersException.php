@@ -2,8 +2,8 @@
 
 namespace Tochka\JsonRpc\Exceptions\RPC;
 
-use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Illuminate\Support\MessageBag;
+use Tochka\JsonRpc\Exceptions\JsonRpcException;
 
 /**
  * Class WebServiceException
@@ -13,7 +13,8 @@ class InvalidParametersException extends JsonRpcException
 {
     /**
      * InvalidParametersException constructor.
-     * @param MessageBag $messageBag
+     *
+     * @param MessageBag      $messageBag
      * @param \Exception|null $previous
      */
     public function __construct(MessageBag $messageBag, \Exception $previous = null)
@@ -22,8 +23,8 @@ class InvalidParametersException extends JsonRpcException
 
         foreach ($messageBag->toArray() as $code => $message) {
             $error[] = [
-                'code' => $code,
-                'message' => reset($message)
+                'code'    => $code,
+                'message' => reset($message),
             ];
         }
 

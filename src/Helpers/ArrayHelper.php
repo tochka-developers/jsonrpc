@@ -17,10 +17,10 @@ class ArrayHelper
      */
     public static function fromObject($object)
     {
-        if (is_object($object)) {
+        if (\is_object($object)) {
             $object = (array)$object;
         }
-        if (is_array($object)) {
+        if (\is_array($object)) {
             $array = [];
             foreach ($object as $key => $value) {
                 $array[$key] = self::fromObject($value);

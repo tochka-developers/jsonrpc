@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc\Helpers;
 
-use Tochka\JsonRpc\Facades\JsonRpcLog;
+use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\JsonRpcRequest;
 
 /**
@@ -12,10 +12,10 @@ use Tochka\JsonRpc\JsonRpcRequest;
 class LogHelper
 {
 
-    const TYPE_REQUEST = 'request';
-    const TYPE_SQL = 'sql';
-    const TYPE_EXCEPTION = 'exception';
-    const TYPE_RESPONSE = 'response';
+    public const TYPE_REQUEST = 'request';
+    public const TYPE_SQL = 'sql';
+    public const TYPE_EXCEPTION = 'exception';
+    public const TYPE_RESPONSE = 'response';
 
     /**
      * Логирование запроса
@@ -23,12 +23,12 @@ class LogHelper
      * @param $type
      * @param $source
      */
-    public static function log($type, $source)
+    public static function log($type, $source): void
     {
         if (
-            ($type === self::TYPE_SQL && !is_array($source)) ||
+            ($type === self::TYPE_SQL && !\is_array($source)) ||
             (!($source instanceof \stdClass) && $type === self::TYPE_EXCEPTION) ||
-            (!($source instanceof JsonRpcRequest) && in_array($type, [self::TYPE_REQUEST, self::TYPE_RESPONSE], true))
+            (!($source instanceof JsonRpcRequest) && \in_array($type, [self::TYPE_REQUEST, self::TYPE_RESPONSE], true))
         ) {
             return;
         }
@@ -79,7 +79,7 @@ class LogHelper
             : false;
 
         $hideData = function (&$item, $key, $rules) {
-            if (in_array($key, $rules, true)) {
+            if (\in_array($key, $rules, true)) {
                 $item = '****';
             }
         };
@@ -88,7 +88,8 @@ class LogHelper
             array_walk($context['params'], $hideData, $hideDataRules);
         }
 
-        JsonRpcLog::$logLevel($message, $context);
+        Log::channel(config('jsonrpc.log_channel'))
+            ->$logLevel($message, $context);
 
     }
 

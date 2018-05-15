@@ -2,15 +2,19 @@
 
 namespace Tochka\JsonRpc;
 
+use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
+use Tochka\JsonRpc\Helpers\ArrayHelper;
 use Tochka\JsonRpc\Middleware\BaseMiddleware;
-use Tochka\JsonRpc\Helpers\LogHelper;
 
 class JsonRpcRequest
 {
+    protected const REQUEST_MESSAGE = 'JsonRpc (%s): New request (%s/%s)';
+    protected const RESPONSE_MESSAGE = 'JsonRpc (%s): Successful request (%s/%s)';
+
     public $call;
 
-    public $id = null;
+    public $id;
     public $controller;
     public $method;
     public $params = [];
@@ -26,6 +30,10 @@ class JsonRpcRequest
         $this->id = !empty($call->id) ? $call->id : null;
     }
 
+    /**
+     * @return mixed
+     * @throws JsonRpcException
+     */
     public function handle()
     {
         $middlewareList = $this->options['middleware'];
@@ -40,11 +48,14 @@ class JsonRpcRequest
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
         }
 
-        LogHelper::log(LogHelper::TYPE_REQUEST, $this);
+        Log::channel(config('jsonrpc.logChannel', 'default'))
+            ->info(sprintf(self::REQUEST_MESSAGE, $this->id, $this->controller, $this->method),
+                ArrayHelper::fromObject($this->call));
 
         $result = $this->controller->{$this->method}(...$this->params);
 
-        LogHelper::log(LogHelper::TYPE_RESPONSE, $this);
+        Log::channel(config('jsonrpc.logChannel', 'default'))
+            ->info(sprintf(self::RESPONSE_MESSAGE, $this->id, $this->controller, $this->method));
 
         return $result;
     }

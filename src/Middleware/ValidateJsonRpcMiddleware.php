@@ -11,6 +11,7 @@ class ValidateJsonRpcMiddleware implements BaseMiddleware
      * Handle an incoming request.
      *
      * @param  JsonRpcRequest $request
+     *
      * @return mixed
      * @throws JsonRpcException
      */
