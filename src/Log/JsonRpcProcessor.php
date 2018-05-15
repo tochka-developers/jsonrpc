@@ -1,6 +1,6 @@
 <?php
 
-namespace Tochka\JsonRpc;
+namespace Tochka\JsonRpc\Log;
 
 use Monolog\Processor\WebProcessor;
 
