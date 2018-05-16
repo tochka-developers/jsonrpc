@@ -28,6 +28,7 @@ trait JsonRpcController
     }
 
     /**
+     * Возвращает экземпляр класса с текущим запросом
      * @return JsonRpcRequest
      */
     protected function getRequest(): JsonRpcRequest

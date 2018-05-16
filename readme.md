@@ -181,7 +181,7 @@ return $server->handle($request, $options);
         //'App\\Http\\TestController2' => '*',
 ],
 ```
-В указанном примере в методу `method` контроллера `App\Http\TestController1` будут иметь доступ только клиенты 
+В указанном примере к методу `method` контроллера `App\Http\TestController1` будут иметь доступ только клиенты 
 `systemName1` и `systemName2`, и ко всем методам контроллера `App\Http\TestController2` - все клиенты.
 
 ## Валидация параметров
@@ -198,58 +198,61 @@ public function store($title, $body)
     // The blog post is valid...
 }
 ```
+Кроме того, в указанном trait доступны следующие методы:
+```php
+/**
+ * Возвращает массив с переданными в запросе параметрами
+ */
+protected function getArrayRequest(): array;
+
+/**
+ * Возвращает экземпляр класса с текущим запросом
+ */
+protected function getRequest(): JsonRpcRequest;
+
+/**
+ * Валидация переданных в контроллер параметров
+ *
+ * @param array $rules Правила валидации
+ * @param array $messages Сообщения об ошибках
+ * @param bool  $noException Если true - Exception генерироваться не будет
+ *
+ * @return bool|MessageBag Прошла валидация или нет
+ */
+protected function validate($rules, array $messages = [], $noException = false);
+
+ /**
+ * Валидирует и фильтрует переданные в контроллер параметры. Возвращает отфильтрованный массив с параметрами
+ *
+ * @param array $rules Правила валидации
+ * @param array $messages Сообщения об ошибках
+ * @param bool  $noException Если true - Exception генерироваться не будет
+ */
+protected function validateAndFilter($rules, array $messages = [], $noException = false): array;
+```
+
+## Логирование
+Вы можете указать любой канал логов, который зарегистрирован у вас в системе (либо предварительно создать его) 
+с помощью параметра `jsonrpc.log.channel`:
+```php
+/**
+ * Канал лога, в который будут записываться все логи
+ */
+'channel' => 'default',
+```
 
 ## Скрытие конфиденциальной информации в логах системы
-Для того, чтобы убрать конфиденциальную информацию (логины, пароли, токены и пр.) из логов системы нужно в контроллере перепределить массив $hideDataLog.
+Для того, чтобы убрать конфиденциальную информацию (логины, пароли, токены и пр.) из логов системы нужно в 
+указать,что именно скрывать, в конфигурации `jsonrpc.log.hideParams`:
 ```php
-public $hideDataLog = [
-    type => [
-        'method' => [key|bindName]
-    ],
-    type => [
-        'method' => [key|bindName]
-    ],
-];
+[
+    'App\\Http\\TestController1@method' => ['password', 'data.phone_number'],
+    'App\\Http\\TestController2' => '*',
+]
 ```
-*type* - определяет где скрываем данные. Имеет 4 значения:
-LogHelper::TYPE_REQUEST - убрать данные из HTTP запроса
-LogHelper::TYPE_SQL - убрать данные из SQL запроса
-LogHelper::TYPE_EXCEPTION - убрать данные при вызове ошибки
-LogHelper::TYPE_RESPONSE - убрать данные из HTTP ответа
-
-*method* - метод контроллера
-
-*[key|bindName]* - определяет, что именно нужно скрыть при вызове вышеуказанного метода.
-Для LogHelper::TYPE_SQL нужно перечислить названия меток в sql запросе.
-Для остальных номера входных переменных (начиная в нуля)
-
-```php
-class TestController extends ApiController
-{
-
-    public $hideDataLog = [
-        LogHelper::TYPE_REQUEST => [
-            'm1' => [0, 2],
-            'm2' => [0]
-        ],
-        LogHelper::TYPE_SQL => [
-            'm2' => ['bindName1', 'bindName2']
-        ],
-        LogHelper::TYPE_EXCEPTION => [
-            'm1' => [0, 1],
-            'm2' => [0]
-        ],
-        LogHelper::TYPE_RESPONSE => [
-            'm1' => [4],
-            'm2' => [0]
-        ]
-    ];
-
-    public function m1($p0, $p1, $p2, $p3, $p4){}
-    
-    public function m2($p0){}
-}   
-```
+В указанном примере из логов метода `method` контроллера `App\Http\TestController1` будут скрываться занчения параметров
+`password` и `data.phone_number` (поддерживается вложенность параметров в запросе при помощи разделителя `.`). 
+В контроллере `App\Http\TestController2` во всех методах будут скрываться значения абсолютно всех параметров.
 
 ## Как это работает
 Клиент послает валидный JsonRpc2.0-запрос:

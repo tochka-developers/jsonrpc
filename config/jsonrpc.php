@@ -112,7 +112,7 @@ return [
          * Параметры, которые необходимо скрыть из логов
          */
         //'hideParams' => [
-        //    'App\\Http\\TestController1@method' => ['password', 'data.phone_number']
+        //    'App\\Http\\TestController1@method' => ['password', 'data.phone_number'],
         //    'App\\Http\\TestController2' => ['password', 'data.phone_number']
         //]
     ]
