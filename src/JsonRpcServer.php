@@ -87,7 +87,7 @@ class JsonRpcServer
                 $jsonRpcRequest = new JsonRpcRequest($call, $options);
                 $jsonRpcRequest->service = $serviceName;
 
-                app()->instance('JsonRpcRequest', $jsonRpcRequest);
+                app()->instance(JsonRpcRequest::class, $jsonRpcRequest);
 
                 if (null !== $jsonRpcRequest->id) {
                     $answer->id = $jsonRpcRequest->id;
