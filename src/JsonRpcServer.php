@@ -74,7 +74,6 @@ class JsonRpcServer
                 $answer = new \stdClass();
                 $answer->jsonrpc = '2.0';
 
-
                 if (!empty($options['endpoint'])) {
                     $call->endpoint = $options['endpoint'];
                 }

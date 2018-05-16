@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
 
 /**
  * JsonRpcHandler Facade
@@ -12,6 +13,6 @@ class JsonRpcHandler extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'JsonRpcHandler';
+        return Handler::class;
     }
 }

@@ -49,13 +49,13 @@ class JsonRpcRequest
         }
 
         Log::channel(config('jsonrpc.logChannel', 'default'))
-            ->info(sprintf(self::REQUEST_MESSAGE, $this->id, $this->controller, $this->method),
+            ->info(sprintf(self::REQUEST_MESSAGE, $this->id, class_basename($this->controller), $this->method),
                 ArrayHelper::fromObject($this->call));
 
         $result = $this->controller->{$this->method}(...$this->params);
 
         Log::channel(config('jsonrpc.logChannel', 'default'))
-            ->info(sprintf(self::RESPONSE_MESSAGE, $this->id, $this->controller, $this->method));
+            ->info(sprintf(self::RESPONSE_MESSAGE, $this->id, class_basename($this->controller), $this->method));
 
         return $result;
     }
