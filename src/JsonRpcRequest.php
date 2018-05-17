@@ -9,9 +9,6 @@ use Tochka\JsonRpc\Middleware\BaseMiddleware;
 
 class JsonRpcRequest
 {
-    protected const REQUEST_MESSAGE = 'JsonRpc (%s): New request (%s/%s)';
-    protected const RESPONSE_MESSAGE = 'JsonRpc (%s): Successful request (%s/%s)';
-
     public $call;
 
     public $id;
@@ -48,14 +45,20 @@ class JsonRpcRequest
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
         }
 
-        Log::channel(config('jsonrpc.logChannel', 'default'))
-            ->info(sprintf(self::REQUEST_MESSAGE, $this->id, class_basename($this->controller), $this->method),
-                ArrayHelper::fromObject($this->call));
+        $logContext = [
+            'method' => $this->call->method,
+            'call' => class_basename($this->controller) . '::' . $this->method,
+            'id' => $this->id,
+            'service' => $this->service,
+        ];
+
+        Log::channel(config('jsonrpc.log.channel', 'default'))
+            ->info('New request', $logContext + ['request' => ArrayHelper::fromObject($this->call)]);
 
         $result = $this->controller->{$this->method}(...$this->params);
 
-        Log::channel(config('jsonrpc.logChannel', 'default'))
-            ->info(sprintf(self::RESPONSE_MESSAGE, $this->id, class_basename($this->controller), $this->method));
+        Log::channel(config('jsonrpc.log.channel', 'default'))
+            ->info('Successful request', $logContext);
 
         return $result;
     }

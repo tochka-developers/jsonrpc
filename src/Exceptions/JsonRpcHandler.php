@@ -10,7 +10,7 @@ use Tochka\JsonRpc\JsonRpcRequest;
 
 class JsonRpcHandler
 {
-    protected const EXCEPTION_MESSAGE = 'JsonRpc (%s): #%d %s';
+    protected const EXCEPTION_MESSAGE = 'JsonRpc (method:"%s", id:"%s", service:"%s"): #%d %s';
 
     public function handle(\Exception $e)
     {
@@ -35,8 +35,15 @@ class JsonRpcHandler
         /** @var JsonRpcRequest $request */
         $request = app(JsonRpcRequest::class);
 
-        Log::channel(config('jsonrpc.logChannel', 'default'))
-            ->info(sprintf(self::EXCEPTION_MESSAGE, $request->id, $error->code, $error->message));
+        $logContext = [
+            'method' => $request->call->method,
+            'call' => class_basename($request->controller) . '::' . $request->method,
+            'id' => $request->id,
+            'service' => $request->service,
+        ];
+
+        Log::channel(config('jsonrpc.log.channel', 'default'))
+            ->info('Error #' . $error->code . ': ' . $error->message, $logContext);
 
         $handler = app(ExceptionHandler::class);
         $handler->report($e);
