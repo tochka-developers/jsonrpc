@@ -23,7 +23,7 @@ trait JsonRpcController
         if (null === $this->arrayRequest) {
             /** @var JsonRpcRequest $request */
             $request = app('JsonRpcRequest');
-            return ArrayHelper::fromObject($request->call->params);
+            return ArrayHelper::fromObject($request->call->params ?? []);
         }
         return $this->arrayRequest;
     }
