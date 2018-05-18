@@ -21,7 +21,7 @@ trait JsonRpcController
     protected function getArrayRequest(): array
     {
         if (null === $this->arrayRequest) {
-            return ArrayHelper::fromObject($this->getRequest()->call->params);
+            return ArrayHelper::fromObject($this->getRequest()->call->params ?? []);
         }
 
         return $this->arrayRequest;
