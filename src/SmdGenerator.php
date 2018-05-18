@@ -109,6 +109,11 @@ class SmdGenerator
     {
         $controllers = $this->getControllers();
 
+        if (!empty($this->options['endpoint'])) {
+            $namespace = $this->options['namespace'] . studly_case($this->options['endpoint']) . '\\';
+            $controllers = \array_merge($controllers, $this->getControllers($namespace));
+        }
+
         $services = [];
 
         foreach ($controllers as $controller) {
@@ -632,9 +637,14 @@ class SmdGenerator
         return $objects;
     }
 
-    private function getControllers()
+    private function getControllers($namespace = null)
     {
-        $namespace = trim($this->options['namespace'], '\\');
+        if (!$namespace) {
+            $namespace = $this->options['namespace'];
+        }
+
+        $namespace = trim($namespace, '\\');
+
         $files = scandir($this->getNamespaceDirectory($namespace), SCANDIR_SORT_ASCENDING);
 
         $classes = array_map(function ($file) use ($namespace) {
