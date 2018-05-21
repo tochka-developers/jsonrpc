@@ -35,12 +35,16 @@ class JsonRpcHandler
         /** @var JsonRpcRequest $request */
         $request = app(JsonRpcRequest::class);
 
-        $logContext = [
-            'method' => $request->call->method,
-            'call' => class_basename($request->controller) . '::' . $request->method,
-            'id' => $request->id,
-            'service' => $request->service,
-        ];
+        if ($request) {
+            $logContext = [
+                'method' => $request->call->method,
+                'call' => class_basename($request->controller) . '::' . $request->method,
+                'id' => $request->id,
+                'service' => $request->service,
+            ];
+        } else {
+            $logContext = [];
+        }
 
         Log::channel(config('jsonrpc.log.channel', 'default'))
             ->info('Error #' . $error->code . ': ' . $error->message, $logContext);
