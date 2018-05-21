@@ -35,7 +35,7 @@ class JsonRpcHandler
         /** @var JsonRpcRequest $request */
         $request = app(JsonRpcRequest::class);
 
-        if ($request) {
+        if (isset($request->call->method)) {
             $logContext = [
                 'method' => $request->call->method,
                 'call' => class_basename($request->controller) . '::' . $request->method,
