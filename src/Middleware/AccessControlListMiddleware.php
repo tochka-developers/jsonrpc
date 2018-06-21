@@ -17,31 +17,31 @@ class AccessControlListMiddleware implements BaseMiddleware
      */
     public function handle($request)
     {
+        if (empty($request->controller) || empty($request->method)) {
+            throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR, 'JsonRpc server configuration error: Place AccessControlListMiddleware after MethodClosureMiddleware in middleware list!');
+        }
+
         $controller = \get_class($request->controller);
         $method = $request->method;
 
         $service = $request->service;
 
-        $aclController = $request->options['acl'][$controller] ?? [];
-        $aclMethod = $request->options['acl'][$controller . '@' . $method] ?? [];
-
-        // если не заданы настройки - по умолчанию запрещаем доступ
-        if (empty($aclController) && empty($aclMethod)) {
-            throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
-        }
+        $acl = $request->options['acl'][$controller][$method] ??
+            $request->options['acl'][$controller]['*'] ??
+            $request->options['acl'][$controller] ??
+            [];
 
         // если разрешено всем
-        if ('*' === $aclController || '*' === $aclMethod) {
+        if ('*' === $acl) {
             return true;
         }
 
-        if (!\is_array($aclController) || !\is_array($aclMethod)) {
+        // если конфигурация неверная
+        if (!\is_array($acl) || empty($acl)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
-        // если нашей системы нет в списке разрешенных
-        if (!\in_array('*', $aclController, true) && !\in_array($service, $aclController, true) &&
-            !\in_array('*', $aclMethod, true) && !\in_array($service, $aclMethod, true)) {
+        if (!\in_array('*', $acl, true) && !\in_array($service, $acl, true)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
