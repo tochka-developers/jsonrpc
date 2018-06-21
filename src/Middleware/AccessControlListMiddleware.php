@@ -31,9 +31,9 @@ class AccessControlListMiddleware implements BaseMiddleware
             $request->options['acl'][$controller] ??
             [];
 
-        // если разрешено всем
-        if ('*' === $acl) {
-            return true;
+        // если указано только одна значение строкой - приведем к массиву
+        if (\is_string($acl)) {
+            $acl = [$acl];
         }
 
         // если конфигурация неверная

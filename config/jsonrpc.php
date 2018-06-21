@@ -63,8 +63,12 @@ return [
      * Работает только при использовании AccessControlListMiddleware
      */
     'acl' => [
-        //'App\\Http\\TestController1@method' => ['system1', 'system2'],
-        //'App\\Http\\TestController2' => '*',
+        //'App\\Http\\TestController1' => [
+        //  '*' => '*'                              // доступ ко всем методам контроллера по умолчанию есть у всех систем
+        //  'method1' => ['system1', 'system2'],    // но к этому методу есть доступ только у system1 и system2
+        //  'method2' => 'system3',                 // а к этому методу только у system3
+        //]
+        //'App\\Http\\TestController2' => '*',      // доступ ко всем методам контроллера есть у всех систем
     ],
 
     /**

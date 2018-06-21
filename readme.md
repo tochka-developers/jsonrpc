@@ -177,12 +177,14 @@ return $server->handle($request, $options);
 Для описания доступа необходимо заполнить параметр `jsonrpc.acl`:
 ```php
 [
-        //'App\\Http\\TestController1@method' => ['systemName1', 'systemName2'],
-        //'App\\Http\\TestController2' => '*',
+    'App\\Http\\TestController1' => [
+        '*' => '*'                              // доступ ко всем методам контроллера по умолчанию есть у всех систем
+        'method1' => ['system1', 'system2'],    // но к этому методу есть доступ только у system1 и system2
+        'method2' => 'system3',                 // а к этому методу только у system3
+    ]
+    'App\\Http\\TestController2' => '*',        // доступ ко всем методам контроллера есть у всех систем
 ],
 ```
-В указанном примере к методу `method` контроллера `App\Http\TestController1` будут иметь доступ только клиенты 
-`systemName1` и `systemName2`, и ко всем методам контроллера `App\Http\TestController2` - все клиенты.
 
 ## Валидация параметров
 Для валидации входных параметров внутри контроллера можно использовать готовый trait: `Tochka\JsonRpc\Traits\JsonRpcController`
