@@ -46,7 +46,7 @@ trait JsonRpcController
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
      */
-    protected function validate($rules, array $messages = [], $noException = false)
+    protected function validateParams($rules, array $messages = [], $noException = false)
     {
         return $this->validateData($this->getArrayRequest(), $rules, $messages, $noException);
     }
