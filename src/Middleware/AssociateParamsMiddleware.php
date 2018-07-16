@@ -4,6 +4,7 @@ namespace Tochka\JsonRpc\Middleware;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcRequest;
+use Tochka\JsonRpc\Helpers\ArrayHelper;
 
 class AssociateParamsMiddleware implements BaseMiddleware
 {
@@ -19,6 +20,8 @@ class AssociateParamsMiddleware implements BaseMiddleware
     public function handle($request)
     {
         $api_params = !empty($request->call->params) ? (array)$request->call->params : [];
+
+        $api_params = ArrayHelper::fromObject($api_params);
 
         // подготавливаем аргументы для вызова метода
         $reflectionMethod = new \ReflectionMethod($request->controller, $request->method);
