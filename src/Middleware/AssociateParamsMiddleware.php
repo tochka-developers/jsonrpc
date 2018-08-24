@@ -63,7 +63,7 @@ class AssociateParamsMiddleware implements BaseMiddleware
                         break;
                 }
 
-                if (\gettype($value) !== $parameterType) {
+                if (null !== $parameter->getType() && \gettype($value) !== $parameterType) {
                     $errors[] = [
                         'code'        => 'invalid_parameter',
                         'message'     => 'Передан аргумент неверного типа',
