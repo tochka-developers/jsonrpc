@@ -26,10 +26,13 @@ class AccessControlListMiddleware implements BaseMiddleware
 
         $service = $request->service;
 
-        $acl = $request->options['acl'][$controller][$method] ??
-            $request->options['acl'][$controller]['*'] ??
-            $request->options['acl'][$controller] ??
-            [];
+        $controllerAcl = $request->options['acl'][$controller] ?? [];
+
+        if (\is_string($controllerAcl)) {
+            $acl = [$controllerAcl];
+        } else {
+            $acl = $controllerAcl[$method] ?? $controllerAcl['*'] ?? [];
+        }
 
         // если указано только одна значение строкой - приведем к массиву
         if (\is_string($acl)) {
