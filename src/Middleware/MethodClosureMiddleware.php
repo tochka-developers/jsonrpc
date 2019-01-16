@@ -18,11 +18,11 @@ class MethodClosureMiddleware implements BaseMiddleware
     public function handle($request)
     {
         // смотрим метод, к которому пытаются обратиться
-        $namespace = $request->options['namespace'];
+        $namespace = $request->server->namespace;
         $method = $request->call->method;
 
         if (!empty($request->call->endpoint) && !empty($request->call->action)) {
-            $namespace = $request->options['namespace'] . studly_case($request->call->endpoint) . '\\';
+            $namespace = $request->server->namespace . studly_case($request->call->endpoint) . '\\';
             $controllerName = $request->call->action;
         } elseif (!empty($request->call->endpoint)) {
             $controllerName = $request->call->endpoint;
@@ -34,7 +34,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
             // если имя вызываемого метода без разделителя - значит ищем его в базовом классе
             if (\count($methodArray) === 1) {
-                $controllerName = $request->options['controller'];
+                $controllerName = $request->server->controller;
                 $method = $methodCall;
             } else {
                 $controllerName = $methodArray[0];
@@ -44,7 +44,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
         }
 
-        $controllerName = $namespace . studly_case($controllerName . $request->options['postfix']);
+        $controllerName = $namespace . studly_case($controllerName . $request->server->postfix);
 
         // если нет такого контроллера или метода
         if (!class_exists($controllerName)) {

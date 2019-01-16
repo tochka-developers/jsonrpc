@@ -18,12 +18,13 @@ class JsonRpcRequest
 
     public $service = 'guest';
 
-    public $options = [];
+    /** @var JsonRpcServer */
+    public $server;
 
-    public function __construct(\StdClass $call, $options)
+    public function __construct(\StdClass $call, $server)
     {
         $this->call = $call;
-        $this->options = $options;
+        $this->server = $server;
         $this->id = !empty($call->id) ? $call->id : null;
     }
 
@@ -33,7 +34,7 @@ class JsonRpcRequest
      */
     public function handle()
     {
-        $middlewareList = $this->options['middleware'];
+        $middlewareList = $this->server->middleware;
 
         foreach ($middlewareList as $className) {
             /** @var BaseMiddleware $middleware */

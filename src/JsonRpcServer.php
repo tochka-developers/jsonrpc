@@ -3,9 +3,12 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
+use Tochka\JsonRpc\Handlers\AuthHandler;
+use Tochka\JsonRpc\Handlers\BaseHandler;
+use Tochka\JsonRpc\Handlers\DescriptionSmdHandler;
+use Tochka\JsonRpc\Handlers\ExecuteRequestHandler;
+use Tochka\JsonRpc\Handlers\ParseAndValidateHandler;
 use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
 
 /**
@@ -14,167 +17,79 @@ use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
  */
 class JsonRpcServer
 {
+    protected const DEFAULT_HANDLERS = [
+        DescriptionSmdHandler::class,
+        AuthHandler::class,
+        ParseAndValidateHandler::class,
+        ExecuteRequestHandler::class,
+    ];
+
+    public $uri;
+    public $namespace;
+    public $postfix;
+    public $description;
+    public $controller;
+    public $middleware;
+    public $acl;
+    public $auth;
+    public $handlers;
+    public $data = [];
+    public $serviceName = 'guest';
+    public $endpoint;
+    public $action;
+
+    protected $response;
+
     /**
      * @param Request $request
-     * @param array   $options
+     * @param array $options
      *
      * @return array
-     * @throws \ReflectionException
      */
     public function handle(Request $request, $options = []): array
     {
-
-        $options = $this->fillOptions($options);
-
-        // SMD-схема
-        if (array_key_exists('smd', $request->all())) {
-            return (new SmdGenerator($options))->get();
-        }
-
-        $result = [];
+        $this->fillOptions($options);
 
         try {
-            // проверка типа метода
-            if (!$request->isMethod('post')) {
-                throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
-            }
-
-            // если включена аутентификацию - проверяем ключ доступа
-            $serviceName = 'guest';
-            if ($options['auth']) {
-                $serviceName = $this->auth($request);
-            }
-
-            // получаем тело запроса
-            $json = $request->getContent();
-
-            // если запрос пустой
-            if (empty($json)) {
-                throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
-            }
-
-            // декодируем json
-            $data = json_decode($json);
-
-            // если не валидный json
-            if (null === $data) {
-                throw new JsonRpcException(JsonRpcException::CODE_PARSE_ERROR);
-            }
-
-            // если один вызов - приведем к массиву вызовов
-            if (!\is_array($data)) {
-                $calls = [$data];
-            } else {
-                $calls = $data;
-            }
-
-            // выполняем все вызовы
-            foreach ($calls as $call) {
-                // создаем ответ
-                $answer = new \stdClass();
-                $answer->jsonrpc = '2.0';
-
-                if (!empty($options['endpoint'])) {
-                    $call->endpoint = $options['endpoint'];
+            foreach ($this->handlers as $handlerName) {
+                /** @var BaseHandler $handler */
+                $handler = new $handlerName();
+                if (!$handler->handle($request, $this)) {
+                    break;
                 }
-
-                if (!empty($options['action'])) {
-                    $call->action = $options['action'];
-                }
-
-                // создаем запрос
-                $jsonRpcRequest = new JsonRpcRequest($call, $options);
-                $jsonRpcRequest->service = $serviceName;
-
-                app()->instance(JsonRpcRequest::class, $jsonRpcRequest);
-
-                if (null !== $jsonRpcRequest->id) {
-                    $answer->id = $jsonRpcRequest->id;
-                }
-
-                // выполняем запрос
-                try {
-                    $answer->result = $jsonRpcRequest->handle();
-                } catch (\Exception $e) {
-                    $answer->error = JsonRpcHandler::handle($e);
-                }
-
-                $result[] = $answer;
             }
         } catch (\Exception $e) {
             $answer = new \StdClass();
             $answer->jsonrpc = '2.0';
             $answer->error = JsonRpcHandler::handle($e);
-            $result[] = $answer;
+            $this->response[] = $answer;
         }
 
-        return \count($result) > 1 ? $result : (array)$result[0];
+        return \count($this->response) > 1 ? $this->response : (array)$this->response[0];
     }
 
-    /**
-     * Проверка заголовка для идентификации сервиса
-     *
-     * @param Request $request
-     *
-     * @return mixed
-     * @throws JsonRpcException
-     */
-    protected function auth(Request $request)
+    public function setResponse($response): void
     {
-        if (!$key = $request->header(config('jsonrpc.accessHeaderName', 'Access-Key'))) {
-            throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
-        }
-
-        $service = array_search($key, config('jsonrpc.keys', []), true);
-
-        if ($service === false) {
-            throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
-        }
-
-        return $service;
+        $this->response = $response;
     }
 
     /**
      * Заполняет параметры
      *
      * @param array $options
-     *
-     * @return array
      */
-    protected function fillOptions($options): array
+    protected function fillOptions($options): void
     {
-        if (empty($options['uri'])) {
-            $options['uri'] = '/';
-        }
-
-        if (empty($options['namespace'])) {
-            $options['namespace'] = config('jsonrpc.controllerNamespace', 'App\\Http\\Controllers\\Api\\');
-        }
-
-        if (empty($options['postfix'])) {
-            $options['postfix'] = config('jsonrpc.controllerPostfix', 'Controller');
-        }
-
-        if (empty($options['description'])) {
-            $options['description'] = config('jsonrpc.description', 'JsonRpc Server');
-        }
-
-        if (empty($options['controller'])) {
-            $options['controller'] = config('jsonrpc.defaultController', 'Api');
-        }
-
-        if (empty($options['middleware'])) {
-            $options['middleware'] = config('jsonrpc.middleware', [MethodClosureMiddleware::class]);
-        }
-
-        if (!isset($options['acl'])) {
-            $options['acl'] = config('jsonrpc.acl', []);
-        }
-
-        if (!isset($options['auth'])) {
-            $options['auth'] = config('jsonrpc.authValidate', true);
-        }
-
-        return $options;
+        $this->uri = $options['uri'] ?? '/';
+        $this->namespace = $options['namespace'] ?? config('jsonrpc.controllerNamespace', 'App\\Http\\Controllers\\Api\\');
+        $this->postfix = $options['postfix'] ?? config('jsonrpc.controllerPostfix', 'Controller');
+        $this->description = $options['description'] ?? config('jsonrpc.description', 'JsonRpc Server');
+        $this->controller = $options['controller'] ?? config('jsonrpc.defaultController', 'Api');
+        $this->middleware = $options['middleware'] ?? config('jsonrpc.middleware', [MethodClosureMiddleware::class]);
+        $this->acl = $options['acl'] ?? config('jsonrpc.acl', []);
+        $this->auth = $options['auth'] ?? config('jsonrpc.authValidate', true);
+        $this->handlers = $options['handlers'] ?? config('jsonrpc.handlers', self::DEFAULT_HANDLERS);
+        $this->endpoint = $options['endpoint'] ?? null;
+        $this->action = $options['action'] ?? null;
     }
 }

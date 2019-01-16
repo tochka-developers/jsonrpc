@@ -26,13 +26,13 @@ class LogHelper
     public static function log($type, $source): void
     {
         if (
-            ($type === self::TYPE_SQL && !\is_array($source)) ||
             (!($source instanceof \stdClass) && $type === self::TYPE_EXCEPTION) ||
             (!($source instanceof JsonRpcRequest) && \in_array($type, [self::TYPE_REQUEST, self::TYPE_RESPONSE], true))
         ) {
             return;
         }
 
+        /** @var JsonRpcRequest $jsonRpcRequest */
         $jsonRpcRequest = app('JsonRpcRequest');
         $hideIndices = !empty($jsonRpcRequest->controller->hideDataLog) ? $jsonRpcRequest->controller->hideDataLog : false;
         $method = !empty($jsonRpcRequest->method) ? $jsonRpcRequest->method : 'Unknown';
@@ -50,19 +50,10 @@ class LogHelper
                 $context = !empty($source->call) ? (array)$source->call : [];
                 break;
 
-            case self::TYPE_SQL:
-                $logLevel = 'info';
-                $message = 'SQL';
-                $context = $source;
-                if (!empty($context['params'])) {
-                    $context['params'] = (array)$source['params'];
-                }
-                break;
-
             case self::TYPE_EXCEPTION:
                 $logLevel = 'error';
                 $message = sprintf('JsonRpcException %d: %s',
-                    !empty($source->code) ? $source->code : 0,
+                    isset($source->code) ? $source->code : 0,
                     !empty($source->message) ? $source->message : '');
                 $context = !empty($jsonRpcRequest->call) ? (array)$jsonRpcRequest->call : [];
                 break;

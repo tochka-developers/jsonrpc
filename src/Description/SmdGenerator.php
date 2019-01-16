@@ -1,6 +1,6 @@
 <?php
 
-namespace Tochka\JsonRpc;
+namespace Tochka\JsonRpc\Description;
 
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
@@ -13,6 +13,7 @@ use Tochka\JsonRpc\DocBlock\ApiReturn;
 use Tochka\JsonRpc\DocBlock\Types\Date;
 use Tochka\JsonRpc\DocBlock\Types\Enum;
 use Tochka\JsonRpc\DocBlock\Types\Object_;
+use Tochka\JsonRpc\JsonRpcServer;
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\AssociateParamsMiddleware;
 
@@ -22,32 +23,32 @@ use Tochka\JsonRpc\Middleware\AssociateParamsMiddleware;
  */
 class SmdGenerator
 {
-    const API_GROUP_NAME = 'apiGroupName';
-    const API_IGNORE_METHOD = 'apiIgnoreMethod';
-    const API_METHOD_NAME = 'apiName';
-    const API_METHOD_DESCRIPTION = 'apiDescription';
-    const API_METHOD_NOTE = 'apiNote';
-    const API_METHOD_WARNING = 'apiWarning';
-    const API_METHOD_DEFAULT_PARAMS = 'param';
-    const API_METHOD_PARAMS = 'apiParam';
-    const API_METHOD_REQUEST_EXAMPLE = 'apiRequestExample';
-    const API_METHOD_RESPONSE_EXAMPLE = 'apiResponseExample';
-    const API_METHOD_RETURN = 'return';
-    const API_METHOD_RETURN_PARAM = 'apiReturn';
-    const API_METHOD_TAG = 'apiTag';
-    const API_ENUM = 'apiEnum';
-    const API_OBJECT = 'apiObject';
-    const API_METHOD_DEPRECATED = 'deprecated';
+    protected const API_GROUP_NAME = 'apiGroupName';
+    protected const API_IGNORE_METHOD = 'apiIgnoreMethod';
+    protected const API_METHOD_NAME = 'apiName';
+    protected const API_METHOD_DESCRIPTION = 'apiDescription';
+    protected const API_METHOD_NOTE = 'apiNote';
+    protected const API_METHOD_WARNING = 'apiWarning';
+    protected const API_METHOD_DEFAULT_PARAMS = 'param';
+    protected const API_METHOD_PARAMS = 'apiParam';
+    protected const API_METHOD_REQUEST_EXAMPLE = 'apiRequestExample';
+    protected const API_METHOD_RESPONSE_EXAMPLE = 'apiResponseExample';
+    protected const API_METHOD_RETURN = 'return';
+    protected const API_METHOD_RETURN_PARAM = 'apiReturn';
+    protected const API_METHOD_TAG = 'apiTag';
+    protected const API_ENUM = 'apiEnum';
+    protected const API_OBJECT = 'apiObject';
+    protected const API_METHOD_DEPRECATED = 'deprecated';
 
-    const DEFAULT_STRUCTURE = [
+    protected const DEFAULT_STRUCTURE = [
         'transport'   => 'POST',
         'envelope'    => 'JSON-RPC-2.0',
-        'SMDVersion'  => '2.0',
+        'SMDVersion'  => '2.1',
         'contentType' => 'application/json',
         'generator'   => 'Tochka/JsonRpc',
     ];
 
-    protected $options = [];
+    protected $server;
     protected $acl = false;
 
     protected $enumObjects = [];
@@ -62,9 +63,9 @@ class SmdGenerator
         self::API_OBJECT              => ApiObject::class,
     ];
 
-    public function __construct($options)
+    public function __construct(JsonRpcServer $server)
     {
-        $this->options = $options;
+        $this->server = $server;
         $this->docFactory = DocBlockFactory::createInstance($this->additionalTags);
     }
 
@@ -72,21 +73,21 @@ class SmdGenerator
      * @return array
      * @throws \ReflectionException
      */
-    public function get()
+    public function get(): array
     {
         $result = self::DEFAULT_STRUCTURE;
 
-        $result['target'] = $this->options['uri'];
-        $result['description'] = $this->options['description'];
+        $result['target'] = $this->server->uri;
+        $result['description'] = $this->server->description;
 
-        if ($this->options['auth']) {
+        if ($this->server->auth) {
             $result['additionalHeaders'] = [
                 config('jsonrpc.accessHeaderName') => '<AuthToken>',
             ];
         }
 
-        $result['namedParameters'] = in_array(AssociateParamsMiddleware::class, $this->options['middleware'], true);
-        $result['acl'] = $this->acl = in_array(AccessControlListMiddleware::class, $this->options['middleware'], true);
+        $result['namedParameters'] = \in_array(AssociateParamsMiddleware::class, $this->server->middleware, true);
+        $result['acl'] = $this->acl = \in_array(AccessControlListMiddleware::class, $this->server->middleware, true);
 
         $result['services'] = $this->getServicesInfo();
 
@@ -105,9 +106,9 @@ class SmdGenerator
      * @return array
      * @throws \ReflectionException
      */
-    protected function getServicesInfo()
+    protected function getServicesInfo(): array
     {
-        $controllers = $this->getControllers();
+        $controllers = $this->getControllers($this->server->namespace);
 
         $services = [];
 
@@ -165,10 +166,25 @@ class SmdGenerator
                 }
 
                 if ($this->acl) {
-                    $service['acl'] = isset($this->options['acl'][$service['name']]) ? $this->options['acl'][$service['name']] : [];
+                    $service['acl'] = $this->server->acl[$service['name']] ?? [];
                 }
 
-                $services[$service['name']] = $service;
+                if (!empty($this->server->endpoint)) {
+                    $namespace = $this->getShortNameForNamespace($reflection->getNamespaceName());
+                    $controllerName = $this->getShortNameForController($reflection->getName());
+
+                    if (!empty($namespace)) {
+                        $service['endpoint'] = $namespace . '/' . $controllerName;
+                    } else {
+                        $service['endpoint'] = $controllerName;
+                    }
+                }
+
+                if (!empty($service['endpoint'])) {
+                    $services[$service['endpoint'] . '/' . $service['name']] = $service;
+                } else {
+                    $services[$service['name']] = $service;
+                }
             }
         }
 
@@ -180,7 +196,7 @@ class SmdGenerator
      *
      * @return string
      */
-    protected function getGroupName($docBlock)
+    protected function getGroupName($docBlock): string
     {
         if ($docBlock->hasTag(self::API_GROUP_NAME)) {
             $tags = $docBlock->getTagsByName(self::API_GROUP_NAME);
@@ -195,8 +211,9 @@ class SmdGenerator
      * @param \ReflectionMethod $method
      *
      * @return array
+     * @throws \ReflectionException
      */
-    protected function generateDocForMethod($method)
+    protected function generateDocForMethod($method): array
     {
         $result = [];
 
@@ -285,18 +302,28 @@ class SmdGenerator
      *
      * @return string
      */
-    protected function getShortNameForController($name)
+    protected function getShortNameForController($name): string
     {
-        return camel_case(str_replace_last($this->options['postfix'], '', class_basename($name)));
+        return camel_case(str_replace_last($this->server->postfix, '', class_basename($name)));
+    }
+
+    /**
+     * @param string $namespace
+     *
+     * @return string
+     */
+    protected function getShortNameForNamespace($namespace): string
+    {
+        return camel_case(trim(str_replace_last(trim($this->server->namespace, '\\'), '', trim($namespace . '\\')), '\\'));
     }
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock          $docBlock
+     * @param DocBlock $docBlock
      *
      * @return string
      */
-    protected function getMethodName($method, $docBlock = null)
+    protected function getMethodName($method, $docBlock = null): string
     {
         if ($docBlock !== null && $docBlock->hasTag(self::API_METHOD_NAME)) {
             $tags = $docBlock->getTagsByName(self::API_METHOD_NAME);
@@ -306,16 +333,21 @@ class SmdGenerator
 
         $controllerName = $method->getDeclaringClass();
 
+        if (!empty($this->server->endpoint)) {
+            return $method->getName();
+        }
+
         return $this->getShortNameForController($controllerName->getName()) . '_' . $method->getName();
     }
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock          $docBlock
+     * @param DocBlock $docBlock
      *
      * @return array
+     * @throws \ReflectionException
      */
-    protected function getMethodParameters($method, $docBlock = null)
+    protected function getMethodParameters($method, $docBlock = null): array
     {
         $result = [];
 
@@ -361,19 +393,18 @@ class SmdGenerator
         }
 
 
-
         return array_values($result);
     }
 
     /**
      * @param ApiParam $docBlock
-     * @param array    $current
+     * @param array $current
      *
      * @return array
      */
-    protected function getExtendedParameters($docBlock, array $current = [])
+    protected function getExtendedParameters($docBlock, array $current = []): array
     {
-        $name = (string)$docBlock->getVariableName();
+        $name = $docBlock->getVariableName();
 
         $nameParts = explode('.', $name);
         $variableName = array_shift($nameParts);
@@ -426,13 +457,13 @@ class SmdGenerator
 
     /**
      * @param ApiReturn $docBlock
-     * @param array     $current
+     * @param array $current
      *
      * @return array
      */
-    protected function getExtendedReturns($docBlock, array $current = [])
+    protected function getExtendedReturns($docBlock, array $current = []): array
     {
-        $name = (string)$docBlock->getVariableName();
+        $name = $docBlock->getVariableName();
 
         $nameParts = explode('.', $name);
         $variableName = array_shift($nameParts);
@@ -511,7 +542,7 @@ class SmdGenerator
             case $type instanceof Object_:
                 $parameter['type'] = 'object';
                 $parameter['types'] = ['object'];
-                $parameter['typeAdditional'] = (string)$type->getClassName();
+                $parameter['typeAdditional'] = $type->getClassName();
                 break;
 
             case $type instanceof Array_:
@@ -529,11 +560,11 @@ class SmdGenerator
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock          $docBlock
+     * @param DocBlock $docBlock
      *
      * @return array
      */
-    protected function getMethodReturn($method, $docBlock = null)
+    protected function getMethodReturn($method, $docBlock = null): array
     {
         $result = ['type' => 'mixed'];
 
@@ -561,7 +592,7 @@ class SmdGenerator
      *
      * @return string
      */
-    protected function getMethodDescription($docBlock)
+    protected function getMethodDescription($docBlock): string
     {
         if ($docBlock->hasTag(self::API_METHOD_DESCRIPTION)) {
             $tags = $docBlock->getTagsByName(self::API_METHOD_DESCRIPTION);
@@ -574,17 +605,17 @@ class SmdGenerator
 
     /**
      * @param ApiEnum $docBlock
-     * @param array   $objects
+     * @param array $objects
      *
      * @return array
      */
-    protected function getDocForEnum($docBlock, array $objects = [])
+    protected function getDocForEnum($docBlock, array $objects = []): array
     {
         if (!isset($objects[$docBlock->getTypeName()])) {
             $objects[$docBlock->getTypeName()] = [
                 'name'   => $docBlock->getTypeName(),
                 'values' => [],
-                'type' => 'int'
+                'type'   => 'int',
             ];
         }
         $object = &$objects[$docBlock->getTypeName()];
@@ -613,11 +644,11 @@ class SmdGenerator
 
     /**
      * @param ApiObject $docBlock
-     * @param array     $objects
+     * @param array $objects
      *
      * @return array
      */
-    protected function getDocForObject($docBlock, array $objects = [])
+    protected function getDocForObject($docBlock, array $objects = []): array
     {
         $objectName = $docBlock->getObjectName();
         if (!isset($objects[$objectName])) {
@@ -632,21 +663,38 @@ class SmdGenerator
         return $objects;
     }
 
-    private function getControllers()
+    private function getControllers($namespace): array
     {
-        $namespace = trim($this->options['namespace'], '\\');
+        $namespace = trim($namespace, '\\');
+
         $files = scandir($this->getNamespaceDirectory($namespace), SCANDIR_SORT_ASCENDING);
 
-        $classes = array_map(function ($file) use ($namespace) {
-            return $namespace . '\\' . str_replace('.php', '', $file);
-        }, $files);
+        $controllers = [];
+        $controllerList = [];
 
-        return array_filter($classes, function ($possibleClass) {
-            return class_exists($possibleClass);
-        });
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            $directory = $this->getNamespaceDirectory($namespace . '\\' . $file);
+
+            if (is_dir($directory)) {
+                $controllerList[] = $this->getControllers($namespace . '\\' . $file);
+            } else {
+                $className = $namespace . '\\' . str_replace('.php', '', $file);
+                if (class_exists($className)) {
+                    $controllers[] = $className;
+                }
+            }
+        }
+
+        $controllers = array_merge($controllers, ...$controllerList);
+
+        return $controllers;
     }
 
-    private function getDefinedNamespaces()
+    private function getDefinedNamespaces(): array
     {
         $composerJsonPath = app()->basePath() . DIRECTORY_SEPARATOR . 'composer.json';
         $composerConfig = json_decode(file_get_contents($composerJsonPath));
@@ -654,6 +702,11 @@ class SmdGenerator
         return (array)$composerConfig->autoload->{'psr-4'};
     }
 
+    /**
+     * @param $namespace
+     *
+     * @return bool|string
+     */
     private function getNamespaceDirectory($namespace)
     {
         $composerNamespaces = $this->getDefinedNamespaces();

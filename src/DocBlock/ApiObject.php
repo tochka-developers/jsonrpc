@@ -2,7 +2,9 @@
 
 namespace Tochka\JsonRpc\DocBlock;
 
+use phpDocumentor\Reflection\DocBlock\Description;
 use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
+use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\TypeResolver;
 use phpDocumentor\Reflection\Types\Context as TypeContext;
 use Webmozart\Assert\Assert;
@@ -12,12 +14,17 @@ use Webmozart\Assert\Assert;
  */
 class ApiObject extends ApiParam
 {
-    const REGEXP_OBJECT = '/(\{(?<objectName>[a-z\._0-9\[\]]+)\}[ ]+)(?<apiParam>.*)/is';
-
-    /** @var string */
-    protected $name = 'apiObject';
+    protected const REGEXP_OBJECT = '/(\{(?<objectName>[a-z\._0-9\[\]]+)\}[ ]+)(?<apiParam>.*)/is';
+    protected const TAG_NAME = 'apiObject';
 
     protected $objectName;
+
+    public function __construct(string $variableName, Type $type = null, Description $description = null)
+    {
+        $this->name = self::TAG_NAME;
+
+        parent::__construct($variableName, $type, $description);
+    }
 
     /**
      * {@inheritdoc}
@@ -41,7 +48,7 @@ class ApiObject extends ApiParam
         return $param;
     }
 
-    public function setObjectName($value)
+    public function setObjectName($value): void
     {
         $this->objectName = $value;
     }

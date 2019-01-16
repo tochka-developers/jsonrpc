@@ -26,7 +26,7 @@ class AccessControlListMiddleware implements BaseMiddleware
 
         $service = $request->service;
 
-        $controllerAcl = $request->options['acl'][$controller] ?? [];
+        $controllerAcl = $request->server->acl[$controller] ?? [];
 
         if (\is_string($controllerAcl)) {
             $acl = [$controllerAcl];

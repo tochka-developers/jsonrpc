@@ -41,7 +41,7 @@ trait JsonRpcController
      *
      * @param array $rules Правила валидации
      * @param array $messages Сообщения об ошибках
-     * @param bool  $noException Если true - Exception генерироваться не будет
+     * @param bool $noException Если true - Exception генерироваться не будет
      *
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
@@ -55,9 +55,9 @@ trait JsonRpcController
      * Валидация любых данных
      *
      * @param array|\StdClass $data Данные для валидации
-     * @param array           $rules Правила валидации
-     * @param array           $messages Сообщения об ошибках
-     * @param bool            $noException Если true - Exception генерироваться не будет
+     * @param array $rules Правила валидации
+     * @param array $messages Сообщения об ошибках
+     * @param bool $noException Если true - Exception генерироваться не будет
      *
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
@@ -87,7 +87,7 @@ trait JsonRpcController
      *
      * @param array $rules Правила валидации
      * @param array $messages Сообщения об ошибках
-     * @param bool  $noException Если true - Exception генерироваться не будет
+     * @param bool $noException Если true - Exception генерироваться не будет
      *
      * @return array
      * @throws \Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException
@@ -103,7 +103,7 @@ trait JsonRpcController
      * Get the request input based on the given validation rules.
      *
      * @param  array|\stdClass $data
-     * @param  array           $rules
+     * @param  array $rules
      *
      * @return array
      */
@@ -124,14 +124,16 @@ trait JsonRpcController
                 $rule = array_shift($attributes);
                 $key = implode('.', $attributes);
 
-                if (\is_array($data) && array_key_exists($rule, $data)) {
-                    $additional[$rule][$key] = $value;
-                } elseif ($rule === '*' && \is_array($data)) {
-                    $arrays[$key] = $value;
+                if (\is_array($data)) {
+                    if (array_key_exists($rule, $data)) {
+                        $additional[$rule][$key] = $value;
+                    } elseif ($rule === '*') {
+                        $arrays[$key] = $value;
+                    }
                 }
             } elseif (\is_array($data) && array_key_exists($rule, $data)) {
                 $result[$rule] = $data[$rule];
-            } elseif ($rule === '*' and \is_array($data)) {
+            } elseif ($rule === '*' && \is_array($data)) {
                 $isGlobalArray = true;
             }
         }

@@ -2,11 +2,11 @@
 
 namespace Tochka\JsonRpc;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
-use \Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
 
 class JsonRpcServiceProvider extends ServiceProvider
 {
@@ -62,30 +62,16 @@ class JsonRpcServiceProvider extends ServiceProvider
 
     protected function route($uri, array $options = []): void
     {
-        if (is_lumen()) {
-            $this->app->router->post($uri,
-                function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
-                    if (!empty($endpoint)) {
-                        $options['endpoint'] = $endpoint;
-                    }
-                    if (!empty($action)) {
-                        $options['action'] = $action;
-                    }
+        Route::post($uri, function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
+            if (!empty($endpoint)) {
+                $options['endpoint'] = $endpoint;
+            }
+            if (!empty($action)) {
+                $options['action'] = $action;
+            }
 
-                    return $server->handle($request, $options);
-                });
-        } else {
-            Route::post($uri,
-                function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
-                    if (!empty($endpoint)) {
-                        $options['endpoint'] = $endpoint;
-                    }
-                    if (!empty($action)) {
-                        $options['action'] = $action;
-                    }
-
-                    return $server->handle($request, $options);
-                });
-        }
+            /** @var \Illuminate\Http\Request $request */
+            return $server->handle($request, $options);
+        });
     }
 }

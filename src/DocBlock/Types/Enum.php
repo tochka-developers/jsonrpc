@@ -2,8 +2,8 @@
 
 namespace Tochka\JsonRpc\DocBlock\Types;
 
-use Tochka\JsonRpc\DocBlock\VariableValueTrait;
 use phpDocumentor\Reflection\Type;
+use Tochka\JsonRpc\DocBlock\VariableValueTrait;
 
 /**
  * Class Enum
@@ -16,16 +16,17 @@ class Enum implements Type
     protected $variants;
     protected $type;
 
-    public function __construct($variants = null)
+    public function __construct($variantsStr = null)
     {
         $this->type = 'string';
 
-        if (preg_match('/^\(.*\)$/u', $variants)) {
-            $variants = trim($variants, '()');
+        $variants = [];
 
-            preg_match_all('/(?<values>\"[^\"]*\"|[^,]+)/iu', $variants, $matches, PREG_PATTERN_ORDER);
+        if (preg_match('/^\(.*\)$/u', $variantsStr)) {
+            $variantsStr = trim($variantsStr, '()');
 
-            $variants = [];
+            preg_match_all('/(?<values>\"[^\"]*\"|[^,]+)/iu', $variantsStr, $matches, PREG_PATTERN_ORDER);
+
             $type = 0;
 
             foreach ($matches['values'] as $value) {
@@ -61,12 +62,12 @@ class Enum implements Type
         $this->variants = $variants;
     }
 
-    public function getVariants()
+    public function getVariants(): array
     {
         return $this->variants;
     }
 
-    public function getRealType()
+    public function getRealType(): string
     {
         return $this->type;
     }

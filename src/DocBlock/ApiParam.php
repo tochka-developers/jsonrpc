@@ -19,10 +19,8 @@ class ApiParam extends BaseTag implements StaticMethod
 {
     use VariableValueTrait;
 
-    const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]*\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
-
-    /** @var string */
-    protected $name = 'apiParam';
+    protected const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]*\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
+    protected const TAG_NAME = 'apiParam';
 
     /** @var Type */
     protected $type;
@@ -31,13 +29,13 @@ class ApiParam extends BaseTag implements StaticMethod
     protected $variableName = '';
 
     /** @var mixed */
-    protected $defaultValue = null;
+    protected $defaultValue;
 
     /** @var bool */
     protected $hasDefault = false;
 
     /** @var mixed */
-    protected $exampleValue = null;
+    protected $exampleValue;
 
     /** @var bool */
     protected $hasExample = false;
@@ -54,6 +52,7 @@ class ApiParam extends BaseTag implements StaticMethod
     {
         Assert::string($variableName);
 
+        $this->name = self::TAG_NAME;
         $this->variableName = $variableName;
         $this->type = $type;
         $this->description = $description;
@@ -87,8 +86,8 @@ class ApiParam extends BaseTag implements StaticMethod
         }
 
         $typeStr = isset($parts['type']) ? trim($parts['type']) : 'mixed';
-        $typeExtended = isset($parts['typeFormat']) ? $parts['typeFormat'] : null;
-        $variableName = isset($parts['variableName']) ? $parts['variableName'] : 'variable';
+        $typeExtended = isset($parts['typeFormat']) ?? null;
+        $variableName = isset($parts['variableName']) ?? 'variable';
 
         $type = CustomTypeResolver::resolve($typeStr, $typeExtended);
 
@@ -111,7 +110,7 @@ class ApiParam extends BaseTag implements StaticMethod
      * Имя параметра
      * @return string
      */
-    public function getVariableName()
+    public function getVariableName(): string
     {
         return $this->variableName;
     }
@@ -120,7 +119,7 @@ class ApiParam extends BaseTag implements StaticMethod
      * Тип параметра
      * @return Type
      */
-    public function getType()
+    public function getType(): Type
     {
         return $this->type;
     }
@@ -129,7 +128,7 @@ class ApiParam extends BaseTag implements StaticMethod
      * Есть ли значение по умолчанию
      * @return bool
      */
-    public function hasDefault()
+    public function hasDefault(): bool
     {
         return $this->hasDefault;
     }
@@ -158,7 +157,7 @@ class ApiParam extends BaseTag implements StaticMethod
      * Есть ли пример значения
      * @return bool
      */
-    public function hasExample()
+    public function hasExample(): bool
     {
         return $this->hasExample;
     }
@@ -187,7 +186,7 @@ class ApiParam extends BaseTag implements StaticMethod
      * Является ли параметр необязательным
      * @return bool
      */
-    public function isOptional()
+    public function isOptional(): bool
     {
         return $this->optional;
     }

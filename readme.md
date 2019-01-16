@@ -97,8 +97,8 @@ return $server->handle($request, $options);
 ```php
 [
     '/api/v1/jsonrpc',                  // для этой точки входа будут использованы глобальные настройки
-    'v2' => [                          // для этой точки входа задаются свои настройки. Если какой-то из параметров не указан - используется глобальный
-        'uri' => '/api/v1/jsonrpc',                       // URI (обязательный)
+    'v2' => [                           // для этой точки входа задаются свои настройки. Если какой-то из параметров не указан - используется глобальный
+        'uri' => '/api/v1/jsonrpc',                      // URI (обязательный)
         'namespace' => 'App\\Http\\Controllers\\V2\\',   // Namespace для контроллеров
         'controller' => 'Api',                           // контроллер по умолчанию
         'postfix' => 'Controller',                       // суффикс для имен контроллеров
@@ -114,14 +114,14 @@ return $server->handle($request, $options);
 ```php
 [
     'v3' => [                          // для этой точки входа задаются свои настройки. Если какой-то из параметров не указан - используется глобальный
-        'uri' => '/api/v3/jsonrpc/{endpoint}[/{action}]',// URI (обязательный)
-        'namespace' => 'App\\Http\\Controllers\\V3\\',   // Namespace для контроллеров
-        'controller' => 'Api',                           // контроллер по умолчанию
-        'postfix' => 'Controller',                       // суффикс для имен контроллеров
-        'middleware' => [],                              // список обработчиков запросов
-        'auth' => false,                                  // аутентификация сервиса
-        'acl' => [],                                     // Список контроля доступа
-        'description' => 'JsonRpc server V3',             // описание для SMD схемы
+        'uri' => '/api/v3/jsonrpc/{endpoint}[/{action}]',  // URI (обязательный)
+        'namespace' => 'App\\Http\\Controllers\\V3\\',     // Namespace для контроллеров
+        'controller' => 'Api',                             // контроллер по умолчанию
+        'postfix' => 'Controller',                         // суффикс для имен контроллеров
+        'middleware' => [],                                // список обработчиков запросов
+        'auth' => false,                                   // аутентификация сервиса
+        'acl' => [],                                       // Список контроля доступа
+        'description' => 'JsonRpc server V3',              // описание для SMD схемы
     ]
 ]
 ```
