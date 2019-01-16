@@ -17,10 +17,8 @@ use Webmozart\Assert\Assert;
  */
 class ApiReturn extends BaseTag implements StaticMethod
 {
-    const REGEXP = '/((?<is_root>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)?/is';
-
-    /** @var string */
-    protected $name = 'apiReturn';
+    protected const REGEXP = '/((?<is_root>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)?/is';
+    protected const TAG_NAME = 'apiReturn';
 
     /** @var Type */
     protected $type;
@@ -32,15 +30,16 @@ class ApiReturn extends BaseTag implements StaticMethod
     protected $is_root = false;
 
     /**
-     * @param string      $variableName
-     * @param Type        $type
-     * @param bool        $isVariadic
+     * @param string $variableName
+     * @param Type $type
      * @param Description $description
+     * @param bool $is_root
      */
     public function __construct($variableName, Type $type = null, Description $description = null, $is_root = false)
     {
         Assert::string($variableName);
 
+        $this->name = self::TAG_NAME;
         $this->variableName = $variableName;
         $this->type = $type;
         $this->description = $description;
@@ -80,7 +79,7 @@ class ApiReturn extends BaseTag implements StaticMethod
      *
      * @return string
      */
-    public function getVariableName()
+    public function getVariableName(): string
     {
         return $this->variableName;
     }
@@ -90,7 +89,7 @@ class ApiReturn extends BaseTag implements StaticMethod
      *
      * @return Type|null
      */
-    public function getType()
+    public function getType(): ?Type
     {
         return $this->type;
     }
@@ -98,7 +97,7 @@ class ApiReturn extends BaseTag implements StaticMethod
     /**
      * @return bool
      */
-    public function isRoot()
+    public function isRoot(): bool
     {
         return $this->is_root;
     }

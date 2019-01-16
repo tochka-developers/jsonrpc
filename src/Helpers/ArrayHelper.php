@@ -15,7 +15,7 @@ class ArrayHelper
      * @param mixed $object
      * @return array
      */
-    public static function fromObject($object)
+    public static function fromObject($object): array
     {
         if (\is_object($object)) {
             $object = (array)$object;

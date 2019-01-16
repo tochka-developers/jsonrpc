@@ -11,7 +11,7 @@ use Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
  */
 class JsonRpcHandler extends Facade
 {
-    protected static function getFacadeAccessor()
+    protected static function getFacadeAccessor(): string
     {
         return Handler::class;
     }

@@ -12,15 +12,20 @@ class JsonRpcHandler
 {
     protected const EXCEPTION_MESSAGE = 'JsonRpc (method:"%s", id:"%s", service:"%s"): #%d %s';
 
-    public function handle(\Exception $e)
+    public function handle(\Exception $e): \StdClass
     {
         $error = new \StdClass();
 
         if ($e instanceof HttpException) {
             /** @var HttpException $statusCode */
             $error->code = $e->getStatusCode();
-            $error->message = !empty($e->getMessage()) ? $e->getMessage() :
-                (!empty(Response::$statusTexts[$e->getStatusCode()]) ? Response::$statusTexts[$e->getStatusCode()] : 'Unknown error');
+            if (!empty($e->getMessage())) {
+                $error->message = $e->getMessage();
+            } else {
+                $error->message = !empty(Response::$statusTexts[$e->getStatusCode()])
+                    ? Response::$statusTexts[$e->getStatusCode()]
+                    : 'Unknown error';
+            }
         } elseif ($e instanceof JsonRpcException) {
             $error->code = $e->getCode();
             $error->message = $e->getMessage();
@@ -37,9 +42,9 @@ class JsonRpcHandler
 
         if (isset($request->call->method)) {
             $logContext = [
-                'method' => $request->call->method,
-                'call' => class_basename($request->controller) . '::' . $request->method,
-                'id' => $request->id,
+                'method'  => $request->call->method,
+                'call'    => class_basename($request->controller) . '::' . $request->method,
+                'id'      => $request->id,
                 'service' => $request->service,
             ];
         } else {
