@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc;
 
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
@@ -70,7 +70,6 @@ class JsonRpcServiceProvider extends ServiceProvider
                 $options['action'] = $action;
             }
 
-            /** @var \Illuminate\Http\Request $request */
             return $server->handle($request, $options);
         });
     }
