@@ -11,7 +11,6 @@ use Tochka\JsonRpc\JsonRpcRequest;
  */
 class LogHelper
 {
-
     public const TYPE_REQUEST = 'request';
     public const TYPE_SQL = 'sql';
     public const TYPE_EXCEPTION = 'exception';

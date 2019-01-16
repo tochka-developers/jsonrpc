@@ -1,8 +1,8 @@
-# JSON-RPC Server (Laravel, Lumen)
+# JSON-RPC Server (Laravel)
 ## Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
 
-Убрана поддержка старых версий Laravel, поддерживается только Laravel и Lumen версии >5.6.
+Убрана поддержка Lumen, поддерживается только Laravel 5.6, 5.7
 Для старых версий Laravel/Lumen используйте 1.* версии пакета.
 
 Поддерживает:
@@ -14,55 +14,25 @@ JsonRpc сервер - реализация сервера по специфик
 * контроль доступа к методам для разных сервисов - ACL (отключаемо)
 * автоматическая генерация SMD-схемы
 * возможность настройки нескольких точек входа с разными настройками JsonRpc-сервера
+
 ## Установка
-### Laravel
 1. ``composer require tochka-developers/jsonrpc``
 2. Опубликуйте конфигурацию:  
 ```
 php artisan vendor:publish
 ```
-### Lumen
-1. ``composer require tochka-developers/jsonrpc``
-2. Зарегистрируйте сервис-провайдер `Tochka\JsonRpc\JsonRpcServiceProvider` в `bootstrap/app.php`:
-```php
-$app->register(Tochka\JsonRpc\JsonRpcServiceProvider::class);
-```
-3. Скопируйте конфигурацию из пакета (`vendor/tochka-developers/jsonrpc/config/jsonrpc.php`) в проект (`config/jsonrpc.php`)
-4. Подключите конфигурацию в `bootstrap/app.php`:
-```php
-$app->configure('jsonrpc');
-```
-5. Включите поддержку фасадов в `bootstrap/app.php`:
-```php
-$app->withFacades();
-```
 
 ## Ручная настройка точек входа
 При ручной найтройке вы сами контролируете процесс роутинга. 
 Пропишите в вашем route.php:
-### Laravel
 ```php
 Route::post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
     return $server->handle($request);
 });
 ```
-### Lumen
-```php
-$router->post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
-    return $server->handle($request);
-});
-```
-
 Если планируется передавать имя контроллера в адресе, после точки входа, роутинги дожны быть следующего вида:
-### Laravel
 ```php
 Route::post('/api/v1/jsonrpc/{endpoint}[/{action}]', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server, $endpoint, $action = null) {
-    return $server->handle($request, ['endpoint' => $endpoint, 'action' => $action]);
-});
-```
-### Lumen
-```php
-$router->post('/api/v1/jsonrpc/{endpoint}[/{action}]', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server, $endpoint, $action = null) {
     return $server->handle($request, ['endpoint' => $endpoint, 'action' => $action]);
 });
 ```
