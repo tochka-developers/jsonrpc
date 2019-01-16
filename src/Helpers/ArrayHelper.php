@@ -13,9 +13,9 @@ class ArrayHelper
     /**
      * Рекурсивно переводит объект в массив
      * @param mixed $object
-     * @return array
+     * @return mixed
      */
-    public static function fromObject($object): array
+    public static function fromObject($object)
     {
         if (\is_object($object)) {
             $object = (array)$object;
