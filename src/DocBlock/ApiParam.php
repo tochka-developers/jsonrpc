@@ -19,7 +19,8 @@ class ApiParam extends BaseTag implements StaticMethod
 {
     use VariableValueTrait;
 
-    protected const REGEXP = '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]*\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
+    protected const REGEXP = /** @lang text */
+        '/((?<require>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)(=(?<defaultValue>[a-z0-9\.\-]+|\"[^\"]*\"))?[ \n]+)(\((?<exampleValue>[a-z0-9\.\-]+|\"[^\"]+\")\)[ \n]+)?(?<description>.*)?/is';
     protected const TAG_NAME = 'apiParam';
 
     /** @var Type */

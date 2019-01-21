@@ -21,7 +21,7 @@ class DescriptionSmdHandler implements BaseHandler
     public function handle(Request $request, JsonRpcServer $server)
     {
         if (array_key_exists('smd', $request->all())) {
-            $server->setResponse((new SmdGenerator($server))->get());
+            $server->setResponse((new SmdGenerator($server))->get()->toArray());
 
             return false;
         }

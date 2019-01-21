@@ -14,16 +14,17 @@ use Webmozart\Assert\Assert;
  */
 class ApiObject extends ApiParam
 {
-    protected const REGEXP_OBJECT = '/(\{(?<objectName>[a-z\._0-9\[\]]+)\}[ ]+)(?<apiParam>.*)/is';
+    protected const REGEXP_OBJECT = /** @lang text */
+        '/(\{(?<objectName>[a-z\._0-9\[\]]+)\}[ ]+)(?<apiParam>.*)/is';
     protected const TAG_NAME = 'apiObject';
 
     protected $objectName;
 
     public function __construct(string $variableName, Type $type = null, Description $description = null)
     {
-        $this->name = self::TAG_NAME;
-
         parent::__construct($variableName, $type, $description);
+
+        $this->name = self::TAG_NAME;
     }
 
     /**

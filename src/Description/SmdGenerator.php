@@ -16,6 +16,13 @@ use Tochka\JsonRpc\DocBlock\Types\Object_;
 use Tochka\JsonRpc\JsonRpcServer;
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\AssociateParamsMiddleware;
+use Tochka\JsonRpcSmd\SmdDescription;
+use Tochka\JsonRpcSmd\SmdEnumObject;
+use Tochka\JsonRpcSmd\SmdEnumValue;
+use Tochka\JsonRpcSmd\SmdParameter;
+use Tochka\JsonRpcSmd\SmdReturn;
+use Tochka\JsonRpcSmd\SmdService;
+use Tochka\JsonRpcSmd\SmdSimpleObject;
 
 /**
  * Генератор SMD-схемы для JsonRpc-сервера
@@ -40,18 +47,9 @@ class SmdGenerator
     protected const API_OBJECT = 'apiObject';
     protected const API_METHOD_DEPRECATED = 'deprecated';
 
-    protected const DEFAULT_STRUCTURE = [
-        'transport'   => 'POST',
-        'envelope'    => 'JSON-RPC-2.0',
-        'SMDVersion'  => '2.1',
-        'contentType' => 'application/json',
-        'generator'   => 'Tochka/JsonRpc',
-    ];
-
     protected $server;
     protected $acl = false;
 
-    protected $enumObjects = [];
     protected $objects = [];
 
     /** @var DocBlockFactory */
@@ -70,40 +68,36 @@ class SmdGenerator
     }
 
     /**
-     * @return array
+     * @return SmdDescription
      * @throws \ReflectionException
      */
-    public function get(): array
+    public function get(): SmdDescription
     {
-        $result = self::DEFAULT_STRUCTURE;
+        $smd = new SmdDescription();
 
-        $result['target'] = $this->server->uri;
-        $result['description'] = $this->server->description;
+        $smd->target = $this->server->uri;
+        $smd->description = $this->server->description;
 
         if ($this->server->auth) {
-            $result['additionalHeaders'] = [
-                config('jsonrpc.accessHeaderName') => '<AuthToken>',
+            $smd->additionalHeaders = [
+                config('jsonrpc.accessHeaderName') => /** @lang text */'<AuthToken>',
             ];
         }
 
-        $result['namedParameters'] = \in_array(AssociateParamsMiddleware::class, $this->server->middleware, true);
-        $result['acl'] = $this->acl = \in_array(AccessControlListMiddleware::class, $this->server->middleware, true);
+        $smd->namedParameters = \in_array(AssociateParamsMiddleware::class, $this->server->middleware, true);
+        $smd->acl = $this->acl = \in_array(AccessControlListMiddleware::class, $this->server->middleware, true);
 
-        $result['services'] = $this->getServicesInfo();
-
-        if (!empty($this->enumObjects)) {
-            $result['enumObjects'] = $this->enumObjects;
-        }
+        $smd->services = $this->getServicesInfo();
 
         if (!empty($this->objects)) {
-            $result['objects'] = $this->objects;
+            $smd->objects = $this->objects;
         }
 
-        return $result;
+        return $smd;
     }
 
     /**
-     * @return array
+     * @return SmdService[]
      * @throws \ReflectionException
      */
     protected function getServicesInfo(): array
@@ -138,7 +132,7 @@ class SmdGenerator
                 /** @var ApiEnum[] $tags */
                 $tags = $docBlock->getTagsByName(self::API_ENUM);
                 foreach ($tags as $tag) {
-                    $this->enumObjects = $this->getDocForEnum($tag, $this->enumObjects);
+                    $this->objects = $this->getDocForEnum($tag, $this->objects);
                 }
 
                 /** @var ApiObject[] $tags */
@@ -160,13 +154,13 @@ class SmdGenerator
 
                 $service = $this->generateDocForMethod($method);
                 // получаем имя для группы методов
-                $service['group'] = $group;
+                $service->group = $group;
                 if ($groupName !== null) {
-                    $service['groupName'] = $groupName;
+                    $service->groupName = $groupName;
                 }
 
                 if ($this->acl) {
-                    $service['acl'] = $this->server->acl[$service['name']] ?? [];
+                    $service->acl = $this->server->acl[$service->name] ?? [];
                 }
 
                 if (!empty($this->server->endpoint)) {
@@ -174,16 +168,16 @@ class SmdGenerator
                     $controllerName = $this->getShortNameForController($reflection->getName());
 
                     if (!empty($namespace)) {
-                        $service['endpoint'] = $namespace . '/' . $controllerName;
+                        $service->endpoint = $namespace . '/' . $controllerName;
                     } else {
-                        $service['endpoint'] = $controllerName;
+                        $service->endpoint = $controllerName;
                     }
                 }
 
-                if (!empty($service['endpoint'])) {
-                    $services[$service['endpoint'] . '/' . $service['name']] = $service;
+                if (!empty($service->endpoint)) {
+                    $services[$service->endpoint . '/' . $service->name] = $service;
                 } else {
-                    $services[$service['name']] = $service;
+                    $services[$service->name] = $service;
                 }
             }
         }
@@ -210,67 +204,63 @@ class SmdGenerator
     /**
      * @param \ReflectionMethod $method
      *
-     * @return array
+     * @return SmdService
      * @throws \ReflectionException
      */
-    protected function generateDocForMethod($method): array
+    protected function generateDocForMethod($method): SmdService
     {
-        $result = [];
+        $result = new SmdService();
 
         $docs = $method->getDocComment();
 
         if (!$docs) {
-            $result['name'] = $this->getMethodName($method);
-            $result['parameters'] = $this->getMethodParameters($method);
-            $result['return'] = $this->getMethodReturn($method);
+            $result->name = $this->getMethodName($method);
+            $result->parameters = $this->getMethodParameters($method);
+            $result->return = $this->getMethodReturn($method);
         } else {
             $docBlock = $this->docFactory->create($docs);
 
-            $result['name'] = $this->getMethodName($method, $docBlock);
-            $result['description'] = $this->getMethodDescription($docBlock);
+            $result->name = $this->getMethodName($method, $docBlock);
+            $result->description = $this->getMethodDescription($docBlock);
 
             if ($docBlock->hasTag(self::API_METHOD_DEPRECATED)) {
-                $result['deprecated'] = true;
+                $result->deprecated = true;
             }
 
             if ($docBlock->hasTag(self::API_METHOD_NOTE)) {
-                $result['note'] = (string)$docBlock->getTagsByName(self::API_METHOD_NOTE)[0];
+                $result->note = (string)$docBlock->getTagsByName(self::API_METHOD_NOTE)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_WARNING)) {
-                $result['warning'] = (string)$docBlock->getTagsByName(self::API_METHOD_WARNING)[0];
+                $result->warning = (string)$docBlock->getTagsByName(self::API_METHOD_WARNING)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_REQUEST_EXAMPLE)) {
-                $result['requestExample'] = (string)$docBlock->getTagsByName(self::API_METHOD_REQUEST_EXAMPLE)[0];
+                $result->requestExample = (string)$docBlock->getTagsByName(self::API_METHOD_REQUEST_EXAMPLE)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_RESPONSE_EXAMPLE)) {
-                $result['responseExample'] = (string)$docBlock->getTagsByName(self::API_METHOD_RESPONSE_EXAMPLE)[0];
-            }
-
-            $enumObjects = [];
-            /** @var ApiEnum[] $tags */
-            $tags = $docBlock->getTagsByName(self::API_ENUM);
-            foreach ($tags as $tag) {
-                $enumObjects = $this->getDocForEnum($tag, $enumObjects);
-            }
-            if (!empty($enumObjects)) {
-                $result['enumObjects'] = $enumObjects;
+                $result->responseExample = (string)$docBlock->getTagsByName(self::API_METHOD_RESPONSE_EXAMPLE)[0];
             }
 
             $objects = [];
+            /** @var ApiEnum[] $tags */
+            $tags = $docBlock->getTagsByName(self::API_ENUM);
+            foreach ($tags as $tag) {
+                $objects = $this->getDocForEnum($tag, $objects);
+            }
+
             /** @var ApiObject[] $tags */
             $tags = $docBlock->getTagsByName(self::API_OBJECT);
             foreach ($tags as $tag) {
                 $objects = $this->getDocForObject($tag, $objects);
             }
             if (!empty($objects)) {
-                $result['objects'] = $objects;
+                $result->objects = $objects;
             }
 
-            $result['parameters'] = $this->getMethodParameters($method, $docBlock);
-            $result['returns'] = $this->getMethodReturn($method, $docBlock);
+            $result->parameters = $this->getMethodParameters($method, $docBlock);
+            $result->return = $this->getMethodReturn($method, $docBlock);
 
             /** @var ApiReturn[] $returnParams */
             $returnParams = $docBlock->getTagsByName(self::API_METHOD_RETURN_PARAM);
@@ -281,7 +271,7 @@ class SmdGenerator
             }
 
             if (!empty($return)) {
-                $result['returnParameters'] = $return;
+                $result->returnParameters = $return;
             }
 
             $tags = array_map(function ($value) {
@@ -289,9 +279,8 @@ class SmdGenerator
             }, $docBlock->getTagsByName(self::API_METHOD_TAG));
 
             if (!empty($tags)) {
-                $result['tags'] = $tags;
+                $result->tags = $tags;
             }
-
         }
 
         return $result;
@@ -353,13 +342,14 @@ class SmdGenerator
 
         /** @var \ReflectionParameter $param */
         foreach ($method->getParameters() as $param) {
-            $parameter = ['name' => $param->getName()];
+            $parameter = new SmdParameter();
+            $parameter->name = $param->getName();
             if (PHP_VERSION_ID > 70000) {
-                $parameter['type'] = (string)$param->getType();
+                $parameter->types = [(string)$param->getType()];
             }
-            $parameter['optional'] = $param->isOptional();
-            if ($parameter['optional']) {
-                $parameter['default'] = $param->getDefaultValue();
+            $parameter->optional = $param->isOptional();
+            if ($parameter->optional) {
+                $parameter->default = $param->getDefaultValue();
             }
 
             $result[$param->getName()] = $parameter;
@@ -374,15 +364,18 @@ class SmdGenerator
         /** @var DocBlock\Tags\Param $param */
         foreach ($params as $param) {
             $name = (string)$param->getVariableName();
-            $result[$name]['name'] = $name;
+
+            $parameter = $result[$name] ?? new SmdParameter();
+            $parameter->name = $name;
 
             if (!empty((string)$param->getDescription())) {
-                $result[$name]['description'] = (string)$param->getDescription();
+                $parameter->description = (string)$param->getDescription();
             }
             if (!empty((string)$param->getType())) {
-                $result[$name]['type'] = (string)$param->getType();
-                $result[$name]['types'] = explode('|', (string)$param->getType());
+                $parameter->types = explode('|', (string)$param->getType());
             }
+
+            $result[$name] = $parameter;
         }
 
         /** @var ApiParam[] $params */
@@ -391,7 +384,6 @@ class SmdGenerator
         foreach ($params as $param) {
             $result = $this->getExtendedParameters($param, $result);
         }
-
 
         return array_values($result);
     }
@@ -409,10 +401,14 @@ class SmdGenerator
         $nameParts = explode('.', $name);
         $variableName = array_shift($nameParts);
 
-        if (!isset($current[$variableName])) {
-            $current[$variableName] = ['name' => $variableName];
+        /** @var SmdParameter $parameter */
+        if (isset($current[$variableName])) {
+            $parameter = $current[$variableName];
+        } else {
+            $parameter = new SmdParameter();
+            $parameter->name = $variableName;
+            $current[$variableName] = $parameter;
         }
-        $parameter = &$current[$variableName];
 
         while ($key = array_shift($nameParts)) {
             $isArray = false;
@@ -421,35 +417,37 @@ class SmdGenerator
                 $variableName = substr($variableName, 0, -2);
                 $isArray = true;
             }
-            if (!isset($parameter['parameters'][$variableName])) {
-                $parameter['parameters'][$variableName] = [];
+
+            $parameter->types = ['object'];
+            $parameters = $parameter->parameters;
+
+            if (!isset($parameters[$variableName])) {
+                $parameters[$variableName] = new SmdParameter();
             }
 
-            $parameter['type'] = 'object';
-            $parameter['types'] = ['object'];
-
-            $parameter = &$parameter['parameters'][$variableName];
+            $parameter->parameters = $parameters;
+            $parameter = $parameters[$variableName];
 
             if ($isArray) {
-                $parameter['array'] = true;
+                $parameter->array = true;
             }
         }
 
-        $parameter['name'] = $variableName;
+        $parameter->name = $variableName;
 
         $parameter = $this->checkParamType($parameter, $docBlock->getType());
 
-        $parameter['optional'] = $docBlock->isOptional();
+        $parameter->optional = $docBlock->isOptional();
 
         if (!empty((string)$docBlock->getDescription())) {
-            $parameter['description'] = (string)$docBlock->getDescription();
+            $parameter->description = (string)$docBlock->getDescription();
         }
 
         if ($docBlock->hasDefault()) {
-            $parameter['default'] = $docBlock->getDefaultValue();
+            $parameter->default = $docBlock->getDefaultValue();
         }
         if ($docBlock->hasExample()) {
-            $parameter['example'] = $docBlock->getExampleValue();
+            $parameter->example = $docBlock->getExampleValue();
         }
 
         return $current;
@@ -468,10 +466,14 @@ class SmdGenerator
         $nameParts = explode('.', $name);
         $variableName = array_shift($nameParts);
 
-        if (!isset($current[$variableName])) {
-            $current[$variableName] = ['name' => $variableName];
+        /** @var SmdParameter $parameter */
+        if (isset($current[$variableName])) {
+            $parameter = $current[$variableName];
+        } else {
+            $parameter = new SmdParameter();
+            $parameter->name = $variableName;
+            $current[$variableName] = $parameter;
         }
-        $parameter = &$current[$variableName];
 
         while ($key = array_shift($nameParts)) {
             $isArray = false;
@@ -480,79 +482,83 @@ class SmdGenerator
                 $variableName = substr($variableName, 0, -2);
                 $isArray = true;
             }
-            if (!isset($parameter['parameters'][$variableName])) {
-                $parameter['parameters'][$variableName] = [];
+
+            $parameter->types = ['object'];
+            $parameters = $parameter->parameters;
+
+            if (!isset($parameters[$variableName])) {
+                $parameters[$variableName] = new SmdParameter();
             }
 
-            $parameter['type'] = 'object';
-            $parameter['types'] = ['object'];
-
-            $parameter = &$parameter['parameters'][$variableName];
+            $parameter->parameters = $parameters;
+            $parameter = $parameters[$variableName];
 
             if ($isArray) {
-                $parameter['array'] = true;
+                $parameter->array = true;
             }
         }
 
-        $parameter['name'] = $variableName;
+        $parameter->name = $variableName;
 
         $parameter = $this->checkParamType($parameter, $docBlock->getType());
 
         if (!empty((string)$docBlock->getDescription())) {
-            $parameter['description'] = (string)$docBlock->getDescription();
+            $parameter->description = (string)$docBlock->getDescription();
         }
 
         if ($docBlock->isRoot()) {
-            $parameter['is_root'] = true;
+            $parameter->is_root = true;
         }
 
         return $current;
     }
 
     /**
-     * @param array $parameter
+     * @param SmdParameter $parameter
      * @param Type $type
      *
      * @return mixed
      */
-    protected function checkParamType($parameter, $type)
+    protected function checkParamType(SmdParameter $parameter, $type)
     {
         switch (true) {
             case $type instanceof Date:
-                $parameter['typeFormat'] = $type->getFormat();
-                $parameter['typeAdditional'] = (string)$type;
+                $parameter->typeFormat = $type->getFormat();
+                $parameter->typeAdditional = (string)$type;
 
-                if (empty($parameter['type'])) {
-                    $parameter['type'] = 'string';
-                    $parameter['types'] = ['string'];
+                if (empty($parameter->types)) {
+                    $parameter->types = ['string'];
                 }
                 break;
 
             case $type instanceof Enum:
-                $parameter['typeVariants'] = $type->getVariants();
-                $parameter['typeAdditional'] = (string)$type;
+                if ($type->hasVariants()) {
+                    $parameter->typeVariants = $type->getVariants();
+                    $parameter->typeAdditional = (string)$type;
+                } else {
+                    $parameter->typeAdditional = $type->getVariantsType();
+                }
 
-                if (empty($parameter['type'])) {
-                    $parameter['type'] = $type->getRealType();
-                    $parameter['types'] = [$type->getRealType()];
+                if (empty($parameter->types)) {
+                    $parameter->types = [$type->getRealType()];
                 }
 
                 break;
 
             case $type instanceof Object_:
-                $parameter['type'] = 'object';
-                $parameter['types'] = ['object'];
-                $parameter['typeAdditional'] = $type->getClassName();
+                $parameter->types = ['object'];
+                if ($type->getClassName() !== null) {
+                    $parameter->typeAdditional = $type->getClassName();
+                }
                 break;
 
             case $type instanceof Array_:
-                $parameter['array'] = true;
+                $parameter->array = true;
                 $parameter = $this->checkParamType($parameter, $type->getValueType());
                 break;
 
             default:
-                $parameter['type'] = (string)$type;
-                $parameter['types'] = [(string)$type];
+                $parameter->types = [(string)$type];
         }
 
         return $parameter;
@@ -562,25 +568,25 @@ class SmdGenerator
      * @param \ReflectionMethod $method
      * @param DocBlock $docBlock
      *
-     * @return array
+     * @return SmdReturn
      */
-    protected function getMethodReturn($method, $docBlock = null): array
+    protected function getMethodReturn($method, $docBlock = null): SmdReturn
     {
-        $result = ['type' => 'mixed'];
+        $result = new SmdReturn();
+        $result->types = ['mixed'];
 
         if (PHP_VERSION_ID > 70000) {
-            $result['type'] = $method->getReturnType();
+            $result->types = [$method->getReturnType()];
         }
 
         if ($docBlock !== null && $docBlock->hasTag(self::API_METHOD_RETURN)) {
             /** @var DocBlock\Tags\Return_ $return */
             $return = $docBlock->getTagsByName(self::API_METHOD_RETURN)[0];
             if (!empty((string)$return->getType())) {
-                $result['type'] = (string)$return->getType();
-                $result['types'] = explode('|', (string)$return->getType());
+                $result->types = explode('|', (string)$return->getType());
             }
             if (!empty((string)$return->getDescription())) {
-                $result['description'] = (string)$return->getDescription();
+                $result->description = (string)$return->getDescription();
             }
         }
 
@@ -612,13 +618,13 @@ class SmdGenerator
     protected function getDocForEnum($docBlock, array $objects = []): array
     {
         if (!isset($objects[$docBlock->getTypeName()])) {
-            $objects[$docBlock->getTypeName()] = [
-                'name'   => $docBlock->getTypeName(),
-                'values' => [],
-                'type'   => 'int',
-            ];
+            $object = new SmdEnumObject();
+            $object->name = $docBlock->getTypeName();
+            $object->type = 'int';
+            $objects[$docBlock->getTypeName()] = $object;
+        } else {
+            $object = $objects[$docBlock->getTypeName()];
         }
-        $object = &$objects[$docBlock->getTypeName()];
 
         $value = $docBlock->getValue();
 
@@ -626,18 +632,22 @@ class SmdGenerator
             case \is_int($value):
                 break;
             case \is_float($value):
-                if ($object['type'] !== 'string') {
-                    $object['type'] = 'float';
+                if ($object->type !== 'string') {
+                    $object->type = 'float';
                 }
                 break;
             default:
-                $object['type'] = 'string';
+                $object->type = 'string';
         }
 
-        $object['values'][] = [
+        $values = $object->values;
+
+        $values[] = SmdEnumValue::fromArray([
             'value'       => $value,
             'description' => (string)$docBlock->getDescription(),
-        ];
+        ]);
+
+        $object->values = $values;
 
         return $objects;
     }
@@ -651,14 +661,16 @@ class SmdGenerator
     protected function getDocForObject($docBlock, array $objects = []): array
     {
         $objectName = $docBlock->getObjectName();
+
         if (!isset($objects[$objectName])) {
-            $objects[$objectName] = [
-                'name'       => $objectName,
-                'parameters' => [],
-            ];
+            $object = new SmdSimpleObject();
+            $object->name = $objectName;
+            $objects[$objectName] = $object;
+        } else {
+            $object = $objects[$objectName];
         }
 
-        $objects[$objectName]['parameters'] = $this->getExtendedParameters($docBlock, $objects[$objectName]['parameters']);
+        $object->parameters = $this->getExtendedParameters($docBlock, $object->parameters);
 
         return $objects;
     }

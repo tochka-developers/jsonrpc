@@ -23,7 +23,7 @@ class Object_ implements Type
      *
      * @return string
      */
-    public function getClassName(): string
+    public function getClassName(): ?string
     {
         return $this->className;
     }

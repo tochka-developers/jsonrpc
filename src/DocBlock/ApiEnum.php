@@ -17,7 +17,8 @@ class ApiEnum extends BaseTag implements StaticMethod
 {
     use VariableValueTrait;
 
-    protected const REGEXP = '/(\{(?<typeName>[a-z\._0-9\[\]]+)\}[ ]+)((?<value>[a-z0-9\.\-]+|\"[^\"]+\")[ \n]+)?(?<description>.*)/is';
+    protected const REGEXP = /** @lang text */
+        '/(\{(?<typeName>[a-z\._0-9\[\]]+)\}[ ]+)((?<value>[a-z0-9\.\-]+|\"[^\"]+\")[ \n]+)?(?<description>.*)/is';
     protected const TAG_NAME = 'apiEnum';
 
     /** @var string */

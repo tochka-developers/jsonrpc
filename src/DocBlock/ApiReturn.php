@@ -17,7 +17,8 @@ use Webmozart\Assert\Assert;
  */
 class ApiReturn extends BaseTag implements StaticMethod
 {
-    protected const REGEXP = '/((?<is_root>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)?/is';
+    protected const REGEXP = /** @lang text */
+        '/((?<is_root>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)?/is';
     protected const TAG_NAME = 'apiReturn';
 
     /** @var Type */
