@@ -86,8 +86,8 @@ class ApiParam extends BaseTag implements StaticMethod
         }
 
         $typeStr = isset($parts['type']) ? trim($parts['type']) : 'mixed';
-        $typeExtended = isset($parts['typeFormat']) ?? null;
-        $variableName = isset($parts['variableName']) ?? 'variable';
+        $typeExtended = $parts['typeFormat'] ?? null;
+        $variableName = $parts['variableName'] ?? 'variable';
 
         $type = CustomTypeResolver::resolve($typeStr, $typeExtended);
 
