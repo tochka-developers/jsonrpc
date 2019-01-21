@@ -13,7 +13,7 @@ use Tochka\JsonRpc\DocBlock\TypeResolver as CustomTypeResolver;
 use Webmozart\Assert\Assert;
 
 /**
- * Reflection class for the {@}param tag in a Docblock.
+ * Reflection class for the {@}apiParam tag in a Docblock.
  */
 class ApiParam extends BaseTag implements StaticMethod
 {
