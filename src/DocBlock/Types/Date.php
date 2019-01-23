@@ -14,7 +14,7 @@ class Date implements Type
 
     public function __construct($format = null)
     {
-        $this->format = trim($format, '"');
+        $this->format = trim($format, '"\'');
     }
 
     public function getFormat()

@@ -18,7 +18,7 @@ use Webmozart\Assert\Assert;
 class ApiReturn extends BaseTag implements StaticMethod
 {
     protected const REGEXP = /** @lang text */
-        '/((?<is_root>\*) +)?(((?<type>[a-z\[\]]+)(\=(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)(\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]+)(?<description>.*)?/is';
+        '/((?<is_root>\*)? +)?(((?<type>[a-z\[\]]+)([ ]*\=[ ]*(?<typeFormat>[a-z0-9]+|"[^"]+"|\([^\)]+\)))?) +)?\$(?<variableName>[a-z\._0-9\[\]]+)[ \n]*(?<description>.+)?/is';
     protected const TAG_NAME = 'apiReturn';
 
     /** @var Type */
@@ -60,7 +60,7 @@ class ApiReturn extends BaseTag implements StaticMethod
         Assert::stringNotEmpty($body);
         Assert::allNotNull([$typeResolver, $descriptionFactory]);
 
-        preg_match(self::REGEXP, $body, $parts);
+        preg_match(self::REGEXP, $body, $parts, PREG_UNMATCHED_AS_NULL);
 
         $description = null;
 
@@ -69,7 +69,7 @@ class ApiReturn extends BaseTag implements StaticMethod
             $description = $descriptionFactory->create($descriptionStr, $context);
         }
 
-        $type = CustomTypeResolver::resolve(trim($parts['type']), $parts['typeFormat']);
+        $type = CustomTypeResolver::resolve(trim($parts['type'] ?? 'mixed'), $parts['typeFormat']);
 
         /** @var static $param */
         return new static($parts['variableName'], $type, $description, !empty($parts['is_root']));
@@ -110,6 +110,9 @@ class ApiReturn extends BaseTag implements StaticMethod
      */
     public function __toString()
     {
-        return '';
+        return $this->isRoot() ? '* ' : ''
+            . $this->getType()
+            . $this->getVariableName()
+            . $this->getDescription();
     }
 }

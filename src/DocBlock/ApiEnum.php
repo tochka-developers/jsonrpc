@@ -18,7 +18,7 @@ class ApiEnum extends BaseTag implements StaticMethod
     use VariableValueTrait;
 
     protected const REGEXP = /** @lang text */
-        '/(\{(?<typeName>[a-z\._0-9\[\]]+)\}[ ]+)((?<value>[a-z0-9\.\-]+|\"[^\"]+\")[ \n]+)?(?<description>.*)/is';
+        '/(\{(?<typeName>[a-z\._0-9\[\]]+)\}[ ]+)((?<value>[a-z0-9\.\-]+|\"[^\"]+\"))?[ \n]*(?<description>.+)?/is';
     protected const TAG_NAME = 'apiEnum';
 
     /** @var string */
@@ -28,8 +28,8 @@ class ApiEnum extends BaseTag implements StaticMethod
     protected $value;
 
     /**
-     * @param string      $typeName
-     * @param mixed       $value
+     * @param string $typeName
+     * @param mixed $value
      * @param Description $description
      */
     public function __construct($typeName, $value, Description $description = null)
@@ -80,6 +80,8 @@ class ApiEnum extends BaseTag implements StaticMethod
 
     public function __toString()
     {
-        return '';
+        return '{' . $this->getTypeName() . '}'
+            . $this->getValue()
+            . $this->getDescription();
     }
 }
