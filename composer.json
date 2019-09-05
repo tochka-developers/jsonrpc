@@ -1,5 +1,5 @@
 {
-    "name": "tochka-developers/jsonrpc",
+    "name": "annuitcoeptis/jsonrpc",
     "description": "JsonRpc extension for Laravel",
     "license": "MIT",
     "authors": [
@@ -11,7 +11,6 @@
     "require": {
         "php": ">=7.1.0",
         "ext-json": "*",
-        "laravel/framework": "~5.6",
         "tochka-developers/jsonrpc-smd": "^1.0",
         "phpdocumentor/reflection-docblock": "~4.3"
     },
