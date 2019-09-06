@@ -1,32 +1,32 @@
 {
-    "name": "xdloc/jsonrpc",
-    "description": "JsonRpc extension for Laravel",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Pavel Babushkin",
-            "email": "darkdarin@tochka.com"
-        }
-    ],
-    "require": {
-        "php": ">=7.1.0",
-        "ext-json": "*",
-        "tochka-developers/jsonrpc-smd": "^1.0",
-        "phpdocumentor/reflection-docblock": "~4.3"
-    },
-    "require-dev": {
-        "roave/security-advisories": "dev-master"
-    },
-    "autoload": {
-        "psr-4": {
-            "Tochka\\JsonRpc\\": "src/"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Tochka\\JsonRpc\\JsonRpcServiceProvider"
-            ]
-        }
+  "name": "tochka-developers/jsonrpc",
+  "description": "JsonRpc extension for Laravel",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Pavel Babushkin",
+      "email": "darkdarin@tochka.com"
     }
+  ],
+  "require": {
+    "php": ">=7.1.0",
+    "ext-json": "*",
+    "tochka-developers/jsonrpc-smd": "^1.0",
+    "phpdocumentor/reflection-docblock": "~4.3"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "Tochka\\JsonRpc\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Tochka\\JsonRpc\\JsonRpcServiceProvider"
+      ]
+    }
+  }
 }
