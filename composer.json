@@ -29,5 +29,9 @@
         "Tochka\\JsonRpc\\JsonRpcServiceProvider"
       ]
     }
+  },
+  "scripts": {
+    "post-update-cmd": "Tochka\\JsonRpc\\JsonRpcServiceProvider::boot",
+    "post-install-cmd": "Tochka\\JsonRpc\\JsonRpcServiceProvider::boot"
   }
 }

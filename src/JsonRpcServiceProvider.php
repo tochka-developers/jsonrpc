@@ -42,7 +42,7 @@ class JsonRpcServiceProvider extends ServiceProvider
         $this->loadRoutes();
 
         // публикуем конфигурации
-        $this->publishes([__DIR__ . '/../config/jsonrpc.php' => config_path('jsonrpc.php')]);
+        $this->publishes([__DIR__ . '/../config/jsonrpc.php' => config_path('jsonrpc.php')],'config');
     }
 
     protected function loadRoutes(): void
