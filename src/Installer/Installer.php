@@ -4,12 +4,10 @@
 namespace Tochka\JsonRpc\Installer;
 
 
-use Tochka\JsonRpc\JsonRpcServiceProvider;
-
 class Installer
 {
     public static function run($event): void
     {
-        (new JsonRpcServiceProvider())->boot();
+        copy(__DIR__ . '/../config/jsonrpc.php', config_path('jsonrpc.php'));
     }
 }
