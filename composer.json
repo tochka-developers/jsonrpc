@@ -2,6 +2,7 @@
   "name": "xdloc/jsonrpc",
   "description": "JsonRpc extension for Laravel",
   "license": "MIT",
+  "homepage" : "https://github.com/xdloc/jsonrpc",
   "authors": [
     {
       "name": "Pavel Babushkin",
