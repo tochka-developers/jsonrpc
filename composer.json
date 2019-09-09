@@ -32,7 +32,6 @@
     }
   },
   "scripts": {
-    "post-update-cmd": "Tochka\\JsonRpc\\Installer::run",
-    "post-install-cmd": "Tochka\\JsonRpc\\Installer::run"
+    "copyConfig": "cp vendor/tochka-developers/jsonrpc/config/jsonrpc.php config/jsonrpc.php"
   }
 }
