@@ -2,9 +2,6 @@
 ## Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
 
-Убрана поддержка Lumen, поддерживается только Laravel 5.6, 5.7
-Для старых версий Laravel/Lumen используйте 1.* версии пакета.
-
 Поддерживает:
 * вызов удаленных методов по нотификации имяКонтроллера_имяМетода
 * вызов нескольких удаленных методов в одном запросе
@@ -16,14 +13,44 @@ JsonRpc сервер - реализация сервера по специфик
 * возможность настройки нескольких точек входа с разными настройками JsonRpc-сервера
 
 ## Установка
-1. ``composer require tochka-developers/jsonrpc``
-2. Опубликуйте конфигурацию:  
+Установка через composer:
+```shell script
+composer require tochka-developers/jsonrpc
 ```
+### Laravel
+Для Laravel есть возможность опубликовать конфигурацию для всех пакетов:  
+```shell script
 php artisan vendor:publish
 ```
 
+Для того, чтобы опубликовать только конфигурации, можно воспользоваться опцией tag
+```shell script
+php artisan vendor:publish --tag="config"
+```
+
+### Lumen
+В Lumen отсутствует команда _vendor:publish_, поэтому делается это вручную. 
+Если в проекте еще нет директории для конфигураций - создайте ее:
+```shell script
+mkdir config
+```
+Скопируйте в нее конфигрурацию jsonrpc:
+```shell script
+cp vendor/tochka-developers/jsonrpc/config/jsonrpc.php config/jsonrpc.php
+```
+Вместо _config/jsonrpc.php_ нужно указать любую другую директорию, где хранятся ваши конфиги и название будущего конфига.
+Далее необходимо прописать скопированный конфиг в _bootstrap/app.php_
+```php
+$app->configure('jsonrpc');
+```
+Так же прописать провайдер:
+```php
+$app->register(\Tochka\JsonRpc\JsonRpcServiceProvider::class);
+```
+Где _jsonrpc_ - имя файла конфига
+
 ## Ручная настройка точек входа
-При ручной найтройке вы сами контролируете процесс роутинга. 
+При ручной настройке вы сами контролируете процесс роутинга. 
 Пропишите в вашем route.php:
 ```php
 Route::post('/api/v1/jsonrpc', function (Illuminate\Http\Request $request, \Tochka\JsonRpc\JsonRpcServer $server) {
