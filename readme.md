@@ -49,6 +49,10 @@ $app->register(\Tochka\JsonRpc\JsonRpcServiceProvider::class);
 ```
 Где _jsonrpc_ - имя файла конфига
 
+Для корректной работы так же необходимы фасады:
+```php
+$app->withFacades();
+```
 ## Ручная настройка точек входа
 При ручной настройке вы сами контролируете процесс роутинга. 
 Пропишите в вашем route.php:
@@ -67,6 +71,7 @@ Route::post('/api/v1/jsonrpc/{endpoint}[/{action}]', function (Illuminate\Http\R
 ```php
 return $server->handle($request, $options);
 ```
+
 ### Описание массива $options
 * `uri` ('/api/v1/jsonrpc') - точка входа
 * `namespace` ('App\\Http\\Controllers\\') - Namespace для контроллеров. 
