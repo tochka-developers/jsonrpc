@@ -1,6 +1,10 @@
-# JSON-RPC Server (Laravel)
+# JSON-RPC Server (Laravel/Lumen)
 ## Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
+
+Поддерживаемые версии:
+* Lumen >= 5.7
+* Laravel >= 5.7 
 
 Поддерживает:
 * вызов удаленных методов по нотификации имяКонтроллера_имяМетода
@@ -23,9 +27,9 @@ composer require tochka-developers/jsonrpc
 php artisan vendor:publish
 ```
 
-Для того, чтобы опубликовать только конфигурации, можно воспользоваться опцией tag
+Для того, чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
 ```shell script
-php artisan vendor:publish --tag="config"
+php artisan vendor:publish --tag="jsonrpc-config"
 ```
 
 ### Lumen
