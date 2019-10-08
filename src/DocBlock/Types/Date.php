@@ -27,7 +27,7 @@ class Date implements Type
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return 'date';
     }
