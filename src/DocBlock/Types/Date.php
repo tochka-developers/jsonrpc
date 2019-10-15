@@ -6,6 +6,7 @@ use phpDocumentor\Reflection\Type;
 
 /**
  * Class Date
+ *
  * @package Tochka\JsonRpc\DocBlock\Types
  */
 class Date implements Type
@@ -27,7 +28,7 @@ class Date implements Type
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return 'date';
     }
