@@ -78,7 +78,7 @@ class ApiEnum extends BaseTag implements StaticMethod
         return $this->value;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return '{' . $this->getTypeName() . '}'
             . $this->getValue()

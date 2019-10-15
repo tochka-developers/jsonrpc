@@ -108,7 +108,7 @@ class ApiReturn extends BaseTag implements StaticMethod
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->isRoot() ? '* ' : ''
             . $this->getType()
