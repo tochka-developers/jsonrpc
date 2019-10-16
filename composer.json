@@ -11,7 +11,7 @@
     "require": {
         "php": ">=7.1.0",
         "ext-json": "*",
-        "laravel/framework": "^5.6||~6.0",
+        "laravel/framework": "^5.6||^6.0",
         "tochka-developers/jsonrpc-smd": "^1.0",
         "phpdocumentor/reflection-docblock": "~4.3"
     },
