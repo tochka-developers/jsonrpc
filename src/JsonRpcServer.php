@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
 use Tochka\JsonRpc\Handlers\AuthHandler;
 use Tochka\JsonRpc\Handlers\BaseHandler;
@@ -64,8 +65,9 @@ class JsonRpcServer
             $answer->error = JsonRpcHandler::handle($e);
             $this->response[] = $answer;
         }
+        $content = \count($this->response) > 1 ? $this->response : (array)$this->response[0];
 
-        return \count($this->response) > 1 ? $this->response : (array)$this->response[0];
+        return new Response(json_encode($content, JSON_UNESCAPED_UNICODE), Response::HTTP_OK, ['Content-Type' => 'application/json']);
     }
 
     public function setResponse($response): void
