@@ -54,7 +54,7 @@ class JsonRpcException extends Exception
         return $this->data;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getMessage();
     }
