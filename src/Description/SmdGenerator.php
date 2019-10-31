@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Description;
 
+use Illuminate\Support\Str;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
 use phpDocumentor\Reflection\Type;
@@ -293,7 +294,7 @@ class SmdGenerator
      */
     protected function getShortNameForController($name): string
     {
-        return camel_case(str_replace_last($this->server->postfix, '', class_basename($name)));
+        return Str::camel(Str::replaceLast($this->server->postfix, '', class_basename($name)));
     }
 
     /**
@@ -303,7 +304,7 @@ class SmdGenerator
      */
     protected function getShortNameForNamespace($namespace): string
     {
-        return camel_case(trim(str_replace_last(trim($this->server->namespace, '\\'), '', trim($namespace . '\\')), '\\'));
+        return Str::camel(trim(Str::replaceLast(trim($this->server->namespace, '\\'), '', trim($namespace . '\\')), '\\'));
     }
 
     /**

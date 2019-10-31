@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
+use Illuminate\Support\Str;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcRequest;
 
@@ -22,7 +23,7 @@ class MethodClosureMiddleware implements BaseMiddleware
         $method = $request->call->method;
 
         if (!empty($request->call->endpoint) && !empty($request->call->action)) {
-            $namespace = $request->server->namespace . studly_case($request->call->endpoint) . '\\';
+            $namespace = $request->server->namespace . Str::studly($request->call->endpoint) . '\\';
             $controllerName = $request->call->action;
         } elseif (!empty($request->call->endpoint)) {
             $controllerName = $request->call->endpoint;
@@ -39,12 +40,12 @@ class MethodClosureMiddleware implements BaseMiddleware
             } else {
                 $controllerName = $methodArray[0];
                 unset($methodArray[0]);
-                $method = camel_case(implode('_', $methodArray));
+                $method = Str::camel(implode('_', $methodArray));
             }
 
         }
 
-        $controllerName = $namespace . studly_case($controllerName . $request->server->postfix);
+        $controllerName = $namespace . Str::studly($controllerName . $request->server->postfix);
 
         // если нет такого контроллера или метода
         if (!class_exists($controllerName)) {

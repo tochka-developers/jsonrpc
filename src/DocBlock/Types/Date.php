@@ -6,6 +6,7 @@ use phpDocumentor\Reflection\Type;
 
 /**
  * Class Date
+ *
  * @package Tochka\JsonRpc\DocBlock\Types
  */
 class Date implements Type
