@@ -11,6 +11,9 @@
   "require": {
     "php": ">=7.1.0",
     "ext-json": "*",
+    "illuminate/support": "5.7.*|5.8.*|^6.0",
+    "illuminate/http": "5.7.*|5.8.*|^6.0",
+    "illuminate/container": "5.7.*|5.8.*|^6.0",
     "tochka-developers/jsonrpc-smd": "^1.0",
     "phpdocumentor/reflection-docblock": "~4.3"
   },

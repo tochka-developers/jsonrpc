@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
@@ -47,18 +48,18 @@ class JsonRpcRequest
         }
 
         $logContext = [
-            'method' => $this->call->method,
-            'call' => class_basename($this->controller) . '::' . $this->method,
-            'id' => $this->id,
+            'method'  => $this->call->method,
+            'call'    => class_basename($this->controller) . '::' . $this->method,
+            'id'      => $this->id,
             'service' => $this->service,
         ];
 
-        Log::channel(config('jsonrpc.log.channel', 'default'))
+        Log::channel(Config::get('jsonrpc.log.channel', 'default'))
             ->info('New request', $logContext + ['request' => ArrayHelper::fromObject($this->call)]);
 
         $result = $this->controller->{$this->method}(...$this->params);
 
-        Log::channel(config('jsonrpc.log.channel', 'default'))
+        Log::channel(Config::get('jsonrpc.log.channel', 'default'))
             ->info('Successful request', $logContext);
 
         return $result;

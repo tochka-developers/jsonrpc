@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
 use Tochka\JsonRpc\Handlers\AuthHandler;
 use Tochka\JsonRpc\Handlers\BaseHandler;
@@ -13,6 +14,7 @@ use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
 
 /**
  * Class JsonRpcServer
+ *
  * @package Tochka\JsonRpc
  */
 class JsonRpcServer
@@ -42,7 +44,7 @@ class JsonRpcServer
 
     /**
      * @param Request $request
-     * @param array $options
+     * @param array   $options
      *
      * @return array
      */
@@ -65,7 +67,7 @@ class JsonRpcServer
             $this->response[] = $answer;
         }
 
-        return \count($this->response) > 1 ? $this->response : (array)$this->response[0];
+        return \count($this->response) > 1 ? $this->response : (array) $this->response[0];
     }
 
     public function setResponse($response): void
@@ -81,14 +83,16 @@ class JsonRpcServer
     protected function fillOptions($options): void
     {
         $this->uri = $options['uri'] ?? '/';
-        $this->namespace = $options['namespace'] ?? config('jsonrpc.controllerNamespace', 'App\\Http\\Controllers\\Api\\');
-        $this->postfix = $options['postfix'] ?? config('jsonrpc.controllerPostfix', 'Controller');
-        $this->description = $options['description'] ?? config('jsonrpc.description', 'JsonRpc Server');
-        $this->controller = $options['controller'] ?? config('jsonrpc.defaultController', 'Api');
-        $this->middleware = $options['middleware'] ?? config('jsonrpc.middleware', [MethodClosureMiddleware::class]);
-        $this->acl = $options['acl'] ?? config('jsonrpc.acl', []);
-        $this->auth = $options['auth'] ?? config('jsonrpc.authValidate', true);
-        $this->handlers = $options['handlers'] ?? config('jsonrpc.handlers', self::DEFAULT_HANDLERS);
+        $this->namespace = $options['namespace'] ?? Config::get('jsonrpc.controllerNamespace',
+                'App\\Http\\Controllers\\Api\\');
+        $this->postfix = $options['postfix'] ?? Config::get('jsonrpc.controllerPostfix', 'Controller');
+        $this->description = $options['description'] ?? Config::get('jsonrpc.description', 'JsonRpc Server');
+        $this->controller = $options['controller'] ?? Config::get('jsonrpc.defaultController', 'Api');
+        $this->middleware = $options['middleware'] ?? Config::get('jsonrpc.middleware',
+                [MethodClosureMiddleware::class]);
+        $this->acl = $options['acl'] ?? Config::get('jsonrpc.acl', []);
+        $this->auth = $options['auth'] ?? Config::get('jsonrpc.authValidate', true);
+        $this->handlers = $options['handlers'] ?? Config::get('jsonrpc.handlers', self::DEFAULT_HANDLERS);
         $this->endpoint = $options['endpoint'] ?? null;
         $this->action = $options['action'] ?? null;
     }

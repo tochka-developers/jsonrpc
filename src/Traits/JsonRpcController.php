@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Traits;
 
+use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
@@ -16,7 +17,9 @@ trait JsonRpcController
 
     /**
      * Возвращает массив с переданными в запросе параметрами
+     *
      * @return array
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     protected function getArrayRequest(): array
     {
@@ -29,11 +32,13 @@ trait JsonRpcController
 
     /**
      * Возвращает экземпляр класса с текущим запросом
+     *
      * @return JsonRpcRequest
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     protected function getRequest(): JsonRpcRequest
     {
-        return app(JsonRpcRequest::class);
+        return Container::getInstance()->make(JsonRpcRequest::class);
     }
 
     /**
@@ -41,7 +46,7 @@ trait JsonRpcController
      *
      * @param array $rules Правила валидации
      * @param array $messages Сообщения об ошибках
-     * @param bool $noException Если true - Exception генерироваться не будет
+     * @param bool  $noException Если true - Exception генерироваться не будет
      *
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
@@ -55,9 +60,9 @@ trait JsonRpcController
      * Валидация любых данных
      *
      * @param array|\StdClass $data Данные для валидации
-     * @param array $rules Правила валидации
-     * @param array $messages Сообщения об ошибках
-     * @param bool $noException Если true - Exception генерироваться не будет
+     * @param array           $rules Правила валидации
+     * @param array           $messages Сообщения об ошибках
+     * @param bool            $noException Если true - Exception генерироваться не будет
      *
      * @return bool|MessageBag Прошла валидация или нет
      * @throws InvalidParametersException
@@ -87,7 +92,7 @@ trait JsonRpcController
      *
      * @param array $rules Правила валидации
      * @param array $messages Сообщения об ошибках
-     * @param bool $noException Если true - Exception генерироваться не будет
+     * @param bool  $noException Если true - Exception генерироваться не будет
      *
      * @return array
      * @throws \Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException
@@ -102,15 +107,15 @@ trait JsonRpcController
     /**
      * Get the request input based on the given validation rules.
      *
-     * @param  array|\stdClass $data
-     * @param  array $rules
+     * @param array|\stdClass $data
+     * @param array           $rules
      *
      * @return array
      */
     protected function extractInputFromRules($data, array $rules): array
     {
         if (\is_object($data)) {
-            $data = (array)$data;
+            $data = (array) $data;
         }
 
         $result = [];

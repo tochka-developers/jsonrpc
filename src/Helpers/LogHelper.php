@@ -2,11 +2,14 @@
 
 namespace Tochka\JsonRpc\Helpers;
 
+use Illuminate\Container\Container;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\JsonRpcRequest;
 
 /**
  * Class LogHelper
+ *
  * @package App\Helpers
  */
 class LogHelper
@@ -21,6 +24,8 @@ class LogHelper
      *
      * @param $type
      * @param $source
+     *
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     public static function log($type, $source): void
     {
@@ -32,7 +37,7 @@ class LogHelper
         }
 
         /** @var JsonRpcRequest $jsonRpcRequest */
-        $jsonRpcRequest = app('JsonRpcRequest');
+        $jsonRpcRequest = Container::getInstance()->make(JsonRpcRequest::class);
         $hideIndices = !empty($jsonRpcRequest->controller->hideDataLog) ? $jsonRpcRequest->controller->hideDataLog : false;
         $method = !empty($jsonRpcRequest->method) ? $jsonRpcRequest->method : 'Unknown';
 
@@ -40,13 +45,14 @@ class LogHelper
             case self::TYPE_REQUEST:
                 $logLevel = 'info';
                 $message = 'Request';
-                $context = !empty($source->call) ? (array)$source->call : [];
+                $context = !empty($source->call) ? (array) $source->call : [];
                 break;
 
             case self::TYPE_RESPONSE:
                 $logLevel = 'info';
-                $message = sprintf('Successful request to method "%s" (id-%s) with params: ', $source->method, $source->id);
-                $context = !empty($source->call) ? (array)$source->call : [];
+                $message = sprintf('Successful request to method "%s" (id-%s) with params: ', $source->method,
+                    $source->id);
+                $context = !empty($source->call) ? (array) $source->call : [];
                 break;
 
             case self::TYPE_EXCEPTION:
@@ -54,7 +60,7 @@ class LogHelper
                 $message = sprintf('JsonRpcException %d: %s',
                     isset($source->code) ? $source->code : 0,
                     !empty($source->message) ? $source->message : '');
-                $context = !empty($jsonRpcRequest->call) ? (array)$jsonRpcRequest->call : [];
+                $context = !empty($jsonRpcRequest->call) ? (array) $jsonRpcRequest->call : [];
                 break;
 
             default:
@@ -68,7 +74,7 @@ class LogHelper
             ? $hideIndices[$type][$method]
             : false;
 
-        $hideData = function (&$item, $key, $rules) {
+        $hideData = static function (&$item, $key, $rules) {
             if (\in_array($key, $rules, true)) {
                 $item = '****';
             }
@@ -78,7 +84,7 @@ class LogHelper
             array_walk($context['params'], $hideData, $hideDataRules);
         }
 
-        Log::channel(config('jsonrpc.log_channel'))
+        Log::channel(Config::get('jsonrpc.log_channel'))
             ->$logLevel($message, $context);
 
     }

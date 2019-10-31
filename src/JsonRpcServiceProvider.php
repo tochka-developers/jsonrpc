@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
@@ -47,7 +48,7 @@ class JsonRpcServiceProvider extends ServiceProvider
 
     protected function loadRoutes(): void
     {
-        $routes = config('jsonrpc.routes', []);
+        $routes = Config::get('jsonrpc.routes', []);
 
         foreach ($routes as $route) {
             if (\is_string($route)) {
@@ -62,15 +63,16 @@ class JsonRpcServiceProvider extends ServiceProvider
 
     protected function route($uri, array $options = []): void
     {
-        Route::post($uri, function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
-            if (!empty($endpoint)) {
-                $options['endpoint'] = $endpoint;
-            }
-            if (!empty($action)) {
-                $options['action'] = $action;
-            }
+        Route::post($uri,
+            function (Request $request, JsonRpcServer $server, $endpoint = null, $action = null) use ($options) {
+                if (!empty($endpoint)) {
+                    $options['endpoint'] = $endpoint;
+                }
+                if (!empty($action)) {
+                    $options['action'] = $action;
+                }
 
-            return $server->handle($request, $options);
-        });
+                return $server->handle($request, $options);
+            });
     }
 }

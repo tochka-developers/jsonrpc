@@ -11,8 +11,7 @@ class ParseAndValidateHandler implements BaseHandler
     /**
      * Handle an incoming request.
      *
-     * @param Request $request
-     *
+     * @param Request       $request
      * @param JsonRpcServer $server
      *
      * @return mixed
@@ -34,7 +33,7 @@ class ParseAndValidateHandler implements BaseHandler
         }
 
         // декодируем json
-        $data = json_decode($json);
+        $data = json_decode($json, false);
 
         // если не валидный json
         if (null === $data) {

@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
+use Illuminate\Container\Container;
 use Illuminate\Support\Str;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcRequest;
@@ -15,6 +16,7 @@ class MethodClosureMiddleware implements BaseMiddleware
      *
      * @return mixed
      * @throws JsonRpcException
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     public function handle($request)
     {
@@ -52,7 +54,7 @@ class MethodClosureMiddleware implements BaseMiddleware
             throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
 
-        $controller = app($controllerName);
+        $controller = Container::getInstance()->make($controllerName);
 
         if (!\is_callable([$controller, $method])) {
             throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
@@ -60,7 +62,7 @@ class MethodClosureMiddleware implements BaseMiddleware
 
         $request->controller = $controller;
         $request->method = $method;
-        $request->params = !empty($request->call->params) ? array_values((array)$request->call->params) : [];
+        $request->params = !empty($request->call->params) ? array_values((array) $request->call->params) : [];
 
         return true;
     }

@@ -2,8 +2,10 @@
 
 namespace Tochka\JsonRpc\Exceptions;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tochka\JsonRpc\JsonRpcRequest;
@@ -12,6 +14,12 @@ class JsonRpcHandler
 {
     protected const EXCEPTION_MESSAGE = 'JsonRpc (method:"%s", id:"%s", service:"%s"): #%d %s';
 
+    /**
+     * @param \Exception $e
+     *
+     * @return \StdClass
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
     public function handle(\Exception $e): \StdClass
     {
         $error = new \StdClass();
@@ -37,8 +45,9 @@ class JsonRpcHandler
             $error->message = $e->getMessage();
         }
 
+
         /** @var JsonRpcRequest $request */
-        $request = app(JsonRpcRequest::class);
+        $request = Container::getInstance()->make(JsonRpcRequest::class);
 
         if (isset($request->call->method)) {
             $logContext = [
@@ -51,10 +60,11 @@ class JsonRpcHandler
             $logContext = [];
         }
 
-        Log::channel(config('jsonrpc.log.channel', 'default'))
+        Log::channel(Config::get('jsonrpc.log.channel', 'default'))
             ->info('Error #' . $error->code . ': ' . $error->message, $logContext);
 
-        $handler = app(ExceptionHandler::class);
+        /** @var ExceptionHandler $handler */
+        $handler = Container::getInstance()->make(ExceptionHandler::class);
         $handler->report($e);
 
         return $error;
