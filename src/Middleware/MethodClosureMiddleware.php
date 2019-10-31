@@ -11,7 +11,7 @@ class MethodClosureMiddleware implements BaseMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  JsonRpcRequest $request
+     * @param JsonRpcRequest $request
      *
      * @return mixed
      * @throws JsonRpcException
