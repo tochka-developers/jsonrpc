@@ -2,11 +2,6 @@
 
 namespace Tochka\JsonRpc\Helpers;
 
-use Illuminate\Container\Container;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Log;
-use Tochka\JsonRpc\JsonRpcRequest;
-
 /**
  * Class LogHelper
  *
@@ -14,79 +9,41 @@ use Tochka\JsonRpc\JsonRpcRequest;
  */
 class LogHelper
 {
-    public const TYPE_REQUEST = 'request';
-    public const TYPE_SQL = 'sql';
-    public const TYPE_EXCEPTION = 'exception';
-    public const TYPE_RESPONSE = 'response';
-
-    /**
-     * Логирование запроса
-     *
-     * @param $type
-     * @param $source
-     *
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    public static function log($type, $source): void
+    public static function hidePrivateData($data, array $rules): array
     {
-        if (
-            (!($source instanceof \stdClass) && $type === self::TYPE_EXCEPTION) ||
-            (!($source instanceof JsonRpcRequest) && \in_array($type, [self::TYPE_REQUEST, self::TYPE_RESPONSE], true))
-        ) {
-            return;
+        foreach ($rules as $rule) {
+            $rule = explode('.', $rule);
+
+            $data = self::hideDataByRule($data, $rule);
         }
 
-        /** @var JsonRpcRequest $jsonRpcRequest */
-        $jsonRpcRequest = Container::getInstance()->make(JsonRpcRequest::class);
-        $hideIndices = !empty($jsonRpcRequest->controller->hideDataLog) ? $jsonRpcRequest->controller->hideDataLog : false;
-        $method = !empty($jsonRpcRequest->method) ? $jsonRpcRequest->method : 'Unknown';
-
-        switch ($type) {
-            case self::TYPE_REQUEST:
-                $logLevel = 'info';
-                $message = 'Request';
-                $context = !empty($source->call) ? (array) $source->call : [];
-                break;
-
-            case self::TYPE_RESPONSE:
-                $logLevel = 'info';
-                $message = sprintf('Successful request to method "%s" (id-%s) with params: ', $source->method,
-                    $source->id);
-                $context = !empty($source->call) ? (array) $source->call : [];
-                break;
-
-            case self::TYPE_EXCEPTION:
-                $logLevel = 'error';
-                $message = sprintf('JsonRpcException %d: %s',
-                    isset($source->code) ? $source->code : 0,
-                    !empty($source->message) ? $source->message : '');
-                $context = !empty($jsonRpcRequest->call) ? (array) $jsonRpcRequest->call : [];
-                break;
-
-            default:
-                $logLevel = 'info';
-                $message = 'No log type specified';
-                $context['params'] = [];
-                break;
-        }
-
-        $hideDataRules = !empty($hideIndices[$type][$method])
-            ? $hideIndices[$type][$method]
-            : false;
-
-        $hideData = static function (&$item, $key, $rules) {
-            if (\in_array($key, $rules, true)) {
-                $item = '****';
-            }
-        };
-
-        if ($hideDataRules && !empty($context['params'])) {
-            array_walk($context['params'], $hideData, $hideDataRules);
-        }
-
-        Log::channel(Config::get('jsonrpc.log_channel'))
-            ->$logLevel($message, $context);
-
+        return $data;
     }
 
+    protected static function hideDataByRule($data, array $rule): array
+    {
+        if (\is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $key = array_shift($rule);
+
+        if ($key === '*') {
+            foreach ($data as $key => $value) {
+                $data[$key] = self::hideDataByRule($data[$key], $rule);
+            }
+        } else if (isset($data[$key])) {
+            if (count($rule)) {
+                $data[$key] = self::hideDataByRule($data[$key], $rule);
+            } else {
+                $data[$key] = '***';
+            }
+        }
+
+        return $data;
+    }
 }
