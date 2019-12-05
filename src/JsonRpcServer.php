@@ -47,9 +47,9 @@ class JsonRpcServer
      * @param Request $request
      * @param array   $options
      *
-     * @return array
+     * @return Response
      */
-    public function handle(Request $request, $options = []): array
+    public function handle(Request $request, $options = [])
     {
         $this->fillOptions($options);
 
