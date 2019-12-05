@@ -2,9 +2,11 @@
 
 namespace Tochka\JsonRpc;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
+use Tochka\JsonRpc\Helpers\LogHelper;
 use Tochka\JsonRpc\Middleware\BaseMiddleware;
 
 class JsonRpcRequest
@@ -47,18 +49,26 @@ class JsonRpcRequest
         }
 
         $logContext = [
-            'method' => $this->call->method,
-            'call' => class_basename($this->controller) . '::' . $this->method,
-            'id' => $this->id,
+            'method'  => $this->call->method,
+            'call'    => class_basename($this->controller) . '::' . $this->method,
+            'id'      => $this->id,
             'service' => $this->service,
         ];
 
-        Log::channel(config('jsonrpc.log.channel', 'default'))
-            ->info('New request', $logContext + ['request' => ArrayHelper::fromObject($this->call)]);
+        $request = ArrayHelper::fromObject($this->call);
+        $logRules = Config::get('jsonrpc.log.hideParams', []);
+        $globalRules = $logRules['*'] ?? [];
+        $controllerRules = $logRules[get_class($this->controller)] ?? [];
+        $methodRules = $logRules[get_class($this->controller) . '@' . $this->method] ?? [];
+        $rules = array_merge($globalRules, $controllerRules, $methodRules);
+        $request['params'] = LogHelper::hidePrivateData($request['params'] ?? [], $rules);
+
+        Log::channel(Config::get('jsonrpc.log.channel', 'default'))
+            ->info('New request', $logContext + ['request' => $request]);
 
         $result = $this->controller->{$this->method}(...$this->params);
 
-        Log::channel(config('jsonrpc.log.channel', 'default'))
+        Log::channel(Config::get('jsonrpc.log.channel', 'default'))
             ->info('Successful request', $logContext);
 
         return $result;

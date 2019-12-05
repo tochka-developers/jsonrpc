@@ -2,6 +2,8 @@
 
 namespace Tochka\JsonRpc\Description;
 
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
 use phpDocumentor\Reflection\Type;
@@ -26,6 +28,7 @@ use Tochka\JsonRpcSmd\SmdSimpleObject;
 
 /**
  * Генератор SMD-схемы для JsonRpc-сервера
+ *
  * @package Tochka\JsonRpc
  */
 class SmdGenerator
@@ -80,7 +83,8 @@ class SmdGenerator
 
         if ($this->server->auth) {
             $smd->additionalHeaders = [
-                config('jsonrpc.accessHeaderName') => /** @lang text */'<AuthToken>',
+                Config::get('jsonrpc.accessHeaderName') => /** @lang text */
+                    '<AuthToken>',
             ];
         }
 
@@ -124,8 +128,8 @@ class SmdGenerator
                 $groupName = $this->getGroupName($docBlock);
 
                 if ($docBlock->hasTag(self::API_IGNORE_METHOD)) {
-                    $ignoreMethods = array_map(function ($value) {
-                        return (string)$value;
+                    $ignoreMethods = array_map(static function ($value) {
+                        return (string) $value;
                     }, $docBlock->getTagsByName(self::API_IGNORE_METHOD));
                 }
 
@@ -195,7 +199,7 @@ class SmdGenerator
         if ($docBlock->hasTag(self::API_GROUP_NAME)) {
             $tags = $docBlock->getTagsByName(self::API_GROUP_NAME);
 
-            return (string)$tags[0];
+            return (string) $tags[0];
         }
 
         return $docBlock->getSummary();
@@ -228,19 +232,19 @@ class SmdGenerator
             }
 
             if ($docBlock->hasTag(self::API_METHOD_NOTE)) {
-                $result->note = (string)$docBlock->getTagsByName(self::API_METHOD_NOTE)[0];
+                $result->note = (string) $docBlock->getTagsByName(self::API_METHOD_NOTE)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_WARNING)) {
-                $result->warning = (string)$docBlock->getTagsByName(self::API_METHOD_WARNING)[0];
+                $result->warning = (string) $docBlock->getTagsByName(self::API_METHOD_WARNING)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_REQUEST_EXAMPLE)) {
-                $result->requestExample = (string)$docBlock->getTagsByName(self::API_METHOD_REQUEST_EXAMPLE)[0];
+                $result->requestExample = (string) $docBlock->getTagsByName(self::API_METHOD_REQUEST_EXAMPLE)[0];
             }
 
             if ($docBlock->hasTag(self::API_METHOD_RESPONSE_EXAMPLE)) {
-                $result->responseExample = (string)$docBlock->getTagsByName(self::API_METHOD_RESPONSE_EXAMPLE)[0];
+                $result->responseExample = (string) $docBlock->getTagsByName(self::API_METHOD_RESPONSE_EXAMPLE)[0];
             }
 
             $objects = [];
@@ -274,8 +278,8 @@ class SmdGenerator
                 $result->returnParameters = $return;
             }
 
-            $tags = array_map(function ($value) {
-                return (string)$value;
+            $tags = array_map(static function ($value) {
+                return (string) $value;
             }, $docBlock->getTagsByName(self::API_METHOD_TAG));
 
             if (!empty($tags)) {
@@ -293,7 +297,7 @@ class SmdGenerator
      */
     protected function getShortNameForController($name): string
     {
-        return camel_case(str_replace_last($this->server->postfix, '', class_basename($name)));
+        return Str::camel(Str::replaceLast($this->server->postfix, '', class_basename($name)));
     }
 
     /**
@@ -303,12 +307,13 @@ class SmdGenerator
      */
     protected function getShortNameForNamespace($namespace): string
     {
-        return camel_case(trim(str_replace_last(trim($this->server->namespace, '\\'), '', trim($namespace . '\\')), '\\'));
+        return Str::camel(trim(Str::replaceLast(trim($this->server->namespace, '\\'), '', trim($namespace . '\\')),
+            '\\'));
     }
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock $docBlock
+     * @param DocBlock          $docBlock
      *
      * @return string
      */
@@ -317,7 +322,7 @@ class SmdGenerator
         if ($docBlock !== null && $docBlock->hasTag(self::API_METHOD_NAME)) {
             $tags = $docBlock->getTagsByName(self::API_METHOD_NAME);
 
-            return (string)$tags[0];
+            return (string) $tags[0];
         }
 
         $controllerName = $method->getDeclaringClass();
@@ -331,7 +336,7 @@ class SmdGenerator
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock $docBlock
+     * @param DocBlock          $docBlock
      *
      * @return array
      * @throws \ReflectionException
@@ -345,7 +350,7 @@ class SmdGenerator
             $parameter = new SmdParameter();
             $parameter->name = $param->getName();
             if (PHP_VERSION_ID > 70000) {
-                $parameter->types = [(string)$param->getType()];
+                $parameter->types = [(string) $param->getType()];
             }
             $parameter->optional = $param->isOptional();
             if ($parameter->optional) {
@@ -363,16 +368,16 @@ class SmdGenerator
 
         /** @var DocBlock\Tags\Param $param */
         foreach ($params as $param) {
-            $name = (string)$param->getVariableName();
+            $name = (string) $param->getVariableName();
 
             $parameter = $result[$name] ?? new SmdParameter();
             $parameter->name = $name;
 
-            if (!empty((string)$param->getDescription())) {
-                $parameter->description = (string)$param->getDescription();
+            if (!empty((string) $param->getDescription())) {
+                $parameter->description = (string) $param->getDescription();
             }
-            if (!empty((string)$param->getType())) {
-                $parameter->types = explode('|', (string)$param->getType());
+            if (!empty((string) $param->getType())) {
+                $parameter->types = explode('|', (string) $param->getType());
             }
 
             $result[$name] = $parameter;
@@ -390,7 +395,7 @@ class SmdGenerator
 
     /**
      * @param ApiParam $docBlock
-     * @param array $current
+     * @param array    $current
      *
      * @return array
      */
@@ -439,8 +444,8 @@ class SmdGenerator
 
         $parameter->optional = $docBlock->isOptional();
 
-        if (!empty((string)$docBlock->getDescription())) {
-            $parameter->description = (string)$docBlock->getDescription();
+        if (!empty((string) $docBlock->getDescription())) {
+            $parameter->description = (string) $docBlock->getDescription();
         }
 
         if ($docBlock->hasDefault()) {
@@ -455,7 +460,7 @@ class SmdGenerator
 
     /**
      * @param ApiReturn $docBlock
-     * @param array $current
+     * @param array     $current
      *
      * @return array
      */
@@ -502,8 +507,8 @@ class SmdGenerator
 
         $parameter = $this->checkParamType($parameter, $docBlock->getType());
 
-        if (!empty((string)$docBlock->getDescription())) {
-            $parameter->description = (string)$docBlock->getDescription();
+        if (!empty((string) $docBlock->getDescription())) {
+            $parameter->description = (string) $docBlock->getDescription();
         }
 
         if ($docBlock->isRoot()) {
@@ -515,7 +520,7 @@ class SmdGenerator
 
     /**
      * @param SmdParameter $parameter
-     * @param Type $type
+     * @param Type         $type
      *
      * @return mixed
      */
@@ -524,7 +529,7 @@ class SmdGenerator
         switch (true) {
             case $type instanceof Date:
                 $parameter->typeFormat = $type->getFormat();
-                $parameter->typeAdditional = (string)$type;
+                $parameter->typeAdditional = (string) $type;
 
                 if (empty($parameter->types)) {
                     $parameter->types = ['string'];
@@ -534,7 +539,7 @@ class SmdGenerator
             case $type instanceof Enum:
                 if ($type->hasVariants()) {
                     $parameter->typeVariants = $type->getVariants();
-                    $parameter->typeAdditional = (string)$type;
+                    $parameter->typeAdditional = (string) $type;
                 } else {
                     $parameter->typeAdditional = $type->getVariantsType();
                 }
@@ -558,7 +563,7 @@ class SmdGenerator
                 break;
 
             default:
-                $parameter->types = [(string)$type];
+                $parameter->types = [(string) $type];
         }
 
         return $parameter;
@@ -566,7 +571,7 @@ class SmdGenerator
 
     /**
      * @param \ReflectionMethod $method
-     * @param DocBlock $docBlock
+     * @param DocBlock          $docBlock
      *
      * @return SmdReturn
      */
@@ -582,11 +587,11 @@ class SmdGenerator
         if ($docBlock !== null && $docBlock->hasTag(self::API_METHOD_RETURN)) {
             /** @var DocBlock\Tags\Return_ $return */
             $return = $docBlock->getTagsByName(self::API_METHOD_RETURN)[0];
-            if (!empty((string)$return->getType())) {
-                $result->types = explode('|', (string)$return->getType());
+            if (!empty((string) $return->getType())) {
+                $result->types = explode('|', (string) $return->getType());
             }
-            if (!empty((string)$return->getDescription())) {
-                $result->description = (string)$return->getDescription();
+            if (!empty((string) $return->getDescription())) {
+                $result->description = (string) $return->getDescription();
             }
         }
 
@@ -603,7 +608,7 @@ class SmdGenerator
         if ($docBlock->hasTag(self::API_METHOD_DESCRIPTION)) {
             $tags = $docBlock->getTagsByName(self::API_METHOD_DESCRIPTION);
 
-            return (string)$tags[0];
+            return (string) $tags[0];
         }
 
         return $docBlock->getSummary();
@@ -611,7 +616,7 @@ class SmdGenerator
 
     /**
      * @param ApiEnum $docBlock
-     * @param array $objects
+     * @param array   $objects
      *
      * @return array
      */
@@ -644,7 +649,7 @@ class SmdGenerator
 
         $values[] = SmdEnumValue::fromArray([
             'value'       => $value,
-            'description' => (string)$docBlock->getDescription(),
+            'description' => (string) $docBlock->getDescription(),
         ]);
 
         $object->values = $values;
@@ -654,7 +659,7 @@ class SmdGenerator
 
     /**
      * @param ApiObject $docBlock
-     * @param array $objects
+     * @param array     $objects
      *
      * @return array
      */
@@ -709,9 +714,9 @@ class SmdGenerator
     private function getDefinedNamespaces(): array
     {
         $composerJsonPath = app()->basePath() . DIRECTORY_SEPARATOR . 'composer.json';
-        $composerConfig = json_decode(file_get_contents($composerJsonPath));
+        $composerConfig = json_decode(file_get_contents($composerJsonPath), false);
 
-        return (array)$composerConfig->autoload->{'psr-4'};
+        return (array) $composerConfig->autoload->{'psr-4'};
     }
 
     /**
@@ -730,7 +735,8 @@ class SmdGenerator
             $possibleNamespace = implode('\\', $namespaceFragments) . '\\';
 
             if (array_key_exists($possibleNamespace, $composerNamespaces)) {
-                $path = app()->basePath() . DIRECTORY_SEPARATOR . $composerNamespaces[$possibleNamespace] . implode('/', array_reverse($undefinedNamespaceFragments));
+                $path = app()->basePath() . DIRECTORY_SEPARATOR . $composerNamespaces[$possibleNamespace] . implode('/',
+                        array_reverse($undefinedNamespaceFragments));
 
                 return realpath($path);
             }

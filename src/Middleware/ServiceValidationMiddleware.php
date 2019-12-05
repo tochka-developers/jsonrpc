@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Request;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcRequest;
@@ -18,7 +19,7 @@ class ServiceValidationMiddleware implements BaseMiddleware
      */
     public function handle($request)
     {
-        $allow_ips = config('jsonrpc.servers.' . $request->service);
+        $allow_ips = Config::get('jsonrpc.servers.' . $request->service);
 
         // если не заданы настройки - по умолчанию запрещаем доступ
         if (null === $allow_ips) {

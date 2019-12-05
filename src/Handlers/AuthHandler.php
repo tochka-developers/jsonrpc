@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc\Handlers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\JsonRpcServer;
 
@@ -11,8 +12,7 @@ class AuthHandler implements BaseHandler
     /**
      * Handle an incoming request.
      *
-     * @param Request $request
-     *
+     * @param Request       $request
      * @param JsonRpcServer $server
      *
      * @return mixed
@@ -24,11 +24,11 @@ class AuthHandler implements BaseHandler
             return true;
         }
 
-        if (!$key = $request->header(config('jsonrpc.accessHeaderName', 'Access-Key'))) {
+        if (!$key = $request->header(Config::get('jsonrpc.accessHeaderName', 'Access-Key'))) {
             throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
         }
 
-        $service = array_search($key, config('jsonrpc.keys', []), true);
+        $service = array_search($key, Config::get('jsonrpc.keys', []), true);
 
         if ($service === false) {
             throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);

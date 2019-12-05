@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Handlers;
 
+use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Tochka\JsonRpc\Facades\JsonRpcHandler;
 use Tochka\JsonRpc\JsonRpcRequest;
@@ -12,8 +13,7 @@ class ExecuteRequestHandler implements BaseHandler
     /**
      * Handle an incoming request.
      *
-     * @param Request $request
-     *
+     * @param Request       $request
      * @param JsonRpcServer $server
      *
      * @return mixed
@@ -49,7 +49,7 @@ class ExecuteRequestHandler implements BaseHandler
             $jsonRpcRequest = new JsonRpcRequest($call, $server);
             $jsonRpcRequest->service = $server->serviceName;
 
-            app()->instance(JsonRpcRequest::class, $jsonRpcRequest);
+            Container::getInstance()->instance(JsonRpcRequest::class, $jsonRpcRequest);
 
             if (null !== $jsonRpcRequest->id) {
                 $answer->id = $jsonRpcRequest->id;
