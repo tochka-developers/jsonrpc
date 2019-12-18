@@ -2,43 +2,38 @@
 
 namespace Tochka\JsonRpc\Traits;
 
-use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
 use Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
-use Tochka\JsonRpc\JsonRpcRequest;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 trait JsonRpcController
 {
+    /** @var array */
     protected $arrayRequest;
+    /** @var JsonRpcRequest */
+    protected $jsonRpcRequest;
     protected $validateMessageBag;
+
+    public function setJsonRpcRequest(JsonRpcRequest $request): void
+    {
+        $this->jsonRpcRequest = $request;
+    }
 
     /**
      * Возвращает массив с переданными в запросе параметрами
      *
      * @return array
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     protected function getArrayRequest(): array
     {
-        if (null === $this->arrayRequest) {
-            return ArrayHelper::fromObject($this->getRequest()->call->params ?? []);
+        if ($this->arrayRequest === null) {
+            return ArrayHelper::fromObject($this->jsonRpcRequest->call->params ?? []);
         }
 
         return $this->arrayRequest;
-    }
-
-    /**
-     * Возвращает экземпляр класса с текущим запросом
-     *
-     * @return JsonRpcRequest
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    protected function getRequest(): JsonRpcRequest
-    {
-        return Container::getInstance()->make(JsonRpcRequest::class);
     }
 
     /**
@@ -69,7 +64,7 @@ trait JsonRpcController
      */
     protected function validateData($data, $rules, array $messages = [], $noException = false)
     {
-        if (\is_object($data)) {
+        if (is_object($data)) {
             $data = ArrayHelper::fromObject($data);
         }
 
@@ -114,7 +109,7 @@ trait JsonRpcController
      */
     protected function extractInputFromRules($data, array $rules): array
     {
-        if (\is_object($data)) {
+        if (is_object($data)) {
             $data = (array) $data;
         }
 
@@ -129,16 +124,16 @@ trait JsonRpcController
                 $rule = array_shift($attributes);
                 $key = implode('.', $attributes);
 
-                if (\is_array($data)) {
+                if (is_array($data)) {
                     if (array_key_exists($rule, $data)) {
                         $additional[$rule][$key] = $value;
                     } elseif ($rule === '*') {
                         $arrays[$key] = $value;
                     }
                 }
-            } elseif (\is_array($data) && array_key_exists($rule, $data)) {
+            } elseif (is_array($data) && array_key_exists($rule, $data)) {
                 $result[$rule] = $data[$rule];
-            } elseif ($rule === '*' && \is_array($data)) {
+            } elseif ($rule === '*' && is_array($data)) {
                 $isGlobalArray = true;
             }
         }

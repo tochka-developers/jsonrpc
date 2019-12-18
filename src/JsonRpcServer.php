@@ -2,16 +2,16 @@
 
 namespace Tochka\JsonRpc;
 
+use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
-use Tochka\JsonRpc\Facades\JsonRpcHandler;
-use Tochka\JsonRpc\Handlers\AuthHandler;
-use Tochka\JsonRpc\Handlers\BaseHandler;
-use Tochka\JsonRpc\Handlers\DescriptionSmdHandler;
-use Tochka\JsonRpc\Handlers\ExecuteRequestHandler;
-use Tochka\JsonRpc\Handlers\ParseAndValidateHandler;
-use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
+use Tochka\JsonRpc\Facades\ExceptionHandler;
+use Tochka\JsonRpc\Support\JsonRpcHandleResolver;
+use Tochka\JsonRpc\Support\JsonRpcParser;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Support\MiddlewarePipeline;
+use Tochka\JsonRpc\Support\ServerConfig;
 
 /**
  * Class JsonRpcServer
@@ -20,82 +20,104 @@ use Tochka\JsonRpc\Middleware\MethodClosureMiddleware;
  */
 class JsonRpcServer
 {
-    protected const DEFAULT_HANDLERS = [
-        DescriptionSmdHandler::class,
-        AuthHandler::class,
-        ParseAndValidateHandler::class,
-        ExecuteRequestHandler::class,
-    ];
+    /** @var JsonRpcParser */
+    protected $parser;
+    /** @var JsonRpcHandleResolver */
+    protected $resolver;
+    /** @var ServerConfig */
+    protected $config;
 
-    public $uri;
-    public $namespace;
-    public $postfix;
-    public $description;
-    public $controller;
-    public $middleware;
-    public $acl;
-    public $auth;
-    public $handlers;
-    public $data = [];
-    public $serviceName = 'guest';
-    public $endpoint;
-    public $action;
-
-    protected $response;
+    public function __construct(JsonRpcParser $parser, JsonRpcHandleResolver $resolver)
+    {
+        $this->parser = $parser;
+        $this->resolver = $resolver;
+    }
 
     /**
-     * @param Request $request
-     * @param array   $options
+     * @param Request     $request
+     * @param string      $serverName
+     * @param string|null $group
+     * @param string|null $action
      *
      * @return Response
      */
-    public function handle(Request $request, $options = [])
-    {
-        $this->fillOptions($options);
-
+    public function handle(
+        Request $request,
+        string $serverName = 'default',
+        string $group = null,
+        string $action = null
+    ): ?Response {
         try {
-            foreach ($this->handlers as $handlerName) {
-                /** @var BaseHandler $handler */
-                $handler = new $handlerName();
-                if (!$handler->handle($request, $this)) {
-                    break;
-                }
-            }
+            $this->config = new ServerConfig(Config::get('jsonrpc.' . $serverName, []));
+            $pipeline = new MiddlewarePipeline(Container::getInstance());
+
+            $requests = $this->parser->parse($request);
+
+            $responses = $pipeline->send($requests)
+                ->through($this->config->onceExecutedMiddleware)
+                ->via('handle')
+                ->then(function (array $requests) use ($group, $action) {
+                    $responses = [];
+                    foreach ($requests as $request) {
+                        $response = $this->handleRequest($request, $group, $action);
+
+                        if (!empty($response)) {
+                            $responses[] = $response;
+                        }
+                    }
+
+                    return $responses;
+                });
         } catch (\Exception $e) {
-            $answer = new \StdClass();
-            $answer->jsonrpc = '2.0';
-            $answer->error = JsonRpcHandler::handle($e);
-            $this->response[] = $answer;
+            $responses = [$this->resultError($e)];
         }
-        $content = \count($this->response) > 1 ? $this->response : (array)$this->response[0];
 
-        return new Response(json_encode($content, JSON_UNESCAPED_UNICODE), Response::HTTP_OK, ['Content-Type' => 'application/json']);
+        if (empty($responses)) {
+            return new Response('', Response::HTTP_OK);
+        }
+
+        $response = count($responses) > 1 ? $responses : (array) $responses[0];
+        $json = json_encode($response, JSON_UNESCAPED_UNICODE);
+
+        return new Response($json, Response::HTTP_OK, ['Content-Type' => 'application/json']);
+
     }
 
-    public function setResponse($response): void
+    public function handleRequest(JsonRpcRequest $request, string $group = null, string $action = null)
     {
-        $this->response = $response;
+        try {
+            $pipeline = new MiddlewarePipeline(Container::getInstance());
+            $this->resolver->resolve($request, $group, $action);
+
+            return $pipeline->send($request)
+                ->through($this->config->middleware)
+                ->via('handle')
+                ->then(static function (JsonRpcRequest $request) {
+                    $result = $request->controller->{$request->method}(...$request->params);
+                    if (empty($request->id)) {
+                        return null;
+                    }
+
+                    // создаем ответ
+                    $answer = (object) [];
+                    $answer->jsonrpc = '2.0';
+                    $answer->id = $request->id;
+                    $answer->result = $result;
+
+                    return $answer;
+
+                });
+        } catch (\Exception $e) {
+            return $this->resultError($e);
+        }
     }
 
-    /**
-     * Заполняет параметры
-     *
-     * @param array $options
-     */
-    protected function fillOptions($options): void
+    private function resultError(\Exception $e): \stdClass
     {
-        $this->uri = $options['uri'] ?? '/';
-        $this->namespace = $options['namespace'] ?? Config::get('jsonrpc.controllerNamespace',
-                'App\\Http\\Controllers\\Api\\');
-        $this->postfix = $options['postfix'] ?? Config::get('jsonrpc.controllerPostfix', 'Controller');
-        $this->description = $options['description'] ?? Config::get('jsonrpc.description', 'JsonRpc Server');
-        $this->controller = $options['controller'] ?? Config::get('jsonrpc.defaultController', 'Api');
-        $this->middleware = $options['middleware'] ?? Config::get('jsonrpc.middleware',
-                [MethodClosureMiddleware::class]);
-        $this->acl = $options['acl'] ?? Config::get('jsonrpc.acl', []);
-        $this->auth = $options['auth'] ?? Config::get('jsonrpc.authValidate', true);
-        $this->handlers = $options['handlers'] ?? Config::get('jsonrpc.handlers', self::DEFAULT_HANDLERS);
-        $this->endpoint = $options['endpoint'] ?? null;
-        $this->action = $options['action'] ?? null;
+        $answer = (object) [];
+        $answer->jsonrpc = '2.0';
+        $answer->error = ExceptionHandler::handle($e);
+
+        return $answer;
     }
 }

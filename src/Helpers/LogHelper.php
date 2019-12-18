@@ -3,9 +3,7 @@
 namespace Tochka\JsonRpc\Helpers;
 
 /**
- * Class LogHelper
- *
- * @package App\Helpers
+ * Хелпер для работы с логами
  */
 class LogHelper
 {
@@ -22,7 +20,7 @@ class LogHelper
 
     protected static function hideDataByRule($data, array $rule): array
     {
-        if (\is_object($data)) {
+        if (is_object($data)) {
             $data = (array) $data;
         }
 
@@ -36,11 +34,13 @@ class LogHelper
             foreach ($data as $key => $value) {
                 $data[$key] = self::hideDataByRule($data[$key], $rule);
             }
-        } else if (isset($data[$key])) {
-            if (count($rule)) {
-                $data[$key] = self::hideDataByRule($data[$key], $rule);
-            } else {
-                $data[$key] = '***';
+        } else {
+            if (isset($data[$key])) {
+                if (count($rule)) {
+                    $data[$key] = self::hideDataByRule($data[$key], $rule);
+                } else {
+                    $data[$key] = '***';
+                }
             }
         }
 

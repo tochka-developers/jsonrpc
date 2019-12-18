@@ -3,16 +3,17 @@
 namespace Tochka\JsonRpc\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use Tochka\JsonRpc\Exceptions\JsonRpcHandler as Handler;
 
 /**
- * JsonRpcHandler Facade
+ * Обработчик исключений JsonRpc
  * @method static handle(\Exception $e)
+ *
+ * @see \Tochka\JsonRpc\Exceptions\ExceptionHandler
  */
-class JsonRpcHandler extends Facade
+class ExceptionHandler extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return Handler::class;
+        return self::class;
     }
 }

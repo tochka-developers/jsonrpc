@@ -2,13 +2,7 @@
 
 namespace Tochka\JsonRpc\Exceptions;
 
-use Exception;
-
-/**
- * Class WebServiceException
- * @package App\Exceptions
- */
-class JsonRpcException extends Exception
+class JsonRpcException extends \Exception
 {
     public const CODE_PARSE_ERROR = -32700;
     public const CODE_INVALID_REQUEST = -32600;
@@ -38,7 +32,7 @@ class JsonRpcException extends Exception
 
     protected $data;
 
-    public function __construct($code = 0, $message = null, $data = null, Exception $previous = null)
+    public function __construct($code = 0, $message = null, $data = null, \Exception $previous = null)
     {
         if ($message === null && !empty($this->jsonrpc_messages[$code])) {
             $message = $this->jsonrpc_messages[$code];

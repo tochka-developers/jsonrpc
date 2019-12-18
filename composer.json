@@ -14,7 +14,7 @@
     "illuminate/support": "5.7.*|5.8.*|^6.0",
     "illuminate/http": "5.7.*|5.8.*|^6.0",
     "illuminate/container": "5.7.*|5.8.*|^6.0",
-    "tochka-developers/jsonrpc-smd": "^1.0",
+    "illuminate/pipeline": "5.7.*|5.8.*|^6.0",
     "phpdocumentor/reflection-docblock": "~4.3"
   },
   "require-dev": {

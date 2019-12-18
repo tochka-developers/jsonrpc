@@ -2,49 +2,48 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Request;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Tochka\JsonRpc\JsonRpcRequest;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 
-class ServiceValidationMiddleware implements BaseMiddleware
+class ServiceValidationMiddleware
 {
     /**
      * Handle an incoming request.
      *
      * @param JsonRpcRequest $request
+     * @param callable       $next
+     * @param array          $servers
      *
      * @return mixed
-     * @throws JsonRpcException
+     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
-    public function handle($request)
+    public function handle(JsonRpcRequest $request, $next, array $servers = [])
     {
-        $allow_ips = Config::get('jsonrpc.servers.' . $request->service);
-
         // если не заданы настройки - по умолчанию запрещаем доступ
-        if (null === $allow_ips) {
+        if (empty($servers)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
         // если разрешено всем
-        if ($allow_ips === '*') {
-            return true;
+        if ($servers === '*') {
+            return $next($request);
         }
 
-        if (!\is_array($allow_ips)) {
+        if (!is_array($servers)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
         // если разрешено всем
-        if (\in_array('*', $allow_ips, true)) {
-            return true;
+        if (in_array('*', $servers, true)) {
+            return $next($request);
         }
 
         $ip = Request::ip();
-        if (!\in_array($ip, $allow_ips, true)) {
+        if (!in_array($ip, $servers, true)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
-        return true;
+        return $next($request);
     }
 }

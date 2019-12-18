@@ -3,51 +3,62 @@
 namespace Tochka\JsonRpc\Middleware;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Tochka\JsonRpc\JsonRpcRequest;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 
-class AccessControlListMiddleware implements BaseMiddleware
+class AccessControlListMiddleware
 {
     /**
      * Handle an incoming request.
      *
      * @param JsonRpcRequest $request
+     * @param callable       $next
+     * @param array          $acl
      *
      * @return mixed
-     * @throws JsonRpcException
+     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
-    public function handle($request)
+    public function handle(JsonRpcRequest $request, $next, array $acl = [])
     {
         if (empty($request->controller) || empty($request->method)) {
-            throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR, 'JsonRpc server configuration error: Place AccessControlListMiddleware after MethodClosureMiddleware in middleware list!');
+            throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR,
+                'JsonRpc server configuration error: Place AccessControlListMiddleware after MethodClosureMiddleware in middleware list!');
         }
 
-        $controller = \get_class($request->controller);
-        $method = $request->method;
+        $controllerName = get_class($request->controller);
+        $methodName = $request->method;
 
         $service = $request->service;
 
-        $controllerAcl = $request->server->acl[$controller] ?? [];
+        $globalRules = (array) ($acl['*'] ?? []);
+        $controllerRules = (array) ($acl[$controllerName] ?? []);
+        $methodRules = (array) ($acl[$controllerName . '@' . $methodName] ?? []);
 
-        if (\is_string($controllerAcl)) {
-            $acl = [$controllerAcl];
-        } else {
-            $acl = $controllerAcl[$method] ?? $controllerAcl['*'] ?? [];
-        }
-
-        // если указано только одна значение строкой - приведем к массиву
-        if (\is_string($acl)) {
-            $acl = [$acl];
-        }
-
-        // если конфигурация неверная
-        if (!\is_array($acl) || empty($acl)) {
+        // если не попали ни под одно правило - значит сервису нельзя
+        if (empty($globalRules) && empty($controllerRules) && empty($methodRules)) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
-        if (!\in_array('*', $acl, true) && !\in_array($service, $acl, true)) {
+        $this->checkRules($service, $methodRules);
+        $this->checkRules($service, $controllerRules);
+        $this->checkRules($service, $globalRules);
+
+        return $next($request);
+    }
+
+    /**
+     * @param string $service
+     * @param array  $rules
+     *
+     * @throws JsonRpcException
+     */
+    protected function checkRules(string $service, array $rules): void
+    {
+        if (
+            !empty($rules)
+            && !in_array('*', $rules, true)
+            && !in_array($service, $rules, true)
+        ) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
-
-        return true;
     }
 }
