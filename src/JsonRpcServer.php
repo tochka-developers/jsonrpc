@@ -3,20 +3,18 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Tochka\JsonRpc\Facades\ExceptionHandler;
 use Tochka\JsonRpc\Support\JsonRpcHandleResolver;
 use Tochka\JsonRpc\Support\JsonRpcParser;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Support\JsonRpcResponse;
 use Tochka\JsonRpc\Support\MiddlewarePipeline;
+use Tochka\JsonRpc\Support\ResponseCollection;
 use Tochka\JsonRpc\Support\ServerConfig;
 
 /**
- * Class JsonRpcServer
- *
- * @package Tochka\JsonRpc
+ * JsonRpcServer
  */
 class JsonRpcServer
 {
@@ -34,57 +32,55 @@ class JsonRpcServer
     }
 
     /**
-     * @param Request     $request
+     * Обработка запроса
+     *
+     * @param string      $content
      * @param string      $serverName
      * @param string|null $group
      * @param string|null $action
      *
-     * @return Response
+     * @return ResponseCollection
      */
     public function handle(
-        Request $request,
+        string $content,
         string $serverName = 'default',
         string $group = null,
         string $action = null
-    ): ?Response {
+    ): ResponseCollection {
         try {
             $this->config = new ServerConfig(Config::get('jsonrpc.' . $serverName, []));
             $pipeline = new MiddlewarePipeline(Container::getInstance());
 
-            $requests = $this->parser->parse($request);
+            $requests = $this->parser->parse($content);
 
             $responses = $pipeline->send($requests)
                 ->through($this->config->onceExecutedMiddleware)
                 ->via('handle')
                 ->then(function (array $requests) use ($group, $action) {
-                    $responses = [];
+                    $responses = new ResponseCollection();
                     foreach ($requests as $request) {
                         $response = $this->handleRequest($request, $group, $action);
 
-                        if (!empty($response)) {
-                            $responses[] = $response;
+                        if ($response !== null) {
+                            $responses->add($response);
                         }
                     }
 
                     return $responses;
                 });
         } catch (\Exception $e) {
-            $responses = [$this->resultError($e)];
+            $responses = new ResponseCollection();
+            $responses->add(JsonRpcResponse::error(ExceptionHandler::handle($e)));
         }
 
-        if (empty($responses)) {
-            return new Response('', Response::HTTP_OK);
-        }
-
-        $response = count($responses) > 1 ? $responses : (array) $responses[0];
-        $json = json_encode($response, JSON_UNESCAPED_UNICODE);
-
-        return new Response($json, Response::HTTP_OK, ['Content-Type' => 'application/json']);
-
+        return $responses;
     }
 
-    public function handleRequest(JsonRpcRequest $request, string $group = null, string $action = null)
-    {
+    public function handleRequest(
+        JsonRpcRequest $request,
+        string $group = null,
+        string $action = null
+    ): ?JsonRpcResponse {
         try {
             $pipeline = new MiddlewarePipeline(Container::getInstance());
             $this->resolver->resolve($request, $group, $action);
@@ -94,30 +90,15 @@ class JsonRpcServer
                 ->via('handle')
                 ->then(static function (JsonRpcRequest $request) {
                     $result = $request->controller->{$request->method}(...$request->params);
+
                     if (empty($request->id)) {
                         return null;
                     }
 
-                    // создаем ответ
-                    $answer = (object) [];
-                    $answer->jsonrpc = '2.0';
-                    $answer->id = $request->id;
-                    $answer->result = $result;
-
-                    return $answer;
-
+                    return JsonRpcResponse::result($result, $request->id);
                 });
         } catch (\Exception $e) {
-            return $this->resultError($e);
+            return JsonRpcResponse::error(ExceptionHandler::handle($e), $request->id);
         }
-    }
-
-    private function resultError(\Exception $e): \stdClass
-    {
-        $answer = (object) [];
-        $answer->jsonrpc = '2.0';
-        $answer->error = ExceptionHandler::handle($e);
-
-        return $answer;
     }
 }

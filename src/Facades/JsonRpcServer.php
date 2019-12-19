@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Facade;
 
 /**
  * JsonRpc Server
- * @method static handle(\Illuminate\Http\Request $request, string $serverName = 'default', string $group = null,string $action = null)
+ * @method static handle(string $request, string $serverName = 'default', string $group = null,string $action = null)
  *
  * @see \Tochka\JsonRpc\JsonRpcServer
  */
