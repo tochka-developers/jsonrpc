@@ -10,23 +10,15 @@ use Tochka\JsonRpc\Middleware\ServiceValidationMiddleware;
 use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
 
 return [
-    // Описание сервиса (для SMD-схемы)
-    'description' => 'JsonRpc Server',
+    'default' => [
+        // Описание сервиса (для SMD-схемы)
+        'description' => 'JsonRpc Server',
 
-    'default'          => [
-        // Пространство имен для контроллеров по умолчанию
-        'controllerNamespace' => 'App\\Http\\Controllers\\',
+        // Namespace, в котором находятся контроллеры
+        'namespace'   => 'App\Http\Controllers',
 
-        //Суффикс для имен контроллеров по умолчанию
-        'controllerPostfix'   => 'Controller',
-
-        //Контроллер по умолчанию для методов без имени сервиса (ping)
-        'defaultController'   => 'Api',
-
-        /**
-         * Обработчики запросов
-         */
-        'middleware'       => [
+        // Обработчики запросов
+        'middleware'  => [
             LogMiddleware::class               => [
                 // Канал лога, в который будут записываться все логи
                 'channel' => 'default',
@@ -42,12 +34,12 @@ return [
             TokenAuthMiddleware::class         => [
                 'headerName' => 'X-Tochka-Access-Key',
                 // Ключи доступа к API
-                'tokens' => [
+                'tokens'     => [
                     'all' => 'TOKEN',
                 ],
             ],
             ServiceValidationMiddleware::class => [
-                //Р азрешенные сервера, которые могут авторизовываться под указанными сервисами
+                // Разрешенные сервера, которые могут авторизовываться под указанными сервисами
                 'servers' => [
                     //'service1' => ['192.168.0.1', '192.168.1.5'],
                     //'service2' => '*',

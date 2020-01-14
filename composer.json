@@ -18,7 +18,9 @@
     "phpdocumentor/reflection-docblock": "~4.3"
   },
   "require-dev": {
-    "roave/security-advisories": "dev-master"
+    "roave/security-advisories": "dev-master",
+    "phpunit/phpunit": "^8.0",
+    "mockery/mockery": "^1.0"
   },
   "autoload": {
     "psr-4": {
@@ -27,6 +29,11 @@
     "files": [
       "src/helpers.php"
     ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tochka\\JsonRpc\\Tests\\": "tests/"
+    }
   },
   "extra": {
     "laravel": {

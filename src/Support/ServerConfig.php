@@ -7,12 +7,14 @@ use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
 class ServerConfig
 {
     public $description;
+    public $namespace;
     public $middleware = [];
     public $onceExecutedMiddleware = [];
 
     public function __construct(array $config)
     {
         $this->description = data_get($config, 'description', 'JsonRpc Server');
+        $this->namespace = data_get($config, 'namespace', 'App\Http\Controllers');
 
         $middleware = $this->parseMiddlewareConfiguration($config['middleware'] ?? []);
         $this->sortMiddleware($middleware);
@@ -22,7 +24,6 @@ class ServerConfig
      * @param $middleware
      *
      * @return array
-     * @codeCoverageIgnore
      */
     protected function parseMiddlewareConfiguration($middleware): array
     {

@@ -10,6 +10,7 @@ class MiddlewarePipeline extends Pipeline
      * Get a Closure that represents a slice of the application onion.
      *
      * @return \Closure
+     * @codeCoverageIgnore
      */
     protected function carry(): \Closure
     {
@@ -78,7 +79,7 @@ class MiddlewarePipeline extends Pipeline
             $type = $reflectionParameters[$i]->getType();
             if ($type === null || $type->isBuiltin()) {
                 if (!$reflectionParameters[$i]->isOptional()) {
-                    new \RuntimeException('Error while handling middleware: unknown parameter ' . $reflectionParamName);
+                    throw new \RuntimeException('Error while handling middleware: unknown parameter ' . $reflectionParamName);
                 }
 
                 // получим значение аргумента по умолчанию

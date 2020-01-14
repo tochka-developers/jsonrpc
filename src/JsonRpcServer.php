@@ -83,7 +83,7 @@ class JsonRpcServer
     ): ?JsonRpcResponse {
         try {
             $pipeline = new MiddlewarePipeline(Container::getInstance());
-            $this->resolver->resolve($request, $group, $action);
+            $this->resolver->resolve($request, $this->config->namespace, $group, $action);
 
             return $pipeline->send($request)
                 ->through($this->config->middleware)

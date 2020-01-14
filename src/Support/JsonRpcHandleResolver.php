@@ -3,7 +3,6 @@
 namespace Tochka\JsonRpc\Support;
 
 use Illuminate\Container\Container;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 
@@ -18,63 +17,28 @@ class JsonRpcHandleResolver
 
     /**
      * @param JsonRpcRequest $request
+     * @param string         $namespace
      * @param string|null    $group
      * @param string|null    $action
      *
      * @return bool
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      * @throws \ReflectionException
+     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
-    public function resolve(JsonRpcRequest $request, string $group = null, string $action = null): bool
-    {
+    public function resolve(
+        JsonRpcRequest $request,
+        string $namespace,
+        string $group = null,
+        string $action = null
+    ): bool {
         if (empty($request->call->jsonrpc) || $request->call->jsonrpc !== '2.0' || empty($request->call->method)) {
             throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
         }
 
-        $method = $request->call->method;
+        [$controllerName, $method] = $this->getHandledMethod($request, $namespace, $group, $action);
 
-        $namespace = Route::current()->getAction('namespace');
-        $namespace = trim($namespace, '\\');
-
-        if ($group !== null) {
-            $namespace .= '\\' . Str::studly($group);
-        }
-
-        if ($action !== null) {
-            $controllerName = $action;
-        } else {
-            $methodCall = $request->call->method;
-
-            // парсим имя метода
-            $methodArray = explode('_', $methodCall);
-
-            if (count($methodArray) < 2) {
-                throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
-            }
-
-            $controllerName = array_shift($methodArray);
-            $method = Str::camel(implode('_', $methodArray));
-        }
-
-        $controllerName = $namespace . '\\' . Str::studly($controllerName . $this->controllerSuffix);
-
-        // если нет такого контроллера или метода
-        if (!class_exists($controllerName)) {
-            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
-        }
-
-        $controller = Container::getInstance()->make($controllerName);
-
-        if (!is_callable([$controller, $method]) || $method === 'setJsonRpcRequest') {
-            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
-        }
-
-        if (method_exists($controller, 'setJsonRpcRequest')) {
-            $controller->setJsonRpcRequest($request);
-        }
-
-        $request->controller = $controller;
+        $request->controller = $this->initializeController($controllerName, $method, $request);
         $request->method = $method;
         $request->params = $this->getCallParams($request);
 
@@ -116,24 +80,7 @@ class JsonRpcHandleResolver
                 }
             } else {
                 // Проверяем тип
-                $parameterType = strtolower(class_basename((string) $parameter->getType()));
-                switch ($parameterType) {
-                    case 'int':
-                    case 'integer':
-                        $parameterType = 'integer';
-                        break;
-                    case 'float':
-                    case 'double':
-                        $parameterType = 'double';
-                        break;
-                    case 'boolean':
-                    case 'bool':
-                        $parameterType = 'boolean';
-                        break;
-                    case 'stdclass':
-                        $parameterType = 'object';
-                        break;
-                }
+                $parameterType = $this->getCanonicalTypeName((string) $parameter->getType());
 
                 if (null !== $parameter->getType() && gettype($value) !== $parameterType) {
                     $errors[] = [
@@ -153,5 +100,111 @@ class JsonRpcHandleResolver
         }
 
         return $args;
+    }
+
+    /**
+     * @param JsonRpcRequest $request
+     * @param string         $namespace
+     * @param string|null    $group
+     * @param string|null    $action
+     *
+     * @return array
+     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     */
+    protected function getHandledMethod(
+        JsonRpcRequest $request,
+        string $namespace,
+        string $group = null,
+        string $action = null
+    ): array {
+        $method = $request->call->method;
+
+        $namespace = trim($namespace, '\\');
+
+        if ($group !== null) {
+            $namespace .= '\\' . Str::studly($group);
+        }
+
+        if ($action !== null) {
+            $controllerName = $action;
+        } else {
+            $methodCall = $request->call->method;
+
+            // парсим имя метода
+            $methodArray = explode('_', $methodCall);
+
+            if (count($methodArray) < 2) {
+                throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
+            }
+
+            $controllerName = array_shift($methodArray);
+            $method = Str::camel(implode('_', $methodArray));
+        }
+
+        $controllerName = $namespace . '\\' . Str::studly($controllerName . $this->controllerSuffix);
+
+        return [$controllerName, $method];
+    }
+
+    /**
+     * @param string         $controllerName
+     * @param string         $method
+     * @param JsonRpcRequest $request
+     *
+     * @return mixed
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     */
+    protected function initializeController(string $controllerName, string $method, JsonRpcRequest $request)
+    {
+        // если нет такого контроллера или метода
+        if (!class_exists($controllerName)) {
+            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
+        }
+
+        $controller = Container::getInstance()->make($controllerName);
+
+        if (!is_callable([$controller, $method]) || $method === 'setJsonRpcRequest') {
+            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
+        }
+
+        if (method_exists($controller, 'setJsonRpcRequest')) {
+            $controller->setJsonRpcRequest($request);
+        }
+
+        return $controller;
+    }
+
+    /**
+     * @param string $type
+     *
+     * @return string
+     */
+    private function getCanonicalTypeName(string $type): string
+    {
+        $parameterType = strtolower(class_basename($type));
+        switch ($parameterType) {
+            case 'str':
+            case 'string':
+                $parameterType = 'string';
+                break;
+            case 'int':
+            case 'integer':
+                $parameterType = 'integer';
+                break;
+            case 'float':
+            case 'double':
+                $parameterType = 'double';
+                break;
+            case 'boolean':
+            case 'bool':
+                $parameterType = 'boolean';
+                break;
+            case 'stdclass':
+                $parameterType = 'object';
+                break;
+        }
+
+        return $parameterType;
     }
 }
