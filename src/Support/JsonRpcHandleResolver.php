@@ -80,14 +80,17 @@ class JsonRpcHandleResolver
                 }
             } else {
                 // Проверяем тип
-                $parameterType = $this->getCanonicalTypeName((string) $parameter->getType());
+                $type = $parameter->getType();
+                if ($type) {
+                    $parameterType = $this->getCanonicalTypeName($type->getName());
 
-                if (null !== $parameter->getType() && gettype($value) !== $parameterType) {
-                    $errors[] = [
-                        'code'        => 'invalid_parameter',
-                        'message'     => 'Передан аргумент неверного типа',
-                        'object_name' => $parameter->getName(),
-                    ];
+                    if (gettype($value) !== $parameterType) {
+                        $errors[] = [
+                            'code'        => 'invalid_parameter',
+                            'message'     => 'Передан аргумент неверного типа',
+                            'object_name' => $parameter->getName(),
+                        ];
+                    }
                 }
             }
 

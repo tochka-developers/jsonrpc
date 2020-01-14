@@ -87,7 +87,7 @@ class MiddlewarePipeline extends Pipeline
                 continue;
             }
 
-            $values[] = $this->container->make((string)$type);
+            $values[] = $this->container->make($type->getName());
         }
 
         return [$name, $values];
