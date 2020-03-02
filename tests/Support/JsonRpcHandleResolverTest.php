@@ -101,19 +101,19 @@ class JsonRpcHandleResolverTest extends TestCase
      * @throws \ReflectionException
      * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
-    public function testResolve(): void
-    {
-        $call = (object) [
-            'jsonrpc' => '3.0',
-            'method'  => 'same_method',
-        ];
-
-        $request = new JsonRpcRequest($call);
-
-        //\Mockery::mock()
-
-        $this->resolver->resolve($request, '');
-    }
+    // public function testResolve(): void
+    // {
+    //     $call = (object) [
+    //         'jsonrpc' => '3.0',
+    //         'method'  => 'same_method',
+    //     ];
+    //
+    //     $request = new JsonRpcRequest($call);
+    //
+    //     //\Mockery::mock()
+    //
+    //     $this->resolver->resolve($request, '');
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCanonicalTypeName
@@ -145,136 +145,136 @@ class JsonRpcHandleResolverTest extends TestCase
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
      */
-    public function testInitializeControllerWithoutClass(): void
-    {
-
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
-     */
-    public function testInitializeControllerWithErrorDI(): void
-    {
-
-    }
+    // public function testInitializeControllerWithoutClass(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
      */
-    public function testInitializeControllerWithoutMethod(): void
-    {
-
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
-     */
-    public function testInitializeControllerWithForbiddenMethod(): void
-    {
-
-    }
+    // public function testInitializeControllerWithErrorDI(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
      */
-    public function testInitializeControllerWithSetRequest(): void
-    {
-
-    }
+    // public function testInitializeControllerWithoutMethod(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
      */
-    public function testInitializeControllerWithoutSetRequest(): void
-    {
+    // public function testInitializeControllerWithForbiddenMethod(): void
+    // {
+    //
+    // }
 
-    }
+    /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
+     */
+    // public function testInitializeControllerWithSetRequest(): void
+    // {
+    //
+    // }
+
+    /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::initializeController
+     */
+    // public function testInitializeControllerWithoutSetRequest(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
      */
-    public function testGetHandledMethodWithoutGroupAndAction(): void
-    {
-
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
-     */
-    public function testGetHandledMethodWithGroupAndWithoutAction(): void
-    {
-
-    }
+    // public function testGetHandledMethodWithoutGroupAndAction(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
      */
-    public function testGetHandledMethodWithGroupAndAction(): void
-    {
-
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
-     */
-    public function testGetHandledMethodWithIncorrectMethodName(): void
-    {
-
-    }
+    // public function testGetHandledMethodWithGroupAndWithoutAction(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
      */
-    public function testGetHandledMethodWithCustomControllerSuffix(): void
-    {
+    // public function testGetHandledMethodWithGroupAndAction(): void
+    // {
+    //
+    // }
 
-    }
+    /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
+     */
+    // public function testGetHandledMethodWithIncorrectMethodName(): void
+    // {
+    //
+    // }
+
+    /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getHandledMethod
+     */
+    // public function testGetHandledMethodWithCustomControllerSuffix(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
      */
-    public function testGetCallParamsEmptyParams(): void
-    {
-
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
-     */
-    public function testGetCallParamsIncorrectTypes(): void
-    {
-
-    }
+    // public function testGetCallParamsEmptyParams(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
      */
-    public function testGetCallParamsWithoutRequired(): void
-    {
-
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
-     */
-    public function testGetCallParamsWithDefaultValues(): void
-    {
-
-    }
+    // public function testGetCallParamsIncorrectTypes(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
      */
-    public function testGetCallParamsExtraParams(): void
-    {
-
-    }
+    // public function testGetCallParamsWithoutRequired(): void
+    // {
+    //
+    // }
 
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
      */
-    public function testGetCallParamsNormal(): void
-    {
+    // public function testGetCallParamsWithDefaultValues(): void
+    // {
+    //
+    // }
 
-    }
+    /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
+     */
+    // public function testGetCallParamsExtraParams(): void
+    // {
+    //
+    // }
+
+    /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::getCallParams
+     */
+    // public function testGetCallParamsNormal(): void
+    // {
+    //
+    // }
 }
