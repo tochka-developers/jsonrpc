@@ -14,6 +14,7 @@ class ExceptionHandler
      *
      * @return \StdClass
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws \Exception
      */
     public function handle(\Exception $e): \StdClass
     {

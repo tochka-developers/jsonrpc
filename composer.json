@@ -14,8 +14,7 @@
         "illuminate/support": "5.7.*|5.8.*|^6.0|^7.0",
         "illuminate/http": "5.7.*|5.8.*|^6.0|^7.0",
         "illuminate/container": "5.7.*|5.8.*|^6.0|^7.0",
-        "illuminate/pipeline": "5.7.*|5.8.*|^6.0|^7.0",
-        "phpdocumentor/reflection-docblock": "~4.3"
+        "illuminate/pipeline": "5.7.*|5.8.*|^6.0|^7.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",
