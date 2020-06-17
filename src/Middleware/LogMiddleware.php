@@ -24,7 +24,7 @@ class LogMiddleware
         $controllerRules = $hideParams[get_class($request->controller)] ?? [];
         $methodRules = $hideParams[get_class($request->controller) . '@' . $request->method] ?? [];
         $rules = array_merge($globalRules, $controllerRules, $methodRules);
-        $logRequest['params'] = LogHelper::hidePrivateData($request->params ?? [], $rules);
+        $logRequest['params'] = LogHelper::hidePrivateData((array) ($request->call->params ?? []), $rules);
 
         Log::channel($channel)->info('New request', $logContext + ['request' => $logRequest]);
 
