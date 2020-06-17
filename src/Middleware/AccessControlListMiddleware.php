@@ -38,9 +38,16 @@ class AccessControlListMiddleware
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
         }
 
-        $this->checkRules($service, $methodRules);
-        $this->checkRules($service, $controllerRules);
-        $this->checkRules($service, $globalRules);
+        // если есть правила для метода - ориентируемся только на них
+        if (!empty($methodRules)) {
+            $this->checkRules($service, $methodRules);
+            // иначе смотрим на правила для контроллера
+        } elseif (!empty($controllerRules)) {
+            $this->checkRules($service, $controllerRules);
+            // ну и если даже их нет - смотрим глобальные правила
+        } elseif (!empty($globalRules)) {
+            $this->checkRules($service, $globalRules);
+        }
 
         return $next($request);
     }
@@ -54,8 +61,7 @@ class AccessControlListMiddleware
     protected function checkRules(string $service, array $rules): void
     {
         if (
-            !empty($rules)
-            && !in_array('*', $rules, true)
+            !in_array('*', $rules, true)
             && !in_array($service, $rules, true)
         ) {
             throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
