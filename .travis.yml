@@ -11,6 +11,7 @@ env:
   - FRAMEWORK="laravel/framework:5.8.*"
   - FRAMEWORK="laravel/framework:6.*"
   - FRAMEWORK="laravel/framework:7.*"
+  - FRAMEWORK="laravel/framework:8.*"
 
 php:
   - '7.2'
