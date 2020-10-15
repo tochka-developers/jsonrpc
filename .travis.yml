@@ -21,6 +21,9 @@ php:
 script: "vendor/bin/phpunit --no-coverage"
 
 jobs:
+  exclude:
+    - php: 7.2
+      env: FRAMEWORK="laravel/framework:8.*"
   include:
     - stage: "Sonar Analyze"
       dist: trusty
