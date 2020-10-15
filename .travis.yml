@@ -28,7 +28,7 @@ jobs:
     - stage: "Sonar Analyze"
       dist: trusty
       php: 7.4
-      env: FRAMEWORK="laravel/framework:7.*"
+      env: FRAMEWORK="laravel/framework:8.*"
       install:
         - pecl install pcov
         - composer install
