@@ -21,6 +21,20 @@ class JsonRpcHandleResolverTest extends TestCase
     }
 
     /**
+     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::setMethodDelimiter
+     * @throws \ReflectionException
+     */
+    public function testSetMethodDelimiter(): void
+    {
+        $delimiter = 'same';
+
+        $this->resolver->setMethodDelimiter($delimiter);
+        $actualDelimiter = $this->getProperty($this->resolver, 'methodDelimiter');
+
+        $this->assertEquals($delimiter, $actualDelimiter);
+    }
+
+    /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::setControllerSuffix
      * @throws \ReflectionException
      */
