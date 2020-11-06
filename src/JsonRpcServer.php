@@ -83,6 +83,9 @@ class JsonRpcServer
     ): ?JsonRpcResponse {
         try {
             $pipeline = new MiddlewarePipeline(Container::getInstance());
+
+            $this->resolver->setControllerSuffix($this->config->controllerSuffix);
+            $this->resolver->setMethodDelimiter($this->config->methodDelimiter);
             $this->resolver->resolve($request, $this->config->namespace, $group, $action);
 
             return $pipeline->send($request)

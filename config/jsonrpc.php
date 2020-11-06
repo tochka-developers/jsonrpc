@@ -17,6 +17,12 @@ return [
         // Namespace, в котором находятся контроллеры
         'namespace'   => 'App\Http\Controllers',
 
+        // Suffix для контроллеров
+        'controllerSuffix' => 'Controller',
+
+        // разделитель для имен методов
+        'methodDelimiter' => '_',
+
         // Обработчики запросов
         'middleware'  => [
             LogMiddleware::class               => [

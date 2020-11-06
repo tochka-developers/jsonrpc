@@ -8,6 +8,8 @@ class ServerConfig
 {
     public $description;
     public $namespace;
+    public $controllerSuffix;
+    public $methodDelimiter;
     public $middleware = [];
     public $onceExecutedMiddleware = [];
 
@@ -15,6 +17,8 @@ class ServerConfig
     {
         $this->description = data_get($config, 'description', 'JsonRpc Server');
         $this->namespace = data_get($config, 'namespace', 'App\Http\Controllers');
+        $this->controllerSuffix = data_get($config, 'controllerSuffix', 'Controller');
+        $this->methodDelimiter = data_get($config, 'methodDelimiter', '_');
 
         $middleware = $this->parseMiddlewareConfiguration($config['middleware'] ?? []);
         $this->sortMiddleware($middleware);
