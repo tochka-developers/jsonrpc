@@ -8,7 +8,14 @@ use Tochka\JsonRpc\Exceptions\JsonRpcException;
 
 class JsonRpcHandleResolver
 {
+    protected $methodDelimiter = '_';
+
     protected $controllerSuffix = 'Controller';
+
+    public function setMethodDelimiter(string $delimiter): void
+    {
+        $this->methodDelimiter = $delimiter;
+    }
 
     public function setControllerSuffix(string $suffix): void
     {
@@ -134,7 +141,7 @@ class JsonRpcHandleResolver
             $methodCall = $request->call->method;
 
             // парсим имя метода
-            $methodArray = explode('_', $methodCall);
+            $methodArray = explode($this->methodDelimiter, $methodCall);
 
             if (count($methodArray) < 2) {
                 throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
