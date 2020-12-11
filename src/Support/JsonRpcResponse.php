@@ -50,7 +50,17 @@ class JsonRpcResponse implements Jsonable, Arrayable
         }
 
         if ($this->error !== null) {
-            $result['error'] = $this->error;
+            if ($this->error instanceof Arrayable) {
+                $result['error'] = $this->error->toArray();
+            } elseif ($this->error instanceof \JsonSerializable) {
+                $result['error'] = $this->error->jsonSerialize();
+            } else {
+                $result['error'] = $this->error;
+            }
+        } elseif ($this->result instanceof Arrayable) {
+            $result['result'] = $this->result->toArray();
+        } elseif ($this->result instanceof \JsonSerializable) {
+            $result['result'] = $this->result->jsonSerialize();
         } else {
             $result['result'] = $this->result;
         }
