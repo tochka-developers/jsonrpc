@@ -8,6 +8,10 @@
             "email": "darkdarin@tochka.com"
         }
     ],
+    "keywords": [
+        "jsonrpc",
+        "laravel"
+    ],
     "require": {
         "php": ">=7.2",
         "ext-json": "*",
