@@ -7,7 +7,8 @@ use Illuminate\Contracts\Support\Jsonable;
 
 class ResponseCollection implements Jsonable, Arrayable
 {
-    public $items = [];
+    /** @var array<JsonRpcResponse> */
+    public array $items = [];
 
     public function add(JsonRpcResponse $response): void
     {
@@ -21,10 +22,11 @@ class ResponseCollection implements Jsonable, Arrayable
 
     /**
      * @inheritDoc
+     * @throws \JsonException
      */
     public function toJson($options = 0)
     {
-        return json_encode($this->toArray(), $options | JSON_UNESCAPED_UNICODE);
+        return json_encode($this->toArray(), JSON_THROW_ON_ERROR | $options | JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -39,9 +41,7 @@ class ResponseCollection implements Jsonable, Arrayable
         }
 
         return array_map(
-            static function (JsonRpcResponse $item) {
-                return $item->toArray();
-            },
+            fn(JsonRpcResponse $item) => $item->toArray(),
             $this->items
         );
     }

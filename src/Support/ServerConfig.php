@@ -6,12 +6,13 @@ use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
 
 class ServerConfig
 {
-    public $description;
-    public $namespace;
-    public $controllerSuffix;
-    public $methodDelimiter;
-    public $middleware = [];
-    public $onceExecutedMiddleware = [];
+    public string $description;
+    public string $namespace;
+    public string $controllerSuffix;
+    public string $methodDelimiter;
+    public array $middleware = [];
+    public array $onceExecutedMiddleware = [];
+    public string $paramsResolver;
 
     public function __construct(array $config)
     {
@@ -19,6 +20,7 @@ class ServerConfig
         $this->namespace = data_get($config, 'namespace', 'App\Http\Controllers');
         $this->controllerSuffix = data_get($config, 'controllerSuffix', 'Controller');
         $this->methodDelimiter = data_get($config, 'methodDelimiter', '_');
+        $this->paramsResolver = data_get($config, 'paramsResolver', JsonRpcHandleResolver::PARAMS_RESOLVER_DTO);
 
         $middleware = $this->parseMiddlewareConfiguration($config['middleware'] ?? []);
         $this->sortMiddleware($middleware);

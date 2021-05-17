@@ -11,7 +11,7 @@ use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
 
 return [
     'default' => [
-        // Описание сервиса (для SMD-схемы)
+        // Описание сервиса
         'description' => 'JsonRpc Server',
 
         // Namespace, в котором находятся контроллеры
@@ -22,6 +22,11 @@ return [
 
         // разделитель для имен методов
         'methodDelimiter' => '_',
+
+        // как должны резолвиться параметры в методах
+        // PARAMS_RESOLVER_DTO - кастинг к DTO
+        // PARAMS_RESOLVER_BY_METHOD - старая логика - параметры из запроса пытаются смапиться в аргументы метода
+        'paramsResolver' => \Tochka\JsonRpc\Support\JsonRpcHandleResolver::PARAMS_RESOLVER_DTO,
 
         // Обработчики запросов
         'middleware'  => [

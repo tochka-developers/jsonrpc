@@ -32,6 +32,7 @@ class JsonRpcParserTest extends TestCase
     /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcParser::parse
      * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     * @throws \JsonException
      */
     public function testParseInvalidJson(): void
     {

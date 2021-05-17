@@ -1,38 +1,33 @@
 <?php
 
+use Illuminate\Support\Facades\App;
+
 if (!function_exists('config_path')) {
     /**
      * Get the configuration path.
-     *
-     * @param string $path
-     * @return string
      */
-    function config_path($path = '')
+    function config_path(string $path = ''): string
     {
-        return app()->basePath() . '/config' . ($path ? '/' . $path : $path);
+        return App::basePath() . '/config' . ($path ? '/' . $path : $path);
     }
 }
 
 if (!function_exists('is_lumen')) {
     /**
      * Check lumen framework
-     *
-     * @return boolean
      */
-    function is_lumen()
+    function is_lumen(): bool
     {
-        return (bool)preg_match('/Lumen/iu', app()->version());
+        return stripos(App::version(), "Lumen") !== false;
     }
 }
 
 if (!function_exists('getVersion')) {
     /**
      * Check framework version
-     *
-     * @return boolean
      */
-    function getVersion()
+    function getVersion(): string
     {
-        return preg_replace('/.*(([0-9]\.[0-9])[0-9]*).*/ui', '$2', app()->version());
+        return preg_replace('/.*(([0-9]\.[0-9])[0-9]*).*/ui', '$2', App::version());
     }
 }

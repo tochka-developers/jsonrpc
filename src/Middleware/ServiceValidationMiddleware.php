@@ -11,14 +11,14 @@ class ServiceValidationMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param JsonRpcRequest $request
-     * @param callable       $next
-     * @param array          $servers
+     * @param JsonRpcRequest    $request
+     * @param callable          $next
+     * @param array|string|null $servers
      *
      * @return mixed
      * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
-    public function handle(JsonRpcRequest $request, $next, array $servers = [])
+    public function handle(JsonRpcRequest $request, callable $next, $servers = [])
     {
         // если не заданы настройки - по умолчанию запрещаем доступ
         if (empty($servers)) {

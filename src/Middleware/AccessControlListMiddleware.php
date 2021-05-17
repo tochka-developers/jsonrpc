@@ -17,7 +17,7 @@ class AccessControlListMiddleware
      * @return mixed
      * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
-    public function handle(JsonRpcRequest $request, $next, array $acl = [])
+    public function handle(JsonRpcRequest $request, callable $next, array $acl = [])
     {
         if (empty($request->controller) || empty($request->method)) {
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR,

@@ -27,7 +27,7 @@ class TokenAuthMiddleware implements OnceExecutedMiddleware
      */
     public function handle(
         array $requests,
-        $next,
+        callable $next,
         Request $httpRequest,
         string $headerName = 'X-Access-Key',
         array $tokens = []

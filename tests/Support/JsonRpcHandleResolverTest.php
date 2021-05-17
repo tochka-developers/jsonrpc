@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Support\JsonRpcHandleResolver;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Support\ServerConfig;
 use Tochka\JsonRpc\Tests\TestHelpers\ReflectionTrait;
 
 class JsonRpcHandleResolverTest extends TestCase
@@ -21,34 +22,6 @@ class JsonRpcHandleResolverTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::setMethodDelimiter
-     * @throws \ReflectionException
-     */
-    public function testSetMethodDelimiter(): void
-    {
-        $delimiter = 'same';
-
-        $this->resolver->setMethodDelimiter($delimiter);
-        $actualDelimiter = $this->getProperty($this->resolver, 'methodDelimiter');
-
-        $this->assertEquals($delimiter, $actualDelimiter);
-    }
-
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::setControllerSuffix
-     * @throws \ReflectionException
-     */
-    public function testSetControllerSuffix(): void
-    {
-        $suffix = 'same';
-
-        $this->resolver->setControllerSuffix($suffix);
-        $actualSuffix = $this->getProperty($this->resolver, 'controllerSuffix');
-
-        $this->assertEquals($suffix, $actualSuffix);
-    }
-
-    /**
      * @covers \Tochka\JsonRpc\Support\JsonRpcHandleResolver::resolve
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @throws \ReflectionException
@@ -61,11 +34,12 @@ class JsonRpcHandleResolverTest extends TestCase
         ];
 
         $request = new JsonRpcRequest($call);
+        $config = new ServerConfig([]);
 
         $this->expectException(JsonRpcException::class);
         $this->expectExceptionCode(JsonRpcException::CODE_INVALID_REQUEST);
 
-        $this->resolver->resolve($request, '');
+        $this->resolver->resolve($request, $config);
     }
 
     /**
@@ -82,11 +56,12 @@ class JsonRpcHandleResolverTest extends TestCase
         ];
 
         $request = new JsonRpcRequest($call);
+        $config = new ServerConfig([]);
 
         $this->expectException(JsonRpcException::class);
         $this->expectExceptionCode(JsonRpcException::CODE_INVALID_REQUEST);
 
-        $this->resolver->resolve($request, '');
+        $this->resolver->resolve($request, $config);
     }
 
     /**
@@ -102,11 +77,12 @@ class JsonRpcHandleResolverTest extends TestCase
         ];
 
         $request = new JsonRpcRequest($call);
+        $config = new ServerConfig([]);
 
         $this->expectException(JsonRpcException::class);
         $this->expectExceptionCode(JsonRpcException::CODE_INVALID_REQUEST);
 
-        $this->resolver->resolve($request, '');
+        $this->resolver->resolve($request, $config);
     }
 
     /**
@@ -145,15 +121,15 @@ class JsonRpcHandleResolverTest extends TestCase
         $booleanType = $this->callMethod($this->resolver, 'getCanonicalTypeName', ['boolean']);
         $objectType = $this->callMethod($this->resolver, 'getCanonicalTypeName', ['stdClass']);
 
-        $this->assertEquals('string', $stringType);
-        $this->assertEquals('string', $strType);
-        $this->assertEquals('integer', $integerType);
-        $this->assertEquals('integer', $intType);
-        $this->assertEquals('double', $floatType);
-        $this->assertEquals('double', $doubleType);
-        $this->assertEquals('boolean', $boolType);
-        $this->assertEquals('boolean', $booleanType);
-        $this->assertEquals('object', $objectType);
+        self::assertEquals('string', $stringType);
+        self::assertEquals('string', $strType);
+        self::assertEquals('integer', $integerType);
+        self::assertEquals('integer', $intType);
+        self::assertEquals('double', $floatType);
+        self::assertEquals('double', $doubleType);
+        self::assertEquals('boolean', $boolType);
+        self::assertEquals('boolean', $booleanType);
+        self::assertEquals('object', $objectType);
     }
 
     /**

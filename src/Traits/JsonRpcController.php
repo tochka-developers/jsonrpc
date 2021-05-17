@@ -145,7 +145,9 @@ trait JsonRpcController
             }
 
             return $result;
-        } elseif ($isGlobalArray) {
+        }
+
+        if ($isGlobalArray) {
             return $data;
         }
 

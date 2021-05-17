@@ -2,9 +2,11 @@
 
 namespace Tochka\JsonRpc\Support;
 
+use Illuminate\Support\Arr;
+use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 
-class JsonRpcParser
+class JsonRpcParser implements JsonRpcParserInterface
 {
     /**
      * @param string $content
@@ -20,21 +22,17 @@ class JsonRpcParser
         }
 
         // декодируем json
-        $data = json_decode($content, false);
-
-        // если не валидный json
-        if ($data === null) {
+        try {
+            $data = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\Throwable $e) {
             throw new JsonRpcException(JsonRpcException::CODE_PARSE_ERROR);
         }
 
-        if (!is_array($data)) {
-            $calls = [$data];
-        } else {
-            $calls = $data;
-        }
+        $calls = Arr::wrap($data);
 
-        return array_map(static function ($call) {
-            return new JsonRpcRequest($call);
-        }, $calls);
+        return array_map(
+            fn($call) => new JsonRpcRequest($call),
+            $calls
+        );
     }
 }

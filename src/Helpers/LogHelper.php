@@ -21,7 +21,7 @@ class LogHelper
     protected static function hideDataByRule($data, array $rule): array
     {
         if (is_object($data)) {
-            $data = (array) $data;
+            $data = (array)$data;
         }
 
         if (!is_array($data)) {
@@ -32,15 +32,13 @@ class LogHelper
 
         if ($key === '*') {
             foreach ($data as $key => $value) {
-                $data[$key] = self::hideDataByRule($data[$key], $rule);
+                $data[$key] = self::hideDataByRule($value, $rule);
             }
-        } else {
-            if (isset($data[$key])) {
-                if (count($rule)) {
-                    $data[$key] = self::hideDataByRule($data[$key], $rule);
-                } else {
-                    $data[$key] = '***';
-                }
+        } elseif (isset($data[$key])) {
+            if (count($rule)) {
+                $data[$key] = self::hideDataByRule($data[$key], $rule);
+            } else {
+                $data[$key] = '***';
             }
         }
 

@@ -7,10 +7,12 @@ use Illuminate\Contracts\Support\Jsonable;
 
 class JsonRpcResponse implements Jsonable, Arrayable
 {
-    public $jsonrpc = '2.0';
+    public string $jsonrpc = '2.0';
+    public ?string $id = null;
+    /** @var mixed */
     public $error = null;
+    /** @var mixed */
     public $result = null;
-    public $id = null;
 
     public static function result($result, string $id = null): self
     {
@@ -32,16 +34,17 @@ class JsonRpcResponse implements Jsonable, Arrayable
 
     /**
      * @inheritDoc
+     * @throws \JsonException
      */
     public function toJson($options = 0)
     {
-        return json_encode($this->toArray(), $options | JSON_UNESCAPED_UNICODE);
+        return json_encode($this->toArray(), JSON_THROW_ON_ERROR | $options | JSON_UNESCAPED_UNICODE);
     }
 
     /**
      * @inheritDoc
      */
-    public function toArray()
+    public function toArray(): array
     {
         $result = [];
         $result['jsonrpc'] = $this->jsonrpc;
@@ -50,21 +53,24 @@ class JsonRpcResponse implements Jsonable, Arrayable
         }
 
         if ($this->error !== null) {
-            if ($this->error instanceof Arrayable) {
-                $result['error'] = $this->error->toArray();
-            } elseif ($this->error instanceof \JsonSerializable) {
-                $result['error'] = $this->error->jsonSerialize();
-            } else {
-                $result['error'] = $this->error;
-            }
-        } elseif ($this->result instanceof Arrayable) {
-            $result['result'] = $this->result->toArray();
-        } elseif ($this->result instanceof \JsonSerializable) {
-            $result['result'] = $this->result->jsonSerialize();
+            $result['error'] = $this->valueToArray($this->error);
         } else {
-            $result['result'] = $this->result;
+            $result['result'] = $this->valueToArray($this->result);
         }
 
         return $result;
+    }
+
+    private function valueToArray($value)
+    {
+        if ($value instanceof Arrayable) {
+            return $value->toArray();
+        }
+
+        if ($value instanceof \JsonSerializable) {
+            return $value->jsonSerialize();
+        }
+
+        return $value;
     }
 }

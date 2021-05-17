@@ -4,9 +4,9 @@ namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Config;
+use Tochka\JsonRpc\Contracts\HandleResolverInterface;
+use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
 use Tochka\JsonRpc\Facades\ExceptionHandler;
-use Tochka\JsonRpc\Support\JsonRpcHandleResolver;
-use Tochka\JsonRpc\Support\JsonRpcParser;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\JsonRpcResponse;
 use Tochka\JsonRpc\Support\MiddlewarePipeline;
@@ -18,14 +18,11 @@ use Tochka\JsonRpc\Support\ServerConfig;
  */
 class JsonRpcServer
 {
-    /** @var JsonRpcParser */
-    protected $parser;
-    /** @var JsonRpcHandleResolver */
-    protected $resolver;
-    /** @var ServerConfig */
-    protected $config;
+    protected JsonRpcParserInterface $parser;
+    protected HandleResolverInterface $resolver;
+    protected ServerConfig $config;
 
-    public function __construct(JsonRpcParser $parser, JsonRpcHandleResolver $resolver)
+    public function __construct(JsonRpcParserInterface $parser, HandleResolverInterface $resolver)
     {
         $this->parser = $parser;
         $this->resolver = $resolver;
@@ -56,18 +53,20 @@ class JsonRpcServer
             $responses = $pipeline->send($requests)
                 ->through($this->config->onceExecutedMiddleware)
                 ->via('handle')
-                ->then(function (array $requests) use ($group, $action) {
-                    $responses = new ResponseCollection();
-                    foreach ($requests as $request) {
-                        $response = $this->handleRequest($request, $group, $action);
+                ->then(
+                    function (array $requests) use ($group, $action) {
+                        $responses = new ResponseCollection();
+                        foreach ($requests as $request) {
+                            $response = $this->handleRequest($request, $group, $action);
 
-                        if ($response !== null) {
-                            $responses->add($response);
+                            if ($response !== null) {
+                                $responses->add($response);
+                            }
                         }
-                    }
 
-                    return $responses;
-                });
+                        return $responses;
+                    }
+                );
         } catch (\Exception $e) {
             $responses = new ResponseCollection();
             $responses->add(JsonRpcResponse::error(ExceptionHandler::handle($e)));
@@ -84,22 +83,22 @@ class JsonRpcServer
         try {
             $pipeline = new MiddlewarePipeline(Container::getInstance());
 
-            $this->resolver->setControllerSuffix($this->config->controllerSuffix);
-            $this->resolver->setMethodDelimiter($this->config->methodDelimiter);
-            $this->resolver->resolve($request, $this->config->namespace, $group, $action);
+            $this->resolver->resolve($request, $this->config, $group, $action);
 
             return $pipeline->send($request)
                 ->through($this->config->middleware)
                 ->via('handle')
-                ->then(static function (JsonRpcRequest $request) {
-                    $result = $request->controller->{$request->method}(...$request->params);
+                ->then(
+                    static function (JsonRpcRequest $request) {
+                        $result = $request->controller->{$request->method}(...$request->params);
 
-                    if (empty($request->id)) {
-                        return null;
+                        if (empty($request->id)) {
+                            return null;
+                        }
+
+                        return JsonRpcResponse::result($result, $request->id);
                     }
-
-                    return JsonRpcResponse::result($result, $request->id);
-                });
+                );
         } catch (\Exception $e) {
             return JsonRpcResponse::error(ExceptionHandler::handle($e), $request->id);
         }

@@ -4,29 +4,21 @@ namespace Tochka\JsonRpc\Support;
 
 use Illuminate\Container\Container;
 use Illuminate\Support\Str;
+use Tochka\JsonRpc\Contracts\HandleResolverInterface;
+use Tochka\JsonRpc\Contracts\JsonRpcRequestInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
+use Tochka\JsonRpc\Facades\JsonRpcRequestCast as JsonRpcRequestCastFacade;
 
-class JsonRpcHandleResolver
+class JsonRpcHandleResolver implements HandleResolverInterface
 {
-    protected $methodDelimiter = '_';
-
-    protected $controllerSuffix = 'Controller';
-
-    public function setMethodDelimiter(string $delimiter): void
-    {
-        $this->methodDelimiter = $delimiter;
-    }
-
-    public function setControllerSuffix(string $suffix): void
-    {
-        $this->controllerSuffix = $suffix;
-    }
+    public const PARAMS_RESOLVER_DTO = 'dto';
+    public const PARAMS_RESOLVER_BY_METHOD = 'by-method';
 
     /**
-     * @param JsonRpcRequest $request
-     * @param string         $namespace
-     * @param string|null    $group
-     * @param string|null    $action
+     * @param JsonRpcRequest                       $request
+     * @param \Tochka\JsonRpc\Support\ServerConfig $config
+     * @param string|null                          $group
+     * @param string|null                          $action
      *
      * @return bool
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
@@ -35,7 +27,7 @@ class JsonRpcHandleResolver
      */
     public function resolve(
         JsonRpcRequest $request,
-        string $namespace,
+        ServerConfig $config,
         string $group = null,
         string $action = null
     ): bool {
@@ -43,13 +35,45 @@ class JsonRpcHandleResolver
             throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
         }
 
-        [$controllerName, $method] = $this->getHandledMethod($request, $namespace, $group, $action);
+        [$controllerName, $method] = $this->getHandledMethod($request, $config, $group, $action);
 
         $request->controller = $this->initializeController($controllerName, $method, $request);
         $request->method = $method;
-        $request->params = $this->getCallParams($request);
+
+        if ($config->paramsResolver === self::PARAMS_RESOLVER_DTO) {
+            $request->params = $this->castParamsToDTO($request);
+        } else {
+            $request->params = $this->getCallParams($request);
+        }
 
         return true;
+    }
+
+    /**
+     * @throws \ReflectionException
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    protected function castParamsToDTO(JsonRpcRequest $request): array
+    {
+        $reflectionMethod = new \ReflectionMethod($request->controller, $request->method);
+
+        $args = [];
+        foreach ($reflectionMethod->getParameters() as $parameter) {
+            $type = $parameter->getType();
+            if ($type instanceof \ReflectionNamedType) {
+                $diName = $type->getName();
+
+                if (\in_array(JsonRpcRequestInterface::class, class_implements($diName), true)) {
+                    $instance = JsonRpcRequestCastFacade::cast($diName, $request->call->params);
+                } else {
+                    $instance = Container::getInstance()->make($type);
+                }
+
+                $args[] = $instance;
+            }
+        }
+
+        return $args;
     }
 
     /**
@@ -61,7 +85,7 @@ class JsonRpcHandleResolver
      */
     protected function getCallParams(JsonRpcRequest $request): array
     {
-        $api_params = !empty($request->call->params) ? (array) $request->call->params : [];
+        $api_params = !empty($request->call->params) ? (array)$request->call->params : [];
 
         // подготавливаем аргументы для вызова метода
         $reflectionMethod = new \ReflectionMethod($request->controller, $request->method);
@@ -69,7 +93,6 @@ class JsonRpcHandleResolver
         $args = [];
 
         foreach ($reflectionMethod->getParameters() as $i => $parameter) {
-
             $value = $api_params[$parameter->getName()] ?? null;
 
             // если аргумент не передан
@@ -113,23 +136,23 @@ class JsonRpcHandleResolver
     }
 
     /**
-     * @param JsonRpcRequest $request
-     * @param string         $namespace
-     * @param string|null    $group
-     * @param string|null    $action
+     * @param JsonRpcRequest                       $request
+     * @param \Tochka\JsonRpc\Support\ServerConfig $config
+     * @param string|null                          $group
+     * @param string|null                          $action
      *
      * @return array
      * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
      */
     protected function getHandledMethod(
         JsonRpcRequest $request,
-        string $namespace,
+        ServerConfig $config,
         string $group = null,
         string $action = null
     ): array {
         $method = $request->call->method;
 
-        $namespace = trim($namespace, '\\');
+        $namespace = trim($config->namespace, '\\');
 
         if ($group !== null) {
             $namespace .= '\\' . Str::studly($group);
@@ -141,7 +164,7 @@ class JsonRpcHandleResolver
             $methodCall = $request->call->method;
 
             // парсим имя метода
-            $methodArray = explode($this->methodDelimiter, $methodCall);
+            $methodArray = explode($config->methodDelimiter, $methodCall);
 
             if (count($methodArray) < 2) {
                 throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
@@ -151,7 +174,7 @@ class JsonRpcHandleResolver
             $method = Str::camel(implode('_', $methodArray));
         }
 
-        $controllerName = $namespace . '\\' . Str::studly($controllerName . $this->controllerSuffix);
+        $controllerName = $namespace . '\\' . Str::studly($controllerName . $config->controllerSuffix);
 
         return [$controllerName, $method];
     }

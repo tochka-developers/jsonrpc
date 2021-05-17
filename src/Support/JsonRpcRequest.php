@@ -4,16 +4,16 @@ namespace Tochka\JsonRpc\Support;
 
 class JsonRpcRequest
 {
-    public $call;
+    public object $call;
 
-    public $id;
-    public $controller;
-    public $method;
-    public $params = [];
+    public ?string $id;
+    public string $controller;
+    public string $method;
+    public array $params = [];
 
-    public $service = 'guest';
+    public string $service = 'guest';
 
-    public function __construct(\StdClass $call)
+    public function __construct(object $call)
     {
         $this->call = $call;
         $this->id = !empty($call->id) ? $call->id : null;

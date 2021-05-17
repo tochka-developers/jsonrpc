@@ -16,7 +16,7 @@ class JsonRpcException extends \Exception
     public const CODE_EXTERNAL_INTEGRATION_ERROR = 8000;
     public const CODE_INTERNAL_INTEGRATION_ERROR = 8001;
 
-    public $jsonrpc_messages = [
+    public array $jsonrpc_messages = [
         self::CODE_PARSE_ERROR                => 'Parse error',
         self::CODE_INVALID_REQUEST            => 'Invalid Request',
         self::CODE_METHOD_NOT_FOUND           => 'Method not found',
