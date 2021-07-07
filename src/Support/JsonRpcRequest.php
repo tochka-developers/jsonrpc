@@ -7,7 +7,7 @@ class JsonRpcRequest
     public object $call;
 
     public ?string $id;
-    public string $controller;
+    public object $controller;
     public string $method;
     public array $params = [];
 
