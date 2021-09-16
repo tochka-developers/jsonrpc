@@ -3,241 +3,255 @@
 namespace Tochka\JsonRpc\Support;
 
 use Illuminate\Container\Container;
-use Illuminate\Support\Str;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
-use Tochka\JsonRpc\Contracts\JsonRpcRequestInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
+use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterError;
+use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParametersException;
+use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterTypeException;
+use Tochka\JsonRpc\Facades\JsonRpcParamsResolver;
 use Tochka\JsonRpc\Facades\JsonRpcRequestCast as JsonRpcRequestCastFacade;
+use Tochka\JsonRpc\Route\Parameters\Parameter;
+use Tochka\JsonRpc\Route\Parameters\ParameterObject;
+use Tochka\JsonRpc\Route\Parameters\ParameterTypeEnum;
 
 class JsonRpcHandleResolver implements HandleResolverInterface
 {
-    public const PARAMS_RESOLVER_DTO = 'dto';
-    public const PARAMS_RESOLVER_BY_METHOD = 'by-method';
-
     /**
-     * @param JsonRpcRequest                       $request
-     * @param \Tochka\JsonRpc\Support\ServerConfig $config
-     * @param string|null                          $group
-     * @param string|null                          $action
-     *
-     * @return bool
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     * @throws \ReflectionException
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     * @throws BindingResolutionException
+     * @throws JsonRpcException
      */
-    public function resolve(
-        JsonRpcRequest $request,
-        ServerConfig $config,
-        string $group = null,
-        string $action = null
-    ): bool {
-        if (empty($request->call->jsonrpc) || $request->call->jsonrpc !== '2.0' || empty($request->call->method)) {
-            throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
-        }
-
-        [$controllerName, $method] = $this->getHandledMethod($request, $config, $group, $action);
-
-        $request->controller = $this->initializeController($controllerName, $method, $request);
-        $request->method = $method;
-
-        if ($config->paramsResolver === self::PARAMS_RESOLVER_DTO) {
-            $request->params = $this->castParamsToDTO($request);
-        } else {
-            $request->params = $this->getCallParams($request);
-        }
-
-        return true;
-    }
-
-    /**
-     * @throws \ReflectionException
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    protected function castParamsToDTO(JsonRpcRequest $request): array
+    public function handle(JsonRpcRequest $request)
     {
-        $reflectionMethod = new \ReflectionMethod($request->controller, $request->method);
-
-        $args = [];
-        foreach ($reflectionMethod->getParameters() as $parameter) {
-            $type = $parameter->getType();
-            if ($type instanceof \ReflectionNamedType) {
-                $diName = $type->getName();
-
-                if (\in_array(JsonRpcRequestInterface::class, class_implements($diName), true)) {
-                    $instance = JsonRpcRequestCastFacade::cast($diName, $request->call->params);
-                } else {
-                    $instance = Container::getInstance()->make($type);
-                }
-
-                $args[] = $instance;
-            }
+        $controllerInstance = $this->initializeController($request);
+        $route = $request->getRoute();
+        if ($route === null) {
+            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
-
-        return $args;
+        
+        $parameters = $this->mapParameters($request->getParams(), $route->parameters);
+        
+        return $controllerInstance->{$request->getRoute()->controllerMethod}(...$parameters);
     }
-
+    
     /**
-     * @param JsonRpcRequest $request
-     *
+     * @param array|object $rawInputParameters
+     * @param array<Parameter> $methodParameters
      * @return array
-     * @throws \ReflectionException
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     * @throws JsonRpcInvalidParametersException
+     * @throws JsonRpcException
      */
-    protected function getCallParams(JsonRpcRequest $request): array
+    private function mapParameters($rawInputParameters, array $methodParameters): array
     {
-        $api_params = !empty($request->call->params) ? (array)$request->call->params : [];
-
-        // подготавливаем аргументы для вызова метода
-        $reflectionMethod = new \ReflectionMethod($request->controller, $request->method);
+        $parameters = [];
         $errors = [];
-        $args = [];
-
-        foreach ($reflectionMethod->getParameters() as $i => $parameter) {
-            $value = $api_params[$parameter->getName()] ?? null;
-
-            // если аргумент не передан
-            if ($value === null) {
-                // если он обязателен
-                if (!$parameter->isOptional()) {
-                    $errors[] = [
-                        'code'        => 'required_field',
-                        'message'     => 'Не передан либо пустой обязательный параметр',
-                        'object_name' => $parameter->getName(),
-                    ];
-                } else {
-                    // получим значение аргумента по умолчанию
-                    $value = $parameter->getDefaultValue();
+        
+        // если входные параметры переданы массивом - преобразуем в объект с именованными параметрами
+        if (is_array($rawInputParameters)) {
+            $namedParameters = (object)[];
+            $i = 0;
+            foreach ($methodParameters as $parameter) {
+                if (isset($rawInputParameters[$i])) {
+                    $parameterName = $parameter->name;
+                    $namedParameters->$parameterName = $rawInputParameters[$i];
                 }
-            } else {
-                // Проверяем тип
-                $type = $parameter->getType();
-                if ($type) {
-                    $parameterType = $this->getCanonicalTypeName($type->getName());
-
-                    if (gettype($value) !== $parameterType) {
-                        $errors[] = [
-                            'code'        => 'invalid_parameter',
-                            'message'     => 'Передан аргумент неверного типа',
-                            'object_name' => $parameter->getName(),
-                        ];
-                    }
+                $i++;
+            }
+            
+            $rawInputParameters = $namedParameters;
+        }
+        
+        foreach ($methodParameters as $parameterName => $parameter) {
+            try {
+                if ($parameter->castFullRequest) {  // если необходимо весь запрос скастовать в объект
+                    $parameterObject = JsonRpcParamsResolver::getParameterObject($parameter->className);
+                    $parameters[] = $this->castObject($rawInputParameters, $parameterObject);
+                } elseif ($parameter->castFromDI) { // если необходимо создать объект из DI
+                    $parameters[] = Container::getInstance()->make($parameter->className);
+                } else { // стандартный каст в параметры
+                    $parameters[] = $this->castParameter((array)$rawInputParameters, $parameter, $parameterName);
                 }
+            } catch (JsonRpcInvalidParametersException $e) {
+                $errors[] = $e->getErrors();
+            } catch (JsonRpcException $e) {
+                throw $e;
+            } catch (\Exception $e) {
+                throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
             }
-
-            // установим переданное значение
-            $args[$i] = $value;
         }
-
-        if (count($errors) > 0) {
-            throw new JsonRpcException(JsonRpcException::CODE_INVALID_PARAMETERS, null, $errors);
+        
+        if (!empty($errors)) {
+            throw new JsonRpcInvalidParametersException(array_merge(...$errors));
         }
-
-        return $args;
+        
+        return $parameters;
     }
-
+    
     /**
-     * @param JsonRpcRequest                       $request
-     * @param \Tochka\JsonRpc\Support\ServerConfig $config
-     * @param string|null                          $group
-     * @param string|null                          $action
-     *
-     * @return array
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     * @throws JsonRpcInvalidParameterException
+     * @throws JsonRpcException
      */
-    protected function getHandledMethod(
-        JsonRpcRequest $request,
-        ServerConfig $config,
-        string $group = null,
-        string $action = null
-    ): array {
-        $method = $request->call->method;
-
-        $namespace = trim($config->namespace, '\\');
-
-        if ($group !== null) {
-            $namespace .= '\\' . Str::studly($group);
-        }
-
-        if ($action !== null) {
-            $controllerName = $action;
-        } else {
-            $methodCall = $request->call->method;
-
-            // парсим имя метода
-            $methodArray = explode($config->methodDelimiter, $methodCall);
-
-            if (count($methodArray) < 2) {
-                throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
-            }
-
-            $controllerName = array_shift($methodArray);
-            $method = Str::camel(implode('_', $methodArray));
-        }
-
-        $controllerName = $namespace . '\\' . Str::studly($controllerName . $config->controllerSuffix);
-
-        return [$controllerName, $method];
-    }
-
-    /**
-     * @param string         $controllerName
-     * @param string         $method
-     * @param JsonRpcRequest $request
-     *
-     * @return mixed
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
-     */
-    protected function initializeController(string $controllerName, string $method, JsonRpcRequest $request)
+    private function castParameter(array $rawInputParameters, Parameter $parameter, string $fullFieldName)
     {
+        if (!array_key_exists($parameter->name, $rawInputParameters)) {
+            if ($parameter->required) {
+                throw new JsonRpcInvalidParameterException(
+                    JsonRpcInvalidParameterError::PARAMETER_ERROR_REQUIRED,
+                    $fullFieldName
+                );
+            }
+            
+            return $parameter->defaultValue;
+        }
+        
+        return $this->castValue($rawInputParameters[$parameter->name], $parameter, $fullFieldName);
+    }
+    
+    /**
+     * @throws JsonRpcInvalidParameterException
+     * @throws JsonRpcException
+     */
+    private function castValue($value, Parameter $parameter, string $fullFieldName)
+    {
+        if ($value === null) {
+            if (!$parameter->nullable) {
+                throw new JsonRpcInvalidParameterException(
+                    JsonRpcInvalidParameterError::PARAMETER_ERROR_NOT_NULLABLE,
+                    $fullFieldName
+                );
+            }
+            
+            return null;
+        }
+        
+        $varType = gettype($value);
+        $type = ParameterTypeEnum::fromVarType($varType);
+        
+        if ($parameter->className !== null && $parameter->type->is(ParameterTypeEnum::TYPE_OBJECT())) {
+            $parameterObject = JsonRpcParamsResolver::getParameterObject($parameter->className);
+            $object = $this->castObject($value, $parameterObject, $fullFieldName);
+            if (!$parameter->nullable && $object === null) {
+                throw new JsonRpcInvalidParameterException(
+                    JsonRpcInvalidParameterError::PARAMETER_ERROR_NOT_NULLABLE,
+                    $fullFieldName
+                );
+            }
+            return $object;
+        }
+        
+        if ($type->isNot($parameter->type) && $parameter->type->isNot(ParameterTypeEnum::TYPE_MIXED())) {
+            throw new JsonRpcInvalidParameterTypeException($fullFieldName, $parameter->type->value, $type->value);
+        }
+        
+        if ($parameter->parametersInArray !== null && $parameter->type->is(ParameterTypeEnum::TYPE_ARRAY())) {
+            $resultArray = [];
+            $i = 0;
+            $errors = [];
+            foreach ($value as $inputArrayItem) {
+                try {
+                    $resultArray[] = $this->castValue(
+                        $inputArrayItem,
+                        $parameter->parametersInArray,
+                        $fullFieldName . '[' . $i . ']'
+                    );
+                } catch (JsonRpcInvalidParametersException $e) {
+                    $errors[] = $e->getErrors();
+                } catch (JsonRpcException $e) {
+                    throw $e;
+                } catch (\Exception $e) {
+                    throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
+                }
+                $i++;
+            }
+            
+            if (!empty($errors)) {
+                throw new JsonRpcInvalidParametersException(array_merge(...$errors));
+            }
+            
+            return $resultArray;
+        }
+        
+        return $value;
+    }
+    
+    /**
+     * @throws JsonRpcException
+     */
+    private function castObject($value, ?ParameterObject $parameterObject, string $fullFieldName = null): ?object
+    {
+        if ($parameterObject === null) {
+            throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
+        }
+        
+        if ($parameterObject->customCastByCaster !== null) {
+            return JsonRpcRequestCastFacade::cast(
+                $parameterObject->customCastByCaster,
+                $parameterObject->className,
+                $value,
+                $fullFieldName
+            );
+        }
+        
+        $className = $parameterObject->className;
+        $instance = new $className();
+        
+        if ($parameterObject->properties === null) {
+            return $instance;
+        }
+        
+        foreach ($parameterObject->properties as $property) {
+            try {
+                $propertyName = $property->name;
+                $instance->$propertyName = $this->castParameter(
+                    (array)$value,
+                    $property,
+                    $fullFieldName . '.' . $propertyName
+                );
+            } catch (JsonRpcInvalidParametersException $e) {
+                $errors[] = $e->getErrors();
+            } catch (JsonRpcException $e) {
+                throw $e;
+            } catch (\Exception $e) {
+                throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
+            }
+        }
+        
+        if (!empty($errors)) {
+            throw new JsonRpcInvalidParametersException(array_merge(...$errors));
+        }
+        
+        return $instance;
+    }
+    
+    /**
+     * @throws JsonRpcException
+     * @throws BindingResolutionException
+     */
+    private function initializeController(JsonRpcRequest $request): object
+    {
+        $route = $request->getRoute();
+        
         // если нет такого контроллера или метода
-        if (!class_exists($controllerName)) {
+        if ($route === null || !class_exists($route->controllerClass)) {
             throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
-
-        $controller = Container::getInstance()->make($controllerName);
-
-        if (!is_callable([$controller, $method]) || $method === 'setJsonRpcRequest') {
-            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
-        }
-
+        
+        $container = Container::getInstance();
+        $container->when([$route->controllerClass])
+            ->needs(JsonRpcRequest::class)
+            ->give(fn() => $request);
+        
+        $controller = $container->make($route->controllerClass);
+        
         if (method_exists($controller, 'setJsonRpcRequest')) {
             $controller->setJsonRpcRequest($request);
         }
-
-        return $controller;
-    }
-
-    /**
-     * @param string $type
-     *
-     * @return string
-     */
-    private function getCanonicalTypeName(string $type): string
-    {
-        $parameterType = strtolower(class_basename($type));
-        switch ($parameterType) {
-            case 'str':
-            case 'string':
-                $parameterType = 'string';
-                break;
-            case 'int':
-            case 'integer':
-                $parameterType = 'integer';
-                break;
-            case 'float':
-            case 'double':
-                $parameterType = 'double';
-                break;
-            case 'boolean':
-            case 'bool':
-                $parameterType = 'boolean';
-                break;
-            case 'stdclass':
-                $parameterType = 'object';
-                break;
+        
+        if (!is_callable([$controller, $route->controllerMethod])) {
+            throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
-
-        return $parameterType;
+        
+        return $controller;
     }
 }

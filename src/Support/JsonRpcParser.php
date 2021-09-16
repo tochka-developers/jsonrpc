@@ -12,7 +12,7 @@ class JsonRpcParser implements JsonRpcParserInterface
      * @param string $content
      *
      * @return JsonRpcRequest[]
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     * @throws JsonRpcException
      */
     public function parse(string $content): array
     {
@@ -31,8 +31,24 @@ class JsonRpcParser implements JsonRpcParserInterface
         $calls = Arr::wrap($data);
 
         return array_map(
-            fn($call) => new JsonRpcRequest($call),
+            fn($rawRequest) => $this->parseRequestFromRaw($rawRequest),
             $calls
         );
+    }
+    
+    /**
+     * @throws JsonRpcException
+     */
+    private function parseRequestFromRaw(object $rawRequest): JsonRpcRequest
+    {
+        if (
+            empty($rawRequest->jsonrpc)
+            || $rawRequest->jsonrpc !== '2.0'
+            || empty($rawRequest->method)
+        ) {
+            throw new JsonRpcException(JsonRpcException::CODE_INVALID_REQUEST);
+        }
+        
+        return new JsonRpcRequest($rawRequest);
     }
 }

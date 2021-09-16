@@ -14,7 +14,7 @@ class JsonRpcInvalidParametersException extends JsonRpcException
         parent::__construct(
             JsonRpcException::CODE_INVALID_PARAMETERS,
             null,
-            array_map(fn(JsonRpcInvalidParameterError $item) => $item->toArray(), $this->errors)
+            array_map(static fn(JsonRpcInvalidParameterError $item) => $item->toArray(), $this->errors)
         );
     }
 

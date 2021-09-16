@@ -4,11 +4,10 @@ namespace Tochka\JsonRpc\Middleware;
 
 use Illuminate\Http\Request;
 use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
-use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 /**
- * Авторизация сервиса по токену
+ * Авторизация сервиса по токену в заголовке
  * Параметры:
  * string headerName - имя заголовка, откуда вычитывать токен
  * array tokens - ассоциативный массив вида [имя_сервиса => токен]
@@ -17,13 +16,12 @@ class TokenAuthMiddleware implements OnceExecutedMiddleware
 {
     /**
      * @param JsonRpcRequest[] $requests
-     * @param callable         $next
-     * @param Request          $httpRequest
-     * @param string           $headerName
-     * @param array            $tokens
+     * @param callable $next
+     * @param Request $httpRequest
+     * @param string $headerName
+     * @param array $tokens
      *
      * @return mixed
-     * @throws JsonRpcException
      */
     public function handle(
         array $requests,
@@ -33,19 +31,19 @@ class TokenAuthMiddleware implements OnceExecutedMiddleware
         array $tokens = []
     ) {
         if (!$key = $httpRequest->header($headerName)) {
-            throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
+            return $next($requests);
         }
-
+        
         $service = array_search($key, $tokens, true);
-
+        
         if ($service === false) {
-            throw new JsonRpcException(JsonRpcException::CODE_UNAUTHORIZED);
+            return $next($requests);
         }
-
+        
         foreach ($requests as $request) {
-            $request->service = $service;
+            $request->setAuthName($service);
         }
-
+        
         return $next($requests);
     }
 }

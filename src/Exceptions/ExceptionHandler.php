@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc\Exceptions;
 
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Debug\ExceptionHandler as DefaultHandler;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -13,7 +14,7 @@ class ExceptionHandler
      * @param \Exception $e
      *
      * @return \StdClass
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws BindingResolutionException
      * @throws \Throwable
      */
     public function handle(\Exception $e): \StdClass

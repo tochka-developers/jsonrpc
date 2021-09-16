@@ -32,7 +32,7 @@ class ResponseCollection implements Jsonable, Arrayable
     /**
      * @inheritDoc
      */
-    public function toArray()
+    public function toArray(): array
     {
         if (count($this->items) === 1) {
             $response = array_shift($this->items);
@@ -41,7 +41,7 @@ class ResponseCollection implements Jsonable, Arrayable
         }
 
         return array_map(
-            fn(JsonRpcResponse $item) => $item->toArray(),
+            static fn(JsonRpcResponse $item) => $item->toArray(),
             $this->items
         );
     }

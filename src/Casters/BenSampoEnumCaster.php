@@ -4,12 +4,13 @@ namespace Tochka\JsonRpc\Casters;
 
 use BenSampo\Enum\Enum;
 use BenSampo\Enum\Exceptions\InvalidEnumMemberException;
-use Tochka\JsonRpc\Contracts\GlobalPropertyCasterInterface;
+use Tochka\JsonRpc\Contracts\GlobalCustomCasterInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
+use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 
-class EnumCaster implements GlobalPropertyCasterInterface
+class BenSampoEnumCaster implements GlobalCustomCasterInterface
 {
-    public function canCast(string $expectedType, $value, \ReflectionProperty $property, string $fieldName): bool
+    public function canCast(string $expectedType): bool
     {
         return is_subclass_of($expectedType, '\BenSampo\Enum\Enum');
     }
@@ -17,7 +18,7 @@ class EnumCaster implements GlobalPropertyCasterInterface
     /**
      * @throws JsonRpcException
      */
-    public function cast(string $expectedType, $value, \ReflectionProperty $property, string $fieldName): ?Enum
+    public function cast(string $expectedType, $value, string $fieldName): ?Enum
     {
         if ($value === null) {
             return null;
@@ -27,8 +28,8 @@ class EnumCaster implements GlobalPropertyCasterInterface
             /** @var Enum $expectedType */
             return $expectedType::fromValue($value);
         } catch (InvalidEnumMemberException $e) {
-            throw new JsonRpcException(
-                JsonRpcException::CODE_INVALID_PARAMETERS,
+            throw new JsonRpcInvalidParameterException(
+                'incorrect_value',
                 sprintf(
                     'Invalid value for field. Expected: [%s], Actual: [%s]',
                     implode(',', $expectedType::getValues()),

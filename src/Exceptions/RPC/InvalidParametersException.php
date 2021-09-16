@@ -5,10 +5,6 @@ namespace Tochka\JsonRpc\Exceptions\RPC;
 use Illuminate\Support\MessageBag;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 
-/**
- * Class WebServiceException
- * @package App\Exceptions
- */
 class InvalidParametersException extends JsonRpcException
 {
     /**

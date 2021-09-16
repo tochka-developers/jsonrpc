@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Support;
 
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Pipeline\Pipeline;
 
 class MiddlewarePipeline extends Pipeline
@@ -57,7 +58,7 @@ class MiddlewarePipeline extends Pipeline
      *
      * @return array
      * @throws \ReflectionException
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws BindingResolutionException
      */
     protected function parseAssociatedParams(array $pipe): array
     {

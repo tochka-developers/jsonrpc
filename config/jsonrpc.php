@@ -8,25 +8,52 @@ use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\LogMiddleware;
 use Tochka\JsonRpc\Middleware\ServiceValidationMiddleware;
 use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
+use Tochka\JsonRpc\Support\ServerConfig;
 
 return [
     'default' => [
-        // Описание сервиса
+        // Точка входа в указанный сервер
+        'endpoint' => '/api/v1/public/jsonrpc',
+        
+        /**
+         * Тип формирования точки входа (получать или нет из конечного URI группу методов и метод
+         *
+         * ServerConfig::DYNAMIC_ENDPOINT_NONE - точка входа статична, все контроллеры располагаются в одном пространстве имен
+         * Пример:
+         * uri: /api/v1/public/jsonrpc
+         * jsonrpc method: test_ping
+         * controller@method: \Default\Controller\Namespace\TestController@ping
+         *
+         * ServerConfig::DYNAMIC_ENDPOINT_CONTROLLER_NAMESPACE - все, что отличается в URI от указанной точки входа -
+         * является постфиксом к пространству имен контроллеров (group).
+         * Пример:
+         * uri: /api/v1/public/jsonrpc/foo/bar
+         * jsonrpc method: test_ping
+         * controller@method: \Default\Controller\Namespace\Foo\Bar\TestController@ping
+         *
+         * ServerConfig::DYNAMIC_ENDPOINT_FULL_CONTROLLER_NAME - последний элемент URI является именем контроллера (action),
+         * предыдущие элементы до указанной точки входа - постфикс к пространству имен контроллеров.
+         * Пример:
+         * uri: /api/v1/public/jsonrpc/foo/bar
+         * jsonrpc method: test_ping
+         * controller@method: \Default\Controller\Namespace\Foo\BarController@test_ping
+         */
+        'dynamicEndpoint' => ServerConfig::DYNAMIC_ENDPOINT_NONE,
+       
+        // Краткое описание сервера
+        'summary' => 'Основная точка входа',
+        
+        // Полное описание сервера
         'description' => 'JsonRpc Server',
 
-        // Namespace, в котором находятся контроллеры
+        // Пространство имен, в котором находятся контроллеры
         'namespace'   => 'App\Http\Controllers',
 
         // Suffix для контроллеров
         'controllerSuffix' => 'Controller',
 
-        // разделитель для имен методов
+        // Разделитель для имен методов
         'methodDelimiter' => '_',
-
-        // как должны резолвиться параметры в методах
-        // PARAMS_RESOLVER_DTO - кастинг к DTO
-        // PARAMS_RESOLVER_BY_METHOD - старая логика - параметры из запроса пытаются смапиться в аргументы метода
-        'paramsResolver' => \Tochka\JsonRpc\Support\JsonRpcHandleResolver::PARAMS_RESOLVER_DTO,
 
         // Обработчики запросов
         'middleware'  => [

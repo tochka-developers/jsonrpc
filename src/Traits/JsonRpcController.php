@@ -5,10 +5,14 @@ namespace Tochka\JsonRpc\Traits;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
+use Tochka\JsonRpc\Annotations\ApiIgnore;
 use Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 
+/**
+ * @deprecated
+ */
 trait JsonRpcController
 {
     /** @var array */
@@ -16,7 +20,11 @@ trait JsonRpcController
     /** @var JsonRpcRequest */
     protected $jsonRpcRequest;
     protected $validateMessageBag;
-
+    
+    /**
+     * @param JsonRpcRequest $request
+     * @ApiIgnore()
+     */
     public function setJsonRpcRequest(JsonRpcRequest $request): void
     {
         $this->jsonRpcRequest = $request;
@@ -30,7 +38,7 @@ trait JsonRpcController
     protected function getArrayRequest(): array
     {
         if ($this->arrayRequest === null) {
-            return ArrayHelper::fromObject($this->jsonRpcRequest->call->params ?? []);
+            return ArrayHelper::fromObject($this->jsonRpcRequest->getParams() ?? []);
         }
 
         return $this->arrayRequest;
@@ -90,7 +98,7 @@ trait JsonRpcController
      * @param bool  $noException Если true - Exception генерироваться не будет
      *
      * @return array
-     * @throws \Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException
+     * @throws InvalidParametersException
      */
     protected function validateAndFilter($rules, array $messages = [], $noException = false): array
     {

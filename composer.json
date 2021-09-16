@@ -15,14 +15,17 @@
     "require": {
         "php": ">=7.4",
         "ext-json": "*",
+        "bensampo/laravel-enum": "^3.0",
         "illuminate/support": "^6.0|^7.0|^8.0",
         "illuminate/http": "^6.0|^7.0|^8.0",
         "illuminate/container": "^6.0|^7.0|^8.0",
         "illuminate/pipeline": "^6.0|^7.0|^8.0",
-        "doctrine/annotations": "^1.8",
-        "doctrine/cache": "^1.8"
+        "illuminate/console": "^6.0|^7.0|^8.0",
+        "spiral/attributes": "^2.8",
+        "tochka-developers/jsonrpc-annotations": "^1.1"
     },
     "require-dev": {
+        "roave/security-advisories": "dev-latest",
         "phpunit/phpunit": "^9.5",
         "mockery/mockery": "^1.0"
     },

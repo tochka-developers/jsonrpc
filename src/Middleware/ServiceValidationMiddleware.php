@@ -16,7 +16,7 @@ class ServiceValidationMiddleware
      * @param array|string|null $servers
      *
      * @return mixed
-     * @throws \Tochka\JsonRpc\Exceptions\JsonRpcException
+     * @throws JsonRpcException
      */
     public function handle(JsonRpcRequest $request, callable $next, $servers = [])
     {
