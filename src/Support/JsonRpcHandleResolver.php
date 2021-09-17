@@ -177,6 +177,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
     
     /**
      * @throws JsonRpcException
+     * @throws \ReflectionException
      */
     private function castObject($value, ?ParameterObject $parameterObject, string $fullFieldName = null): ?object
     {
@@ -193,8 +194,11 @@ class JsonRpcHandleResolver implements HandleResolverInterface
             );
         }
         
-        $className = $parameterObject->className;
-        $instance = new $className();
+        // создаем инстанс класса без участия конструктора, так как все равно не можем правильно просадить параметры
+        // в конструктор. А так будет возможность в DTO юзать кастомные конструкторы, при этом JsonRpc сможет все равно
+        // в него кастить
+        $reflectionClass = new \ReflectionClass($parameterObject->className);
+        $instance = $reflectionClass->newInstanceWithoutConstructor();
         
         if ($parameterObject->properties === null) {
             return $instance;
