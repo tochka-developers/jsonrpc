@@ -4,12 +4,13 @@ git:
   depth: false
 
 install:
-  - composer require ${FRAMEWORK}
+  - cp ${COMPOSER_FILE} composer.json
+  - composer install
 
 env:
-  - FRAMEWORK="laravel/framework:6.*"
-  - FRAMEWORK="laravel/framework:7.*"
-  - FRAMEWORK="laravel/framework:8.*"
+  - COMPOSER_FILE="composer.test.6.0.json"
+  - COMPOSER_FILE="composer.test.7.0.json"
+  - COMPOSER_FILE="composer.test.8.0.json"
 
 php:
   - '7.4'
@@ -22,7 +23,7 @@ jobs:
     - stage: "Sonar Analyze"
       dist: trusty
       php: 8.0
-      env: FRAMEWORK="laravel/framework:8.*"
+      env: COMPOSER_FILE="composer.json"
       install:
         - pecl install pcov
         - composer install
