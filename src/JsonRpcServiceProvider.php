@@ -32,6 +32,23 @@ use Tochka\JsonRpc\Support\ServerConfig;
 
 class JsonRpcServiceProvider extends ServiceProvider
 {
+    private const IGNORED_ANNOTATIONS = [
+        'apiGroupName',
+        'apiIgnoreMethod',
+        'apiName',
+        'apiDescription',
+        'apiNote',
+        'apiWarning',
+        'apiParam',
+        'apiRequestExample',
+        'apiResponseExample',
+        'apiReturn',
+        'apiTag',
+        'apiEnum',
+        'apiObject',
+        'mixin',
+    ];
+    
     /**
      * Register any application services.
      *
@@ -43,7 +60,8 @@ class JsonRpcServiceProvider extends ServiceProvider
             return new ArrayFileCache('jsonrpc_routes');
         });
     
-        DoctrineAnnotationReader::addGlobalIgnoredName('mixin');
+        $this->registerIgnoredAnnotations();
+        
         $annotationReader = new MergeReader(
             [
                 new AnnotationReader(),
@@ -132,5 +150,12 @@ class JsonRpcServiceProvider extends ServiceProvider
         
         // публикуем конфигурации
         $this->publishes([__DIR__ . '/../config/jsonrpc.php' => config_path('jsonrpc.php')], 'jsonrpc-config');
+    }
+    
+    private function registerIgnoredAnnotations()
+    {
+        foreach (self::IGNORED_ANNOTATIONS as $annotationName) {
+            DoctrineAnnotationReader::addGlobalIgnoredName($annotationName);
+        }
     }
 }
