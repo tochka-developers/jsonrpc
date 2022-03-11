@@ -6,10 +6,10 @@ git:
 
 stage: test
 env:
-  - COMPOSER_FILE="composer.test.6.0.json"
-  - COMPOSER_FILE="composer.test.7.0.json"
-  - COMPOSER_FILE="composer.test.8.0.json"
-  - COMPOSER_FILE="composer.test.9.0.json"
+  - FRAMEWORK="laravel/framework:6.*"
+  - FRAMEWORK="laravel/framework:7.*"
+  - FRAMEWORK="laravel/framework:8.*"
+  - FRAMEWORK="laravel/framework:9.*"
 php:
   - '7.4'
   - '8.0'
@@ -21,8 +21,7 @@ workspaces:
       - coverage-report.clover
 install:
   - pecl install pcov
-  - cp ${COMPOSER_FILE} composer.json
-  - composer install
+  - composer require ${FRAMEWORK}
 script:
   - php -d pcov.enabled=1 vendor/bin/phpunit --coverage-clover=coverage-report.clover
 
