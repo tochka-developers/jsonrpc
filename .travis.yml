@@ -27,22 +27,22 @@ script:
 
 jobs:
   exclude:
-    - env: COMPOSER_FILE="composer.test.6.0.json"
+    - env: FRAMEWORK="laravel/framework:6.*"
       php: '8.0'
-    - env: COMPOSER_FILE="composer.test.7.0.json"
+    - env: FRAMEWORK="laravel/framework:7.*"
       php: '8.0'
-    - env: COMPOSER_FILE="composer.test.6.0.json"
+    - env: FRAMEWORK="laravel/framework:6.*"
       php: '8.1.2'
-    - env: COMPOSER_FILE="composer.test.7.0.json"
+    - env: FRAMEWORK="laravel/framework:7.*"
       php: '8.1.2'
-    - env: COMPOSER_FILE="composer.test.9.0.json"
+    - env: FRAMEWORK="laravel/framework:9.*"
       php: '7.4'
 
   include:
     - stage: deploy
       name: "Sonar Analyze"
       php: 8.0
-      env: COMPOSER_FILE="composer.json"
+      env: FRAMEWORK="laravel/framework:8.*"
       workspaces:
         use: coverage-report
       addons:
