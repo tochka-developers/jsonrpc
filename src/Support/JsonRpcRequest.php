@@ -2,10 +2,12 @@
 
 namespace Tochka\JsonRpc\Support;
 
+use Psr\Http\Message\ServerRequestInterface;
 use Tochka\JsonRpc\Route\JsonRpcRoute;
 
 class JsonRpcRequest
 {
+    private ServerRequestInterface $psrRequest;
     private object $rawRequest;
     
     private string $jsonrpc;
@@ -17,10 +19,11 @@ class JsonRpcRequest
     private ?JsonRpcRoute $route = null;
     private string $authName = 'guest';
     
-    public function __construct(object $rawRequest)
+    public function __construct(ServerRequestInterface $psrRequest, object $rawRequest)
     {
+        $this->psrRequest = $psrRequest;
         $this->rawRequest = $rawRequest;
-        
+    
         $this->jsonrpc = $rawRequest->jsonrpc;
         $this->method = $rawRequest->method;
         $this->params = $rawRequest->params ?? (object)[];
@@ -30,6 +33,11 @@ class JsonRpcRequest
     public function getRawRequest(): object
     {
         return $this->rawRequest;
+    }
+    
+    public function getPsrRequest(): ServerRequestInterface
+    {
+        return $this->psrRequest;
     }
     
     public function getId(): string

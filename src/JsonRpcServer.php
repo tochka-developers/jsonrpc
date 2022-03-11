@@ -3,55 +3,57 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Pipeline\Pipeline;
+use Psr\Http\Message\ServerRequestInterface;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\ExceptionHandler;
+use Tochka\JsonRpc\Facades\JsonRpcMiddlewareRepository;
 use Tochka\JsonRpc\Facades\JsonRpcRouter;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\JsonRpcResponse;
-use Tochka\JsonRpc\Support\MiddlewarePipeline;
 use Tochka\JsonRpc\Support\ResponseCollection;
-use Tochka\JsonRpc\Support\ServerConfig;
 
-/**
- * JsonRpcServer
- */
 class JsonRpcServer
 {
     private JsonRpcParserInterface $parser;
     private HandleResolverInterface $resolver;
-    private ServerConfig $config;
-
-    public function __construct(JsonRpcParserInterface $parser, HandleResolverInterface $resolver)
+    private Container $container;
+    
+    public function __construct(JsonRpcParserInterface $parser, HandleResolverInterface $resolver, Container $container)
     {
         $this->parser = $parser;
         $this->resolver = $resolver;
+        $this->container = $container;
     }
     
-    public function handle(string $content, string $serverName = 'default', string $group = null, string $action = null): ResponseCollection
-    {
+    public function handle(
+        ServerRequestInterface $request,
+        string $serverName = 'default',
+        string $group = null,
+        string $action = null
+    ): ResponseCollection {
         try {
-            $this->config = new ServerConfig(Config::get('jsonrpc.' . $serverName, []));
-            $pipeline = new MiddlewarePipeline(Container::getInstance());
-
-            $requests = $this->parser->parse($content);
-
-            $responses = $pipeline->send($requests)
-                ->through($this->config->onceExecutedMiddleware)
-                ->via('handle')
+            $pipeline = new Pipeline($this->container);
+            
+            $responses = $pipeline->send($request)
+                ->through(JsonRpcMiddlewareRepository::getMiddlewareForHttpRequest($serverName))
+                ->via('handleHttpRequest')
                 ->then(
-                    function (array $requests) use ($serverName, $group, $action) {
+                    function (ServerRequestInterface $httpRequest) use ($serverName, $group, $action) {
+                        $requests = $this->parser->parse($httpRequest);
+                        
                         $responses = new ResponseCollection();
+                        
                         foreach ($requests as $request) {
                             $response = $this->handleRequest($request, $serverName, $group, $action);
-
+                            
                             if ($response !== null) {
                                 $responses->add($response);
                             }
                         }
-
+                        
                         return $responses;
                     }
                 );
@@ -59,13 +61,18 @@ class JsonRpcServer
             $responses = new ResponseCollection();
             $responses->add(JsonRpcResponse::error(ExceptionHandler::handle($e)));
         }
-
+        
         return $responses;
     }
-
-    public function handleRequest(JsonRpcRequest $request, string $serverName, string $group = null, string $action = null): ?JsonRpcResponse {
+    
+    public function handleRequest(
+        JsonRpcRequest $request,
+        string $serverName,
+        string $group = null,
+        string $action = null
+    ): ?JsonRpcResponse {
         try {
-            $pipeline = new MiddlewarePipeline(Container::getInstance());
+            $pipeline = new Pipeline($this->container);
             
             $route = JsonRpcRouter::get($serverName, $request->getMethod(), $group, $action);
             
@@ -76,16 +83,16 @@ class JsonRpcServer
             $request->setRoute($route);
             
             return $pipeline->send($request)
-                ->through($this->config->middleware)
-                ->via('handle')
+                ->through(JsonRpcMiddlewareRepository::getMiddlewareForJsonRpcRequest($serverName))
+                ->via('handleJsonRpcRequest')
                 ->then(
                     function (JsonRpcRequest $request) {
                         $result = $this->resolver->handle($request);
-
+                        
                         if ($request->getId() === null) {
                             return null;
                         }
-
+                        
                         return JsonRpcResponse::result($result, $request->getId());
                     }
                 );

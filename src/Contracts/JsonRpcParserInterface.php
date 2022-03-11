@@ -2,7 +2,14 @@
 
 namespace Tochka\JsonRpc\Contracts;
 
+use Psr\Http\Message\ServerRequestInterface;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
+
 interface JsonRpcParserInterface
 {
-    public function parse(string $content): array;
+    /**
+     * @param ServerRequestInterface $request
+     * @return array<JsonRpcRequest>
+     */
+    public function parse(ServerRequestInterface $request): array;
 }

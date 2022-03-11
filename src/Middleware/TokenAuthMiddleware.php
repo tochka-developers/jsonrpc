@@ -2,48 +2,37 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
-use Illuminate\Http\Request;
-use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
-use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Psr\Http\Message\ServerRequestInterface;
+use Tochka\JsonRpc\Contracts\HttpRequestMiddleware;
+use Tochka\JsonRpc\Support\ResponseCollection;
 
-/**
- * Авторизация сервиса по токену в заголовке
- * Параметры:
- * string headerName - имя заголовка, откуда вычитывать токен
- * array tokens - ассоциативный массив вида [имя_сервиса => токен]
- */
-class TokenAuthMiddleware implements OnceExecutedMiddleware
+class TokenAuthMiddleware implements HttpRequestMiddleware
 {
-    /**
-     * @param JsonRpcRequest[] $requests
-     * @param callable $next
-     * @param Request $httpRequest
-     * @param string $headerName
-     * @param array $tokens
-     *
-     * @return mixed
-     */
-    public function handle(
-        array $requests,
-        callable $next,
-        Request $httpRequest,
-        string $headerName = 'X-Access-Key',
-        array $tokens = []
-    ) {
-        if (!$key = $httpRequest->header($headerName)) {
-            return $next($requests);
+    public const ATTRIBUTE_AUTH = 'jsonrpc_auth';
+    
+    private string $headerName;
+    private array $tokens;
+    
+    public function __construct(string $headerName = 'X-Access-Key', array $tokens = [])
+    {
+        $this->headerName = $headerName;
+        $this->tokens = $tokens;
+    }
+    
+    public function handleHttpRequest(ServerRequestInterface $request, callable $next): ResponseCollection
+    {
+        if (!$key = $request->getHeaderLine($this->headerName)) {
+            return $next($request);
         }
         
-        $service = array_search($key, $tokens, true);
+        $service = array_search($key, $this->tokens, true);
         
         if ($service === false) {
-            return $next($requests);
+            return $next($request);
         }
         
-        foreach ($requests as $request) {
-            $request->setAuthName($service);
-        }
+        $request = $request->withAttribute(self::ATTRIBUTE_AUTH, $service);
         
-        return $next($requests);
+        return $next($request);
     }
 }

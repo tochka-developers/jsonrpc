@@ -4,6 +4,9 @@ namespace Tochka\JsonRpc\Support;
 
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Concerns\FormatsMessages;
+use Tochka\JsonRpc\Annotations\ValidationRule;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterError;
@@ -62,23 +65,30 @@ class JsonRpcHandleResolver implements HandleResolverInterface
             $rawInputParameters = $namedParameters;
         }
         
+        $rules = [];
         foreach ($methodParameters as $parameterName => $parameter) {
             try {
                 if ($parameter->castFullRequest) {  // если необходимо весь запрос скастовать в объект
                     $parameterObject = JsonRpcParamsResolver::getParameterObject($parameter->className);
-                    $parameters[] = $this->castObject($rawInputParameters, $parameterObject);
+                    $parameters[] = $this->castObject($rawInputParameters, $parameter, $parameterObject);
                 } elseif ($parameter->castFromDI) { // если необходимо создать объект из DI
                     $parameters[] = Container::getInstance()->make($parameter->className);
                 } else { // стандартный каст в параметры
+                    $rules[$parameterName] = $this->getValidationRules($parameter);
                     $parameters[] = $this->castParameter((array)$rawInputParameters, $parameter, $parameterName);
                 }
             } catch (JsonRpcInvalidParametersException $e) {
                 $errors[] = $e->getErrors();
             } catch (JsonRpcException $e) {
                 throw $e;
-            } catch (\Exception $e) {
-                throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
+            } catch (\Throwable $e) {
+                throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR, null, null, $e);
             }
+        }
+        
+        $validator = Validator::make((array)$rawInputParameters, $rules);
+        if ($validator->fails()) {
+            throw new JsonRpcInvalidParametersException($this->formatFailedRules($validator->failed()));
         }
         
         if (!empty($errors)) {
@@ -91,6 +101,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
     /**
      * @throws JsonRpcInvalidParameterException
      * @throws JsonRpcException
+     * @throws \ReflectionException
      */
     private function castParameter(array $rawInputParameters, Parameter $parameter, string $fullFieldName)
     {
@@ -111,6 +122,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
     /**
      * @throws JsonRpcInvalidParameterException
      * @throws JsonRpcException
+     * @throws \ReflectionException
      */
     private function castValue($value, Parameter $parameter, string $fullFieldName)
     {
@@ -130,7 +142,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
         
         if ($parameter->className !== null && $parameter->type->is(ParameterTypeEnum::TYPE_OBJECT())) {
             $parameterObject = JsonRpcParamsResolver::getParameterObject($parameter->className);
-            $object = $this->castObject($value, $parameterObject, $fullFieldName);
+            $object = $this->castObject($value, $parameter, $parameterObject, $fullFieldName);
             if (!$parameter->nullable && $object === null) {
                 throw new JsonRpcInvalidParameterException(
                     JsonRpcInvalidParameterError::PARAMETER_ERROR_NOT_NULLABLE,
@@ -179,8 +191,12 @@ class JsonRpcHandleResolver implements HandleResolverInterface
      * @throws JsonRpcException
      * @throws \ReflectionException
      */
-    private function castObject($value, ?ParameterObject $parameterObject, string $fullFieldName = null): ?object
-    {
+    private function castObject(
+        $value,
+        Parameter $parameter,
+        ?ParameterObject $parameterObject,
+        string $fullFieldName = null
+    ): ?object {
         if ($parameterObject === null) {
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
         }
@@ -188,7 +204,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
         if ($parameterObject->customCastByCaster !== null) {
             return JsonRpcRequestCastFacade::cast(
                 $parameterObject->customCastByCaster,
-                $parameterObject->className,
+                $parameter,
                 $value,
                 $fullFieldName
             );
@@ -204,11 +220,17 @@ class JsonRpcHandleResolver implements HandleResolverInterface
             return $instance;
         }
         
+        $propertyValues = (array)$value;
+        
         foreach ($parameterObject->properties as $property) {
             try {
                 $propertyName = $property->name;
+                if (!$property->required && !array_key_exists($propertyName, $propertyValues)) {
+                    continue;
+                }
+                
                 $instance->$propertyName = $this->castParameter(
-                    (array)$value,
+                    $propertyValues,
                     $property,
                     $fullFieldName . '.' . $propertyName
                 );
@@ -257,5 +279,17 @@ class JsonRpcHandleResolver implements HandleResolverInterface
         }
         
         return $controller;
+    }
+    
+    private function getValidationRules(Parameter $parameter): array
+    {
+        $rules = [];
+        foreach ($parameter->annotations as $annotation) {
+            if ($annotation instanceof ValidationRule) {
+                $rules[] = explode('|', $annotation->rule);
+            }
+        }
+        
+        return array_merge(...$rules);
     }
 }

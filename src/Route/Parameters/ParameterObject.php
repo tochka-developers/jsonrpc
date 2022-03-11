@@ -24,6 +24,7 @@ class ParameterObject
         $instance = new self($array['className']);
         $instance->properties = $array['properties'];
         $instance->customCastByCaster = $array['customCastByCaster'];
+        $instance->annotations = $array['annotations'];
         
         return $instance;
     }

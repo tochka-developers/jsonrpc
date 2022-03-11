@@ -16,14 +16,19 @@
         "php": ">=7.4",
         "ext-json": "*",
         "bensampo/laravel-enum": "^1.0|^2.0|^3.0|^4.0",
-        "illuminate/support": "^6.0|^7.0|^8.0",
-        "illuminate/http": "^6.0|^7.0|^8.0",
-        "illuminate/container": "^6.0|^7.0|^8.0",
-        "illuminate/pipeline": "^6.0|^7.0|^8.0",
-        "illuminate/console": "^6.0|^7.0|^8.0",
+        "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
+        "illuminate/http": "^6.0|^7.0|^8.0|^9.0",
+        "illuminate/container": "^6.0|^7.0|^8.0|^9.0",
+        "illuminate/pipeline": "^6.0|^7.0|^8.0|^9.0",
+        "illuminate/console": "^6.0|^7.0|^8.0|^9.0",
+        "illuminate/validation": "^6.0|^7.0|^8.0|^9.0",
+        "nyholm/psr7": "^1.0",
         "phpdocumentor/reflection-docblock": "^3.0|^4.0|^5.0",
+        "psr/http-message": "^1.0",
         "spiral/attributes": "^2.8",
-        "tochka-developers/jsonrpc-annotations": "^1.1"
+        "symfony/psr-http-message-bridge": "^2.0",
+        "tochka-developers/jsonrpc-annotations": "^1.3",
+        "tochka-developers/jsonrpc-support": "^1.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",
@@ -33,10 +38,7 @@
     "autoload": {
         "psr-4": {
             "Tochka\\JsonRpc\\": "src/"
-        },
-        "files": [
-            "src/helpers.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -49,5 +51,25 @@
                 "Tochka\\JsonRpc\\JsonRpcServiceProvider"
             ]
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/var/www/packages/jsonrpc-support",
+            "options": {
+                "versions": {
+                    "tochka-developers/jsonrpc-support": "v1.0.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "/var/www/packages/jsonrpc-annotations",
+            "options": {
+                "versions": {
+                    "tochka-developers/jsonrpc-annotations": "v1.3.0"
+                }
+            }
+        }
+    ]
 }

@@ -11,7 +11,9 @@ use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\Types\Array_;
 use phpDocumentor\Reflection\Types\Object_;
 use Tochka\JsonRpc\Annotations\ApiMapRequestToObject;
+use Tochka\JsonRpc\Annotations\Sometimes;
 use Tochka\JsonRpc\Contracts\ApiAnnotationContract;
+use Tochka\JsonRpc\Contracts\ApiParameterAnnotationContract;
 use Tochka\JsonRpc\Contracts\CustomCasterInterface;
 use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
 use Tochka\JsonRpc\Facades\JsonRpcDocBlockFactory;
@@ -104,6 +106,7 @@ class ParamsResolver implements ParamsResolverInterface
             $parameter->nullable = $reflectionParameter->allowsNull();
             if ($reflectionParameter->isDefaultValueAvailable()) {
                 $parameter->defaultValue = $reflectionParameter->getDefaultValue();
+                $parameter->hasDefaultValue = true;
             }
             
             $parameters[] = $parameter;
@@ -136,6 +139,7 @@ class ParamsResolver implements ParamsResolverInterface
             $parameter->required = !$reflectionParameter->isOptional();
             if ($reflectionParameter->isDefaultValueAvailable()) {
                 $parameter->defaultValue = $reflectionParameter->getDefaultValue();
+                $parameter->hasDefaultValue = true;
             }
             
             $parameter->description = $this->getParameterDescriptionFromPhpDoc(
@@ -144,7 +148,10 @@ class ParamsResolver implements ParamsResolverInterface
                 DocBlockTypeEnum::METHOD()
             );
             
-            $parameter->annotations = $this->getAnnotations($reflectionParameter);
+            $parameter->annotations = array_merge(
+                $this->getAnnotations($reflectionParameter),
+                $this->getAnnotationsForParameter($reflectionMethod, $parameterName)
+            );
             
             $parameters[$parameterName] = $parameter;
         }
@@ -208,11 +215,21 @@ class ParamsResolver implements ParamsResolverInterface
                 DocBlockTypeEnum::PROPERTY()
             );
             
+            $property->annotations = $this->getAnnotations($reflectionProperty);
+            
             if ($reflectionProperty->isInitialized($instance)) {
                 $property->required = false;
                 $property->defaultValue = $reflectionProperty->getValue($instance);
+                $property->hasDefaultValue = true;
             } else {
                 $property->required = true;
+                
+                foreach ($property->annotations as $annotation) {
+                    if ($annotation instanceof Sometimes) {
+                        $property->required = false;
+                        break;
+                    }
+                }
             }
             
             $property->description = $this->getParameterDescriptionFromPhpDoc(
@@ -220,8 +237,6 @@ class ParamsResolver implements ParamsResolverInterface
                 $docBlock,
                 DocBlockTypeEnum::PROPERTY()
             );
-            
-            $property->annotations = $this->getAnnotations($reflectionProperty);
             
             $properties[$propertyName] = $property;
         }
@@ -335,6 +350,21 @@ class ParamsResolver implements ParamsResolverInterface
         return $docBlock->getAnnotations(
             null,
             fn($annotation) => $annotation instanceof ApiAnnotationContract
+        );
+    }
+    
+    private function getAnnotationsForParameter(\Reflector $reflector, string $parameterName): array
+    {
+        $docBlock = JsonRpcDocBlockFactory::make($reflector);
+        if ($docBlock === null) {
+            return [];
+        }
+        
+        return $docBlock->getAnnotations(
+            null,
+            fn($annotation) => $annotation instanceof ApiAnnotationContract
+                && $annotation instanceof ApiParameterAnnotationContract
+                && $annotation->getParameterName() === $parameterName
         );
     }
     

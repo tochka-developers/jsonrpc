@@ -4,8 +4,9 @@ namespace Tochka\JsonRpc\Exceptions;
 
 class JsonRpcInvalidParameterException extends JsonRpcInvalidParametersException
 {
-    public function __construct(string $code, string $fieldName, ?string $message = null)
+    public function __construct(string $code, string $fieldName, ?string $message = null, ?\Throwable $previous = null)
     {
-        parent::__construct([new JsonRpcInvalidParameterError($code, $fieldName, $message)]);
+        $error = new JsonRpcInvalidParameterError($code, $fieldName, $message);
+        parent::__construct([$error], $previous);
     }
 }

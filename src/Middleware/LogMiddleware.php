@@ -3,13 +3,25 @@
 namespace Tochka\JsonRpc\Middleware;
 
 use Illuminate\Support\Facades\Log;
+use Tochka\JsonRpc\Contracts\JsonRpcRequestMiddleware;
+use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
 use Tochka\JsonRpc\Helpers\LogHelper;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Support\JsonRpcResponse;
 
-class LogMiddleware
+class LogMiddleware implements JsonRpcRequestMiddleware
 {
-    public function handle(JsonRpcRequest $request, $next, string $channel = 'default', array $hideParams = [])
+    private string $channel;
+    private array $hideParams;
+    
+    public function __construct(string $channel = 'default', array $hideParams = [])
+    {
+        $this->channel = $channel;
+        $this->hideParams = $hideParams;
+    }
+    
+    public function handleJsonRpcRequest(JsonRpcRequest $request, callable $next): JsonRpcResponse
     {
         $logContext = [
             'id' => $request->getId(),
@@ -24,29 +36,44 @@ class LogMiddleware
             $logContext['method'] = $route->jsonRpcMethodName;
             $logContext['call'] = $route->controllerClass . '::' . $route->controllerMethod;
             $logContext['service'] = $request->getAuthName();
-    
-            $globalRules = $hideParams['*'] ?? [];
-            $controllerRules = $hideParams[$route->controllerClass] ?? [];
-            $methodRules = $hideParams[$route->controllerClass . '@' . $route->controllerMethod] ?? [];
+            
+            $globalRules = $this->hideParams['*'] ?? [];
+            $controllerRules = $this->hideParams[$route->controllerClass] ?? [];
+            $methodRules = $this->hideParams[$route->controllerClass . '@' . $route->controllerMethod] ?? [];
             $rules = array_merge($globalRules, $controllerRules, $methodRules);
-            $logRequest['params'] = LogHelper::hidePrivateData((array) ($request->getRawRequest()->params ?? []), $rules);
+            $logRequest['params'] = LogHelper::hidePrivateData(
+                (array)($request->getRawRequest()->params ?? []),
+                $rules
+            );
         }
-
-        Log::channel($channel)->info('New request', $logContext + ['request' => $logRequest]);
-
-        $result = $next($request);
-
-        if (isset($result->error)) {
-            Log::channel($channel)->info(
-                'Error',
-                $logContext + [
+        
+        Log::channel($this->channel)->info('New request', $logContext + ['request' => $logRequest]);
+        
+        try {
+            $result = $next($request);
+    
+            if (isset($result->error)) {
+                Log::channel($this->channel)->info(
+                    'Error',
+                    $logContext + [
                         'error' => $result->error,
                     ]
+                );
+            } else {
+                Log::channel($this->channel)->info('Successful request', $logContext);
+            }
+    
+            return $result;
+        } catch (JsonRpcException $e) {
+            Log::channel($this->channel)->info(
+                'Error',
+                $logContext + [
+                    'error_code' => $e->getCode(),
+                    'error_message' => $e->getMessage(),
+                ]
             );
-        } else {
-            Log::channel($channel)->info('Successful request', $logContext);
+            
+            throw $e;
         }
-
-        return $result;
     }
 }

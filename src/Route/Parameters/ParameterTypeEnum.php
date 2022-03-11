@@ -78,12 +78,15 @@ final class ParameterTypeEnum extends Enum
     {
         switch ($varType) {
             case 'string':
+            case 'str':
                 return self::TYPE_STRING();
             case 'double':
                 return self::TYPE_FLOAT();
             case 'boolean':
+            case 'bool':
                 return self::TYPE_BOOLEAN();
             case 'integer':
+            case 'int':
                 return self::TYPE_INTEGER();
             case 'array':
                 return self::TYPE_ARRAY();

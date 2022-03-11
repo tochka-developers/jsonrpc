@@ -3,10 +3,10 @@
 namespace Tochka\JsonRpc\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * JsonRpc Server
- * @method static handle(string $request, string $serverName = 'default', string $group = null,string $action = null)
+ * @method static handle(ServerRequestInterface $request, string $serverName = 'default', string $group = null,string $action = null)
  *
  * @see \Tochka\JsonRpc\JsonRpcServer
  */

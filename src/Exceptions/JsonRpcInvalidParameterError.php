@@ -2,9 +2,7 @@
 
 namespace Tochka\JsonRpc\Exceptions;
 
-use Illuminate\Contracts\Support\Arrayable;
-
-class JsonRpcInvalidParameterError implements Arrayable
+class JsonRpcInvalidParameterError extends JsonRpcError
 {
     public const PARAMETER_ERROR_REQUIRED = 'required';
     public const PARAMETER_ERROR_NOT_NULLABLE = 'not_nullable';
@@ -16,23 +14,8 @@ class JsonRpcInvalidParameterError implements Arrayable
         self::PARAMETER_ERROR_TYPE => 'Field type incorrect',
     ];
     
-    public string $code;
-    public string $message;
-    public string $fieldName;
-    
-    public function __construct(string $code, string $fieldName, ?string $message = null)
+    public function __construct(string $code, string $fieldName, ?string $message = null, ?object $meta = null)
     {
-        $this->code = $code;
-        $this->message = $message ?? self::MESSAGES[$code] ?? 'Unknown cast error';
-        $this->fieldName = $fieldName;
-    }
-    
-    public function toArray(): array
-    {
-        return [
-            'code' => $this->code,
-            'message' => $this->message,
-            'object_name' => $this->fieldName,
-        ];
+        parent::__construct($code, $message ?? self::MESSAGES[$code] ?? 'Unknown cast error', $fieldName, $meta);
     }
 }

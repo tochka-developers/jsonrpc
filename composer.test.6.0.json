@@ -21,8 +21,13 @@
         "illuminate/container": "^6.0",
         "illuminate/pipeline": "^6.0",
         "illuminate/console": "^6.0",
+        "nyholm/psr7": "^1.0",
+        "phpdocumentor/reflection-docblock": "^3.0|^4.0|^5.0",
+        "psr/http-message": "^1.0",
         "spiral/attributes": "^2.8",
-        "tochka-developers/jsonrpc-annotations": "^1.1"
+        "symfony/psr-http-message-bridge": "^2.0",
+        "tochka-developers/jsonrpc-annotations": "^1.3",
+        "tochka-developers/jsonrpc-support": "^1.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",

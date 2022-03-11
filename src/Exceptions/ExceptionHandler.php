@@ -34,7 +34,7 @@ class ExceptionHandler
         } elseif ($e instanceof JsonRpcException) {
             $error->code = $e->getCode();
             $error->message = $e->getMessage();
-            if (null !== $e->getData()) {
+            if ($e->getData() !== null) {
                 $error->data['errors'] = $e->getData();
             }
         } else {

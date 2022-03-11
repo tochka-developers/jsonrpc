@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc\Exceptions;
 
-class JsonRpcException extends \Exception
+class JsonRpcException extends \RuntimeException
 {
     public const CODE_PARSE_ERROR = -32700;
     public const CODE_INVALID_REQUEST = -32600;
@@ -16,7 +16,7 @@ class JsonRpcException extends \Exception
     public const CODE_EXTERNAL_INTEGRATION_ERROR = 8000;
     public const CODE_INTERNAL_INTEGRATION_ERROR = 8001;
 
-    public array $jsonrpc_messages = [
+    public const MESSAGES_CODES = [
         self::CODE_PARSE_ERROR                => 'Parse error',
         self::CODE_INVALID_REQUEST            => 'Invalid Request',
         self::CODE_METHOD_NOT_FOUND           => 'Method not found',
@@ -30,12 +30,12 @@ class JsonRpcException extends \Exception
         self::CODE_INTERNAL_INTEGRATION_ERROR => 'Internal integration error',
     ];
 
-    protected $data;
+    private $data;
 
-    public function __construct($code = 0, $message = null, $data = null, \Exception $previous = null)
+    public function __construct(int $code = 0, ?string $message = null, $data = null, ?\Throwable $previous = null)
     {
-        if ($message === null && !empty($this->jsonrpc_messages[$code])) {
-            $message = $this->jsonrpc_messages[$code];
+        if ($message === null && !empty(self::MESSAGES_CODES[$code])) {
+            $message = self::MESSAGES_CODES[$code];
         }
 
         $this->data = $data;

@@ -2,22 +2,24 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
+use Tochka\JsonRpc\Contracts\JsonRpcRequestMiddleware;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Support\JsonRpcResponse;
 
-class AccessControlListMiddleware
+class AccessControlListMiddleware implements JsonRpcRequestMiddleware
 {
+    private array $acl;
+    
+    public function __construct(array $acl = [])
+    {
+        $this->acl = $acl;
+    }
+    
     /**
-     * Handle an incoming request.
-     *
-     * @param JsonRpcRequest $request
-     * @param callable $next
-     * @param array $acl
-     *
-     * @return mixed
      * @throws JsonRpcException
      */
-    public function handle(JsonRpcRequest $request, callable $next, array $acl = [])
+    public function handleJsonRpcRequest(JsonRpcRequest $request, callable $next): JsonRpcResponse
     {
         $route = $request->getRoute();
         
@@ -27,9 +29,9 @@ class AccessControlListMiddleware
         
         $service = $request->getAuthName();
         
-        $globalRules = (array)($acl['*'] ?? []);
-        $controllerRules = (array)($acl[$route->controllerClass] ?? []);
-        $methodRules = (array)($acl[$route->controllerClass . '@' . $route->controllerMethod] ?? []);
+        $globalRules = (array)($this->acl['*'] ?? []);
+        $controllerRules = (array)($this->acl[$route->controllerClass] ?? []);
+        $methodRules = (array)($this->acl[$route->controllerClass . '@' . $route->controllerMethod] ?? []);
         
         // если не попали ни под одно правило - значит сервису нельзя
         if (empty($globalRules) && empty($controllerRules) && empty($methodRules)) {
@@ -51,9 +53,6 @@ class AccessControlListMiddleware
     }
     
     /**
-     * @param string $service
-     * @param array $rules
-     *
      * @throws JsonRpcException
      */
     protected function checkRules(string $service, array $rules): void

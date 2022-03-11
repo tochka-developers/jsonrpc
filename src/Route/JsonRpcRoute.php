@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Route;
 
+use Tochka\JsonRpc\Contracts\ApiAnnotationContract;
 use Tochka\JsonRpc\Route\Parameters\Parameter;
 
 class JsonRpcRoute
@@ -15,6 +16,8 @@ class JsonRpcRoute
     /** @var array<string, Parameter> */
     public array $parameters = [];
     public Parameter $result;
+    /** @var array<ApiAnnotationContract> */
+    public array $annotations = [];
     
     public function __construct(
         string $serverName,
@@ -48,6 +51,7 @@ class JsonRpcRoute
         $instance->controllerMethod = $array['controllerMethod'];
         $instance->parameters = $array['parameters'] ?? [];
         $instance->result = $array['result'];
+        $instance->annotations = $array['annotations'] ?? [];
         
         return $instance;
     }

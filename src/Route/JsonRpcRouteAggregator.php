@@ -6,6 +6,8 @@ use Illuminate\Support\Str;
 use Spiral\Attributes\ReaderInterface;
 use Tochka\JsonRpc\Annotations\ApiIgnore;
 use Tochka\JsonRpc\Annotations\ApiIgnoreMethod;
+use Tochka\JsonRpc\Contracts\ApiAnnotationContract;
+use Tochka\JsonRpc\Facades\JsonRpcDocBlockFactory;
 use Tochka\JsonRpc\Facades\JsonRpcParamsResolver;
 use Tochka\JsonRpc\Support\ServerConfig;
 
@@ -107,6 +109,7 @@ class JsonRpcRouteAggregator
                 $route->controllerMethod = $reflectionMethod->getName();
                 $route->parameters = JsonRpcParamsResolver::resolveParameters($reflectionMethod);
                 $route->result = JsonRpcParamsResolver::resolveResult($reflectionMethod);
+                $route->annotations = $this->getAnnotations($reflectionMethod);
                 
                 $routes[$route->getRouteName()] = $route;
             }
@@ -190,5 +193,22 @@ class JsonRpcRouteAggregator
         }
         
         return implode('\\', $resultNamespace);
+    }
+    
+    /**
+     * @param \Reflector $reflector
+     * @return array<ApiAnnotationContract>
+     */
+    private function getAnnotations(\Reflector $reflector): array
+    {
+        $docBlock = JsonRpcDocBlockFactory::make($reflector);
+        if ($docBlock === null) {
+            return [];
+        }
+        
+        return $docBlock->getAnnotations(
+            null,
+            fn($annotation) => $annotation instanceof ApiAnnotationContract
+        );
     }
 }

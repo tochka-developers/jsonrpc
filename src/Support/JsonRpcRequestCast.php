@@ -5,6 +5,8 @@ namespace Tochka\JsonRpc\Support;
 use Tochka\JsonRpc\Contracts\CustomCasterInterface;
 use Tochka\JsonRpc\Contracts\GlobalCustomCasterInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
+use Tochka\JsonRpc\Route\Parameters\Parameter;
+use Tochka\JsonRpc\Route\Parameters\ParameterObject;
 
 class JsonRpcRequestCast
 {
@@ -30,10 +32,10 @@ class JsonRpcRequestCast
     /**
      * @throws JsonRpcException
      */
-    public function cast(string $casterName, string $className, $value, string $fieldName)
+    public function cast(string $casterName, Parameter $parameter, $value, string $fieldName)
     {
         if (array_key_exists($casterName, $this->casters)) {
-            return $this->casters[$casterName]->cast($className, $value, $fieldName);
+            return $this->casters[$casterName]->cast($parameter, $value, $fieldName);
         }
         
         $caster = new $casterName();
@@ -41,6 +43,6 @@ class JsonRpcRequestCast
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
         }
         
-        return $caster->cast($className, $value, $fieldName);
+        return $caster->cast($parameter, $value, $fieldName);
     }
 }
