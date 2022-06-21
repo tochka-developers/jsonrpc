@@ -140,7 +140,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
         $varType = gettype($value);
         $type = ParameterTypeEnum::fromVarType($varType);
         
-        if ($parameter->className !== null && $parameter->type->is(ParameterTypeEnum::TYPE_OBJECT())) {
+        if ($parameter->className !== null && $parameter->type === ParameterTypeEnum::TYPE_OBJECT) {
             $parameterObject = JsonRpcParamsResolver::getParameterObject($parameter->className);
             $object = $this->castObject($value, $parameter, $parameterObject, $fullFieldName);
             if (!$parameter->nullable && $object === null) {
@@ -152,11 +152,11 @@ class JsonRpcHandleResolver implements HandleResolverInterface
             return $object;
         }
         
-        if ($type->isNot($parameter->type) && $parameter->type->isNot(ParameterTypeEnum::TYPE_MIXED())) {
+        if ($type !== $parameter->type && $parameter->type !== ParameterTypeEnum::TYPE_MIXED) {
             throw new JsonRpcInvalidParameterTypeException($fullFieldName, $parameter->type->value, $type->value);
         }
         
-        if ($parameter->parametersInArray !== null && $parameter->type->is(ParameterTypeEnum::TYPE_ARRAY())) {
+        if ($parameter->parametersInArray !== null && $parameter->type === ParameterTypeEnum::TYPE_ARRAY) {
             $resultArray = [];
             $i = 0;
             $errors = [];

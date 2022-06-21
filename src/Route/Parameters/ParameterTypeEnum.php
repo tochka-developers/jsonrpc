@@ -2,7 +2,6 @@
 
 namespace Tochka\JsonRpc\Route\Parameters;
 
-use BenSampo\Enum\Enum;
 use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\Types\Array_;
 use phpDocumentor\Reflection\Types\Boolean;
@@ -11,114 +10,69 @@ use phpDocumentor\Reflection\Types\Integer;
 use phpDocumentor\Reflection\Types\Object_;
 use phpDocumentor\Reflection\Types\String_;
 
-/**
- * @method static self TYPE_STRING()
- * @method static self TYPE_FLOAT()
- * @method static self TYPE_BOOLEAN()
- * @method static self TYPE_INTEGER()
- * @method static self TYPE_OBJECT()
- * @method static self TYPE_ARRAY()
- * @method static self TYPE_MIXED()
- */
-final class ParameterTypeEnum extends Enum
+enum ParameterTypeEnum: string
 {
-    public const TYPE_STRING = 'string';
-    public const TYPE_FLOAT = 'float';
-    public const TYPE_BOOLEAN = 'boolean';
-    public const TYPE_INTEGER = 'integer';
-    public const TYPE_OBJECT = 'object';
-    public const TYPE_ARRAY = 'array';
-    public const TYPE_MIXED = 'mixed';
+    case TYPE_STRING = 'string';
+    case TYPE_FLOAT = 'float';
+    case TYPE_BOOLEAN = 'boolean';
+    case TYPE_INTEGER = 'integer';
+    case TYPE_OBJECT = 'object';
+    case TYPE_ARRAY = 'array';
+    case TYPE_MIXED = 'mixed';
     
     public static function fromReflectionType(\ReflectionNamedType $type): self
     {
         if (!$type->isBuiltin()) {
-            return self::TYPE_OBJECT();
+            return self::TYPE_OBJECT;
         }
         
-        switch ($type->getName()) {
-            case 'string':
-                return self::TYPE_STRING();
-            case 'float':
-                return self::TYPE_FLOAT();
-            case 'bool':
-                return self::TYPE_BOOLEAN();
-            case 'int':
-                return self::TYPE_INTEGER();
-            case 'array':
-                return self::TYPE_ARRAY();
-            case 'object':
-                return self::TYPE_OBJECT();
-            default:
-                return self::TYPE_MIXED();
-        }
+        return match ($type->getName()) {
+            'string' => self::TYPE_STRING,
+            'float' => self::TYPE_FLOAT,
+            'bool' => self::TYPE_BOOLEAN,
+            'int' => self::TYPE_INTEGER,
+            'array' => self::TYPE_ARRAY,
+            'object' => self::TYPE_OBJECT,
+            default => self::TYPE_MIXED,
+        };
     }
     
     public static function fromDocBlockType(Type $type): self
     {
-        switch (true) {
-            case $type instanceof String_:
-                return self::TYPE_STRING();
-            case $type instanceof Float_:
-                return self::TYPE_FLOAT();
-            case $type instanceof Boolean:
-                return self::TYPE_BOOLEAN();
-            case $type instanceof Integer:
-                return self::TYPE_INTEGER();
-            case $type instanceof Array_:
-                return self::TYPE_ARRAY();
-            case $type instanceof Object_:
-                return self::TYPE_OBJECT();
-            default:
-                return self::TYPE_MIXED();
-        }
+        return match (true) {
+            $type instanceof String_ => self::TYPE_STRING,
+            $type instanceof Float_ => self::TYPE_FLOAT,
+            $type instanceof Boolean => self::TYPE_BOOLEAN,
+            $type instanceof Integer => self::TYPE_INTEGER,
+            $type instanceof Array_ => self::TYPE_ARRAY,
+            $type instanceof Object_ => self::TYPE_OBJECT,
+            default => self::TYPE_MIXED,
+        };
     }
     
     public static function fromVarType(string $varType): self
     {
-        switch ($varType) {
-            case 'string':
-            case 'str':
-                return self::TYPE_STRING();
-            case 'double':
-                return self::TYPE_FLOAT();
-            case 'boolean':
-            case 'bool':
-                return self::TYPE_BOOLEAN();
-            case 'integer':
-            case 'int':
-                return self::TYPE_INTEGER();
-            case 'array':
-                return self::TYPE_ARRAY();
-            case 'object':
-                return self::TYPE_OBJECT();
-            default:
-                return self::TYPE_MIXED();
-        }
-    }
-    
-    public static function __set_state(array $array): self
-    {
-        return self::coerce($array['value']) ?? self::TYPE_MIXED();
+        return match ($varType) {
+            'string', 'str' => self::TYPE_STRING,
+            'double' => self::TYPE_FLOAT,
+            'boolean', 'bool' => self::TYPE_BOOLEAN,
+            'integer', 'int' => self::TYPE_INTEGER,
+            'array' => self::TYPE_ARRAY,
+            'object' => self::TYPE_OBJECT,
+            default => self::TYPE_MIXED,
+        };
     }
     
     public function toJsonType(): string
     {
-        switch ($this->value) {
-            case self::TYPE_STRING:
-                return 'string';
-            case self::TYPE_FLOAT:
-                return 'number';
-            case self::TYPE_BOOLEAN:
-                return 'boolean';
-            case self::TYPE_INTEGER:
-                return 'integer';
-            case self::TYPE_ARRAY:
-                return 'array';
-            case self::TYPE_OBJECT:
-                return 'object';
-            default:
-                return 'any';
-        }
+        return match ($this) {
+            self::TYPE_STRING => 'string',
+            self::TYPE_FLOAT => 'number',
+            self::TYPE_BOOLEAN => 'boolean',
+            self::TYPE_INTEGER => 'integer',
+            self::TYPE_ARRAY => 'array',
+            self::TYPE_OBJECT => 'object',
+            default => 'any',
+        };
     }
 }

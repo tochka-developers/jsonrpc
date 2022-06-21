@@ -84,7 +84,7 @@ class ParamsResolver implements ParamsResolverInterface
         $reflectionParameters = $reflectionMethod->getParameters();
         
         foreach ($reflectionParameters as $reflectionParameter) {
-            $parameter = new Parameter($reflectionParameter->getName(), ParameterTypeEnum::TYPE_OBJECT());
+            $parameter = new Parameter($reflectionParameter->getName(), ParameterTypeEnum::TYPE_OBJECT);
             
             $type = Reflector::getParameterClassName($reflectionParameter);
             
@@ -256,18 +256,18 @@ class ParamsResolver implements ParamsResolverInterface
         DocBlockTypeEnum $docBlockType
     ): Parameter {
         if (!$reflectionType instanceof \ReflectionNamedType) {
-            $parameter = new Parameter($parameterName, ParameterTypeEnum::TYPE_MIXED());
+            $parameter = new Parameter($parameterName, ParameterTypeEnum::TYPE_MIXED);
             $parameter->nullable = true;
         } else {
             $type = ParameterTypeEnum::fromReflectionType($reflectionType);
             $parameter = new Parameter($parameterName, $type);
             $parameter->nullable = $reflectionType->allowsNull();
             
-            if (!$reflectionType->isBuiltin() && $type->is(ParameterTypeEnum::TYPE_OBJECT())) {
+            if (!$reflectionType->isBuiltin() && $type === ParameterTypeEnum::TYPE_OBJECT) {
                 $parameter->className = $this->fullyQualifiedClassName($reflectionType->getName());
                 $this->resolveClass($parameter->className);
             }
-            if ($type->is(ParameterTypeEnum::TYPE_ARRAY())) {
+            if ($type === ParameterTypeEnum::TYPE_ARRAY) {
                 $arrayParam = null;
                 if ($docBlock !== null) {
                     $arrayParam = $this->getDocBlockTypeForParameter(
@@ -278,7 +278,7 @@ class ParamsResolver implements ParamsResolverInterface
                 }
                 
                 if ($arrayParam === null) {
-                    $arrayParam = new Parameter('', ParameterTypeEnum::TYPE_MIXED());
+                    $arrayParam = new Parameter('', ParameterTypeEnum::TYPE_MIXED);
                 }
                 
                 $arrayParam->name = $parameterName;
