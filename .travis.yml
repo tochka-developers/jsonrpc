@@ -6,13 +6,8 @@ git:
 
 stage: test
 env:
-  - FRAMEWORK="laravel/framework:6.*"
-  - FRAMEWORK="laravel/framework:7.*"
-  - FRAMEWORK="laravel/framework:8.*"
   - FRAMEWORK="laravel/framework:9.*"
 php:
-  - '7.4'
-  - '8.0'
   - '8.1.2'
 workspaces:
   create:
@@ -26,23 +21,11 @@ script:
   - php -d pcov.enabled=1 vendor/bin/phpunit --coverage-clover=coverage-report.clover
 
 jobs:
-  exclude:
-    - env: FRAMEWORK="laravel/framework:6.*"
-      php: '8.0'
-    - env: FRAMEWORK="laravel/framework:7.*"
-      php: '8.0'
-    - env: FRAMEWORK="laravel/framework:6.*"
-      php: '8.1.2'
-    - env: FRAMEWORK="laravel/framework:7.*"
-      php: '8.1.2'
-    - env: FRAMEWORK="laravel/framework:9.*"
-      php: '7.4'
-
   include:
     - stage: deploy
       name: "Sonar Analyze"
-      php: 8.0
-      env: FRAMEWORK="laravel/framework:8.*"
+      php: 8.1
+      env: FRAMEWORK="laravel/framework:9.*"
       workspaces:
         use: coverage-report
       addons:
