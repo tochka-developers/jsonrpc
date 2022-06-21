@@ -1,42 +1,54 @@
+os: linux
+dist: focal
 language: php
-
 git:
-    depth: false
+  depth: false
 
-install:
-    - cp ${COMPOSER_FILE} composer.json
-    - composer install
-
+stage: test
 env:
-    - COMPOSER_FILE="composer.test.6.0.json"
-    - COMPOSER_FILE="composer.test.7.0.json"
-    - COMPOSER_FILE="composer.test.8.0.json"
-
+  - FRAMEWORK="laravel/framework:6.*"
+  - FRAMEWORK="laravel/framework:7.*"
+  - FRAMEWORK="laravel/framework:8.*"
+  - FRAMEWORK="laravel/framework:9.*"
 php:
-    - '7.4'
-    - '8.0'
-
-script: "vendor/bin/phpunit --no-coverage"
+  - '7.4'
+  - '8.0'
+  - '8.1.2'
+workspaces:
+  create:
+    name: coverage-report
+    paths:
+      - coverage-report.clover
+install:
+  - pecl install pcov
+  - composer require ${FRAMEWORK}
+script:
+  - php -d pcov.enabled=1 vendor/bin/phpunit --coverage-clover=coverage-report.clover
 
 jobs:
-    exclude:
-        - env: COMPOSER_FILE="composer.test.6.0.json"
-          php: '8.0'
-        - env: COMPOSER_FILE="composer.test.7.0.json"
-          php: '8.0'
-    include:
-        -   stage: "Sonar Analyze"
-            dist: trusty
-            php: 8.0
-            env: COMPOSER_FILE="composer.json"
-            install:
-                - pecl install pcov
-                - composer install
-            addons:
-                sonarcloud:
-                    organization: "tochka-developers"
-                    token:
-                        secure: "ek17Nu/1EnHKEe4cAvYwVI5JEiNz1OKgl2QrP7Y6r4tq26kWg7WtLuO6nOW3SWkWyw5eZM/SsTSdi71PsRhdXXCx7/Zqhtnl+SEx1ucMvGw14piOUR5p5NC0684+TzLMh2gaMOipg7or9YQiF8hVWpUWC9sl20H4PbAJIpdVaSuwQ7Qp3KF52x6ckJRgBIYGyj7t2apmKeiIgDJaoPYKnnmb9GCfDyBhVk7ade/ANAYWirsE0h3ZJ89PMfF4GJvQ0tEC7FEWsF5hsot+B2DgQ0E7JfyvEnYmmYlGSk6ZmBco3eF+VQB7iNdxYnS/p5jP5bux8esytaEVwe2YkNTcGELhbetJUGIEgPr6hlCUBAHXe8zI/QjOrNgwFJF9+6YjpDPI19lc0CgN1252gleZBDeeckPsTzhr9UhrmWaXfFDwl6gWTP7I9EEJGI2YTfJMBdhqSB4xPJGccHbMY6YL46FCDJ9+H+neBOp4GkcCKOMmcY5kUUyaqlSUFjlpJJKVyfmG6+AnqM+23dwVAjRGigEB4Wt4CZKoX44mKps5tSQpL8lxPJ3Pw7EY/ksa6khBaszNJt+qEUtLHFZrJyfAy9BDX/w+Zdg96JqEgzi20l0QSv+u+2tgT60A840yVB4oZlU3KfadwxMfSThfKaiixeV/Xf8F3E2nWDOyFIsTrU4="
-            script:
-                - php -d pcov.enabled=1 vendor/bin/phpunit --coverage-clover=coverage-report.clover
-                - sonar-scanner
+  exclude:
+    - env: FRAMEWORK="laravel/framework:6.*"
+      php: '8.0'
+    - env: FRAMEWORK="laravel/framework:7.*"
+      php: '8.0'
+    - env: FRAMEWORK="laravel/framework:6.*"
+      php: '8.1.2'
+    - env: FRAMEWORK="laravel/framework:7.*"
+      php: '8.1.2'
+    - env: FRAMEWORK="laravel/framework:9.*"
+      php: '7.4'
+
+  include:
+    - stage: deploy
+      name: "Sonar Analyze"
+      php: 8.0
+      env: FRAMEWORK="laravel/framework:8.*"
+      workspaces:
+        use: coverage-report
+      addons:
+        sonarcloud:
+          organization: "tochka-developers"
+          token:
+            secure: "ek17Nu/1EnHKEe4cAvYwVI5JEiNz1OKgl2QrP7Y6r4tq26kWg7WtLuO6nOW3SWkWyw5eZM/SsTSdi71PsRhdXXCx7/Zqhtnl+SEx1ucMvGw14piOUR5p5NC0684+TzLMh2gaMOipg7or9YQiF8hVWpUWC9sl20H4PbAJIpdVaSuwQ7Qp3KF52x6ckJRgBIYGyj7t2apmKeiIgDJaoPYKnnmb9GCfDyBhVk7ade/ANAYWirsE0h3ZJ89PMfF4GJvQ0tEC7FEWsF5hsot+B2DgQ0E7JfyvEnYmmYlGSk6ZmBco3eF+VQB7iNdxYnS/p5jP5bux8esytaEVwe2YkNTcGELhbetJUGIEgPr6hlCUBAHXe8zI/QjOrNgwFJF9+6YjpDPI19lc0CgN1252gleZBDeeckPsTzhr9UhrmWaXfFDwl6gWTP7I9EEJGI2YTfJMBdhqSB4xPJGccHbMY6YL46FCDJ9+H+neBOp4GkcCKOMmcY5kUUyaqlSUFjlpJJKVyfmG6+AnqM+23dwVAjRGigEB4Wt4CZKoX44mKps5tSQpL8lxPJ3Pw7EY/ksa6khBaszNJt+qEUtLHFZrJyfAy9BDX/w+Zdg96JqEgzi20l0QSv+u+2tgT60A840yVB4oZlU3KfadwxMfSThfKaiixeV/Xf8F3E2nWDOyFIsTrU4="
+      install: skip
+      script: sonar-scanner
