@@ -8,9 +8,8 @@
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
 
 Поддерживаемые версии:
-* Lumen >= 6.0
-* Laravel >= 6.0
-* PHP 7.4 | 8.0
+* Laravel >= 9.0
+* PHP 8.0 | 8.1 | 8.2
 
 Поддерживает:
 * вызов удаленных методов по нотификации имяКонтроллера_имяМетода, либо с разделением логики на несколько ресурсных 
@@ -36,35 +35,9 @@ composer require tochka-developers/jsonrpc
 php artisan vendor:publish
 ```
 
-Для того, чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
+Для того чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
 ```shell script
 php artisan vendor:publish --tag="jsonrpc-config"
-```
-
-### Lumen
-В Lumen отсутствует команда _vendor:publish_, поэтому делается это вручную. 
-Если в проекте еще нет директории для конфигураций - создайте ее:
-```shell script
-mkdir config
-```
-Скопируйте в нее конфигрурацию jsonrpc:
-```shell script
-cp vendor/tochka-developers/jsonrpc/config/jsonrpc.php config/jsonrpc.php
-```
-Вместо _config/jsonrpc.php_ нужно указать любую другую директорию, где хранятся ваши конфиги и название будущего конфига.
-Далее необходимо прописать скопированный конфиг в _bootstrap/app.php_
-```php
-$app->configure('jsonrpc');
-```
-Так же прописать провайдер:
-```php
-$app->register(\Tochka\JsonRpc\JsonRpcServiceProvider::class);
-```
-Где _jsonrpc_ - имя файла конфига
-
-Для корректной работы так же необходимы фасады:
-```php
-$app->withFacades();
 ```
 
 # Настройка точек входа
@@ -82,6 +55,7 @@ Route::post('/api/v1/jsonrpc/{group}[/{action}]', function (Illuminate\Http\Requ
 ```
 
 # Конфигурация
+
 ```php
 return [
     // можно настроить несколько разных конфигурация для разных точек входа
@@ -117,7 +91,7 @@ return [
                 // Канал лога, в который будут записываться все логи
                 'channel' => 'default',
             ],
-             Tochka\JsonRpc\Middleware\TokenAuthMiddleware::class         => [
+             Tochka\JsonRpc\Middleware\TokenAuthMiddlewareInterface::class         => [
                  'headerName' => 'X-Tochka-Access-Key',
                  // Ключи доступа к API
                  'tokens'     => [
@@ -277,8 +251,9 @@ Laravel `config:cache`).
 раз при входящем запросе.
 
 Также вы можете динамически добавлять новые маршруты в список:
+
 ```php
-$route = new \Tochka\JsonRpc\Route\JsonRpcRoute('default', 'my_dynamic_method');
+$route = new \Tochka\JsonRpc\DTO\JsonRpcRoute('default', 'my_dynamic_method');
 $route->controllerClass = MyController::class;
 $route->controllerMethod = 'methodName';
 

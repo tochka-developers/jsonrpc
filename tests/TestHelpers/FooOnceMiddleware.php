@@ -6,5 +6,4 @@ use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
 
 class FooOnceMiddleware implements OnceExecutedMiddleware
 {
-
 }

@@ -3,21 +3,21 @@
 namespace Tochka\JsonRpc\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use Tochka\JsonRpc\Route\JsonRpcCacheRouter;
-use Tochka\JsonRpc\Route\JsonRpcRoute;
-use Tochka\JsonRpc\Route\JsonRpcRouterResolver;
+use Tochka\JsonRpc\Contracts\RouterInterface;
+use Tochka\JsonRpc\DTO\JsonRpcRoute;
 
 /**
  * @method static JsonRpcRoute|null get(string $serverName, string $methodName, string $group = null, string $action = null)
- * @method static add(JsonRpcRoute $route)
+ * @method static void add(JsonRpcRoute $route)
  *
- * @see JsonRpcCacheRouter
- * @see JsonRpcRouterResolver
+ * @see RouterInterface
+ * @see \Tochka\JsonRpc\Route\CacheRouter
+ * @see \Tochka\JsonRpc\Route\Router
  */
 class JsonRpcRouter extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return self::class;
+        return RouterInterface::class;
     }
 }

@@ -3,19 +3,19 @@
 namespace Tochka\JsonRpc\Tests\Support;
 
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Support\JsonRpcResponse;
+use Tochka\JsonRpc\Support\OldJsonRpcResponse;
 
 class JsonRpcResponseTest extends TestCase
 {
     /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::result
+     * @covers \Tochka\JsonRpc\Support\OldJsonRpcResponse::result
      */
     public function testResult(): void
     {
         $data = ['data' => 'data'];
         $id = '12345';
 
-        $response = JsonRpcResponse::result($data, $id);
+        $response = OldJsonRpcResponse::result($data, $id);
 
         $this->assertEquals($data, $response->result);
         $this->assertEquals('2.0', $response->jsonrpc);
@@ -24,14 +24,14 @@ class JsonRpcResponseTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::error
+     * @covers \Tochka\JsonRpc\Support\OldJsonRpcResponse::error
      */
     public function testError(): void
     {
         $error = ['error' => 'error'];
         $id = '12345';
 
-        $response = JsonRpcResponse::error($error, $id);
+        $response = OldJsonRpcResponse::error($error, $id);
 
         $this->assertEquals($error, $response->error);
         $this->assertEquals('2.0', $response->jsonrpc);
@@ -40,7 +40,7 @@ class JsonRpcResponseTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::toArray
+     * @covers \Tochka\JsonRpc\Support\OldJsonRpcResponse::toArray
      */
     public function testToArrayResult(): void
     {
@@ -52,13 +52,13 @@ class JsonRpcResponseTest extends TestCase
             'id'      => $id,
         ];
 
-        $response = JsonRpcResponse::result($data, $id)->toArray();
+        $response = OldJsonRpcResponse::result($data, $id)->toArray();
 
         $this->assertEquals($result, $response);
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::toArray
+     * @covers \Tochka\JsonRpc\Support\OldJsonRpcResponse::toArray
      */
     public function testToArrayError(): void
     {
@@ -70,13 +70,13 @@ class JsonRpcResponseTest extends TestCase
             'id'      => $id,
         ];
 
-        $response = JsonRpcResponse::error($error, $id)->toArray();
+        $response = OldJsonRpcResponse::error($error, $id)->toArray();
 
         $this->assertEquals($result, $response);
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::toJson
+     * @covers \Tochka\JsonRpc\Support\OldJsonRpcResponse::toJson
      */
     public function testToJson(): void
     {
@@ -88,7 +88,7 @@ class JsonRpcResponseTest extends TestCase
             'id'      => $id,
         ], JSON_UNESCAPED_UNICODE);
 
-        $response = JsonRpcResponse::result($data, $id)->toJson();
+        $response = OldJsonRpcResponse::result($data, $id)->toJson();
 
         $this->assertJsonStringEqualsJsonString($result, $response);
     }

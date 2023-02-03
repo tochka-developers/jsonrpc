@@ -3,8 +3,8 @@
 namespace Tochka\JsonRpc\Tests\Support;
 
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Support\JsonRpcResponse;
-use Tochka\JsonRpc\Support\ResponseCollection;
+use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
+use Tochka\JsonRpc\Support\OldJsonRpcResponse;
 use Tochka\JsonRpc\Tests\TestHelpers\ReflectionTrait;
 
 class ResponseCollectionTest extends TestCase
@@ -12,15 +12,15 @@ class ResponseCollectionTest extends TestCase
     use ReflectionTrait;
 
     /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::add
+     * @covers \Tochka\JsonRpc\DTO\JsonRpcResponseCollection::add
      * @throws \ReflectionException
      */
     public function testAdd(): void
     {
-        $response1 = JsonRpcResponse::result(['method' => 'foo'], '11111');
-        $response2 = JsonRpcResponse::result(['method' => 'bar'], '22222');
+        $response1 = OldJsonRpcResponse::result(['method' => 'foo'], '11111');
+        $response2 = OldJsonRpcResponse::result(['method' => 'bar'], '22222');
 
-        $collection = new ResponseCollection();
+        $collection = new JsonRpcResponseCollection();
         $collection->add($response1);
         $collection->add($response2);
 
@@ -31,26 +31,26 @@ class ResponseCollectionTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::empty
+     * @covers \Tochka\JsonRpc\DTO\JsonRpcResponseCollection::empty
      */
     public function testEmpty(): void
     {
-        $collection = new ResponseCollection();
+        $collection = new JsonRpcResponseCollection();
 
         $this->assertTrue($collection->empty());
-        $collection->add(JsonRpcResponse::result(['method' => 'foo'], '11111'));
+        $collection->add(OldJsonRpcResponse::result(['method' => 'foo'], '11111'));
 
         $this->assertFalse($collection->empty());
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::toArray
+     * @covers \Tochka\JsonRpc\DTO\JsonRpcResponseCollection::toArray
      */
     public function testToArraySingle(): void
     {
-        $response = JsonRpcResponse::result(['method' => 'foo'], '11111');
+        $response = OldJsonRpcResponse::result(['method' => 'foo'], '11111');
 
-        $collection = new ResponseCollection();
+        $collection = new JsonRpcResponseCollection();
         $collection->add($response);
 
         $result = $collection->toArray();
@@ -59,14 +59,14 @@ class ResponseCollectionTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::toArray
+     * @covers \Tochka\JsonRpc\DTO\JsonRpcResponseCollection::toArray
      */
     public function testToArrayMultiple(): void
     {
-        $response1 = JsonRpcResponse::result(['method' => 'foo'], '11111');
-        $response2 = JsonRpcResponse::result(['method' => 'bar'], '22222');
+        $response1 = OldJsonRpcResponse::result(['method' => 'foo'], '11111');
+        $response2 = OldJsonRpcResponse::result(['method' => 'bar'], '22222');
 
-        $collection = new ResponseCollection();
+        $collection = new JsonRpcResponseCollection();
         $collection->add($response1);
         $collection->add($response2);
 
@@ -82,14 +82,14 @@ class ResponseCollectionTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::toJson
+     * @covers \Tochka\JsonRpc\DTO\JsonRpcResponseCollection::toJson
      */
     public function testToJson(): void
     {
-        $response1 = JsonRpcResponse::result(['method' => 'foo'], '11111');
-        $response2 = JsonRpcResponse::result(['method' => 'bar'], '22222');
+        $response1 = OldJsonRpcResponse::result(['method' => 'foo'], '11111');
+        $response2 = OldJsonRpcResponse::result(['method' => 'bar'], '22222');
 
-        $collection = new ResponseCollection();
+        $collection = new JsonRpcResponseCollection();
         $collection->add($response1);
         $collection->add($response2);
 

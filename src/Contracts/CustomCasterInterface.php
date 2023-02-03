@@ -6,5 +6,5 @@ use Tochka\JsonRpc\Route\Parameters\Parameter;
 
 interface CustomCasterInterface
 {
-    public function cast(Parameter $parameter, $value, string $fieldName);
+    public function cast(Parameter $parameter, mixed $value, string $fieldName): ?object;
 }

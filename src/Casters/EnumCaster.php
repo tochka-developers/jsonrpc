@@ -3,8 +3,11 @@
 namespace Tochka\JsonRpc\Casters;
 
 use Tochka\JsonRpc\Contracts\GlobalCustomCasterInterface;
-use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Exceptions\InvalidEnumValueException;
 use Tochka\JsonRpc\Route\Parameters\Parameter;
+use Tochka\JsonRpc\Standard\Exceptions\Additional\InvalidParameterException;
+use Tochka\JsonRpc\Standard\Exceptions\Errors\InvalidParameterError;
+use Tochka\JsonRpc\Standard\Exceptions\InternalErrorException;
 
 /**
  * @since 8.1
@@ -15,34 +18,38 @@ class EnumCaster implements GlobalCustomCasterInterface
     {
         return function_exists('enum_exists') && enum_exists($expectedType);
     }
-    
+
     /**
-     * @return mixed
-     * @throws JsonRpcInvalidParameterException
+     * @param Parameter $parameter
+     * @param mixed $value
+     * @param string $fieldName
+     * @return \BackedEnum|null
      */
-    public function cast(Parameter $parameter, $value, string $fieldName)
+    public function cast(Parameter $parameter, mixed $value, string $fieldName): ?object
     {
         if ($value === null) {
             return null;
         }
-    
+
+        if (!is_string($value) && !is_int($value)) {
+            throw InvalidParameterException::from(
+                parameterName: $fieldName,
+                code:          InvalidParameterError::CODE_INCORRECT_VALUE,
+            );
+        }
+
+        /** @var class-string<\BackedEnum>|null $expectedType */
+        $expectedType = $parameter->className;
+        if ($expectedType === null) {
+            throw new InternalErrorException();
+        }
+
         try {
-            /** @var \BackedEnum $expectedType */
-            $expectedType = $parameter->className;
             return $expectedType::from($value);
         } catch (\ValueError $e) {
-            throw new JsonRpcInvalidParameterException(
-                'incorrect_value',
-                $fieldName,
-                sprintf(
-                    'Invalid value for field. Expected: [%s], Actual: [%s]',
-                    implode(',', $expectedType::cases()),
-                    $value
-                ),
-                $e
-            );
+            throw new InvalidEnumValueException($fieldName, $value, $expectedType::cases(), $e);
         } catch (\Throwable $e) {
-            throw new JsonRpcInvalidParameterException('error', $fieldName, $e->getMessage(), $e);
+            throw InternalErrorException::from($e);
         }
     }
 }

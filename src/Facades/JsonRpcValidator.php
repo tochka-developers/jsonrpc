@@ -3,18 +3,22 @@
 namespace Tochka\JsonRpc\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterError;
+use Tochka\JsonRpc\Contracts\ValidatorInterface;
+use Tochka\JsonRpc\Standard\Exceptions\Errors\InvalidParameterError;
 
 /**
- * @method static JsonRpcInvalidParameterError[] getJsonRpcErrors()
- * @method static bool validate()
+ * @method static bool validate(array $data, array $rules, array $messages = [])
+ * @method static array validateAndGetErrors(array $data, array $rules, array $messages = [])
+ * @method static void validateAndThrow(array $data, array $rules, array $messages = [])
+ * @method static array<InvalidParameterError> getJsonRpcErrors(array $failedRules)
  *
- * @see \Tochka\JsonRpc\Support\JsonRpcValidator
+ * @see ValidatorInterface
+ * @see \Tochka\JsonRpc\Support\Validator
  */
 class JsonRpcValidator extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return self::class;
+        return ValidatorInterface::class;
     }
 }

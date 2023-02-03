@@ -6,15 +6,15 @@
 
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\LogMiddleware;
-use Tochka\JsonRpc\Middleware\ServiceValidationMiddleware;
-use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
+use Tochka\JsonRpc\Middleware\ServiceValidationMiddlewareInterface;
+use Tochka\JsonRpc\Middleware\TokenAuthMiddlewareInterface;
 use Tochka\JsonRpc\Support\ServerConfig;
 
 return [
     'default' => [
         // Точка входа в указанный сервер
         'endpoint' => '/api/v1/public/jsonrpc',
-        
+
         /**
          * Тип формирования точки входа (получать или нет из конечного URI группу методов и метод
          *
@@ -39,15 +39,15 @@ return [
          * controller@method: \Default\Controller\Namespace\Foo\BarController@test_ping
          */
         'dynamicEndpoint' => ServerConfig::DYNAMIC_ENDPOINT_NONE,
-       
+
         // Краткое описание сервера
         'summary' => 'Основная точка входа',
-        
+
         // Полное описание сервера
         'description' => 'JsonRpc Server',
 
         // Пространство имен, в котором находятся контроллеры
-        'namespace'   => 'App\Http\Controllers',
+        'namespace' => 'App\Http\Controllers',
 
         // Suffix для контроллеров
         'controllerSuffix' => 'Controller',
@@ -56,8 +56,8 @@ return [
         'methodDelimiter' => '_',
 
         // Обработчики запросов
-        'middleware'  => [
-            LogMiddleware::class               => [
+        'middleware' => [
+            LogMiddleware::class => [
                 // Канал лога, в который будут записываться все логи
                 'channel' => 'default',
 
@@ -69,14 +69,14 @@ return [
                 //    'App\\Http\\TestController2' => ['password', 'data.phone_number']
                 //]
             ],
-            TokenAuthMiddleware::class         => [
+            TokenAuthMiddlewareInterface::class => [
                 'headerName' => 'X-Tochka-Access-Key',
                 // Ключи доступа к API
-                'tokens'     => [
+                'tokens' => [
                     'all' => 'TOKEN',
                 ],
             ],
-            ServiceValidationMiddleware::class => [
+            ServiceValidationMiddlewareInterface::class => [
                 // Разрешенные сервера, которые могут авторизовываться под указанными сервисами
                 'servers' => [
                     //'service1' => ['192.168.0.1', '192.168.1.5'],

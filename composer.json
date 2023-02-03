@@ -1,6 +1,6 @@
 {
     "name": "tochka-developers/jsonrpc",
-    "description": "JsonRpc extension for Laravel",
+    "description": "JsonRpc server package for Laravel",
     "license": "MIT",
     "authors": [
         {
@@ -13,28 +13,32 @@
         "laravel"
     ],
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.0",
         "ext-json": "*",
-        "bensampo/laravel-enum": "^1.0|^2.0|^3.0|^4.0|^5.0,<5.2.0",
-        "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
-        "illuminate/http": "^6.0|^7.0|^8.0|^9.0",
-        "illuminate/container": "^6.0|^7.0|^8.0|^9.0",
-        "illuminate/pipeline": "^6.0|^7.0|^8.0|^9.0",
-        "illuminate/console": "^6.0|^7.0|^8.0|^9.0",
-        "illuminate/validation": "^6.0|^7.0|^8.0|^9.0",
+        "illuminate/support": "^9.0",
+        "illuminate/http": "^9.0",
+        "illuminate/container": "^9.0",
+        "illuminate/pipeline": "^9.0",
+        "illuminate/console": "^9.0",
+        "illuminate/validation": "^9.0",
         "nyholm/psr7": "^1.0",
         "phpdocumentor/reflection-docblock": "^3.0|^4.0|^5.0",
         "psr/http-message": "^1.0",
+        "psr/simple-cache": "^1.0|^2.0|^3.0",
         "spiral/attributes": "^2.8",
         "symfony/psr-http-message-bridge": "^2.0",
-        "tochka-developers/jsonrpc-annotations": "^1.1",
-        "tochka-developers/jsonrpc-support": "^1.0"
+        "tochka-developers/array-file-cache": "^1.0|^2.0|^3.0",
+        "tochka-developers/jsonrpc-annotations": "^1.3",
+        "tochka-developers/jsonrpc-standard": "^1.0"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest",
-        "phpunit/phpunit": "^9.5",
+        "laravel/pint": "^1.4",
         "mockery/mockery": "^1.0",
-        "bensampo/laravel-enum": "^1.0|^2.0|^3.0|^4.0|^5.0"
+        "php-coveralls/php-coveralls": "^2.5",
+        "phpunit/phpunit": "^9.5",
+        "roave/security-advisories": "dev-latest",
+        "bensampo/laravel-enum": "^1.0|^2.0|^3.0|^4.0|^5.0",
+        "vimeo/psalm": "^4.20"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -55,22 +59,30 @@
             ]
         }
     },
+    "scripts": {
+        "lint": "pint --test",
+        "lint-fix": "pint",
+        "analize": "psalm --no-cache",
+        "analize-8.0": "psalm --config=psalm.xml --no-cache",
+        "analize-8.1": "psalm --config=psalm-8.1.xml --php-version=8.1 --no-cache",
+        "analize-8.2": "psalm --config=psalm-8.1.xml --php-version=8.2 --no-cache"
+    },
     "repositories": [
-        {
-            "type": "path",
-            "url": "/var/www/packages/jsonrpc-support",
-            "options": {
-                "versions": {
-                    "tochka-developers/jsonrpc-support": "v1.0.0"
-                }
-            }
-        },
         {
             "type": "path",
             "url": "/var/www/packages/jsonrpc-annotations",
             "options": {
                 "versions": {
                     "tochka-developers/jsonrpc-annotations": "v1.3.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "/var/www/packages/jsonrpc-standard",
+            "options": {
+                "versions": {
+                    "tochka-developers/jsonrpc-standard": "v1.0.0"
                 }
             }
         }
