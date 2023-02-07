@@ -16,6 +16,9 @@ class ExceptionHandler implements ExceptionHandlerInterface
 {
     private Container $container;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(Container $container)
     {
         $this->container = $container;

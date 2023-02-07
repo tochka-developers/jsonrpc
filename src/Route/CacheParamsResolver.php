@@ -13,6 +13,9 @@ class CacheParamsResolver implements ParamsResolverInterface
     private ParamsResolverInterface $paramsResolver;
     private RouteCacheInterface $cache;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(ParamsResolverInterface $paramsResolver, RouteCacheInterface $cache)
     {
         $this->paramsResolver = $paramsResolver;

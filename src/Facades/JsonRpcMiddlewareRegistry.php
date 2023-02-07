@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Facade;
 use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
 
 /**
+ * @psalm-api
+ *
  * @see MiddlewareRegistryInterface
  * @see \Tochka\JsonRpc\Support\MiddlewareRegistry
  */

@@ -4,6 +4,9 @@ namespace Tochka\JsonRpc\Route\Parameters;
 
 use Tochka\JsonRpc\Contracts\ApiAnnotationInterface;
 
+/**
+ * @psalm-api
+ */
 class Parameter
 {
     public string $name;

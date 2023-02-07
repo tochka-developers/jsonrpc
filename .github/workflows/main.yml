@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+      - v5
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+env:
+  COVERAGE: '1'
+  default_php_version: '8.0'
+  php_extensions: 'pcov, json'
+
+jobs:
+  vars:
+    runs-on: 'ubuntu-latest'
+    outputs:
+      default_php_version: ${{ env.default_php_version }}
+      php_extensions: ${{ env.php_extensions }}
+    steps:
+      - run: echo "Exposing env vars"
+
+  lint:
+    name: 'Lint code'
+    needs: vars
+    uses: 'tochka-developers/actions/.github/workflows/lint.yml@v1'
+    with:
+      php-version: ${{ needs.vars.outputs.default_php_version }}
+      php-extensions: ${{ needs.vars.outputs.php_extensions }}
+
+  analyze:
+    name: 'Analyze code'
+    needs: vars
+    strategy:
+      fail-fast: false
+      matrix:
+        php-versions: [ '8.0', '8.1', '8.2' ]
+    uses: 'tochka-developers/actions/.github/workflows/analyze.yml@v1'
+    with:
+      php-version: ${{ matrix.php-versions }}
+      php-extensions: ${{ needs.vars.outputs.php_extensions }}
+
+  composer-require-check:
+    name: 'Composer Require check'
+    needs: vars
+    uses: 'tochka-developers/actions/.github/workflows/composer-require-check.yml@v1'
+    with:
+      php-version: ${{ needs.vars.outputs.default_php_version }}
+      php-extensions: ${{ needs.vars.outputs.php_extensions }}
+
+  composer-audit:
+    name: 'Composer Audit'
+    needs: vars
+    uses: 'tochka-developers/actions/.github/workflows/composer-audit.yml@v1'
+    with:
+      php-version: ${{ needs.vars.outputs.default_php_version }}
+      php-extensions: ${{ needs.vars.outputs.php_extensions }}

@@ -8,6 +8,10 @@ use phpDocumentor\Reflection\DocBlockFactory;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use Tochka\JsonRpc\Contracts\AnnotationReaderInterface;
 
+/**
+ * @psalm-type Attributes = object
+ * @psalm-api
+ */
 class JsonRpcDocBlock
 {
     private ?DocBlock $docBlock = null;
@@ -140,13 +144,14 @@ class JsonRpcDocBlock
             return null;
         }
 
-        /** @var array<T> $tags */
         $tags = $docBlock->getTags();
 
         foreach ($tags as $tag) {
             if ($tagClassName !== null && !$tag instanceof $tagClassName) {
                 continue;
             }
+
+            /** @var T $tag */
 
             if ($filter !== null && !$filter($tag)) {
                 continue;
@@ -159,7 +164,7 @@ class JsonRpcDocBlock
     }
 
     /**
-     * @template T of DocBlock\Tag
+     * @template T of Tag
      * @param class-string<T>|null $tagClassName
      * @param callable(T):bool|null $filter
      * @param DocBlock|null $docBlock
@@ -178,10 +183,11 @@ class JsonRpcDocBlock
         return array_filter(
             $tags,
             static function (DocBlock\Tag $tag) use ($tagClassName, $filter) {
-                /** @var T $tag */
                 if ($tagClassName !== null && !$tag instanceof $tagClassName) {
                     return false;
                 }
+
+                /** @var T $tag */
 
                 if ($filter !== null) {
                     return $filter($tag);
@@ -193,7 +199,7 @@ class JsonRpcDocBlock
     }
 
     /**
-     * @template T
+     * @template T of Attributes
      * @param class-string<T> $annotationClassName
      * @return bool
      */
@@ -203,7 +209,7 @@ class JsonRpcDocBlock
     }
 
     /**
-     * @template T
+     * @template T of Attributes
      * @param class-string<T>|null $annotationClassName
      * @param callable(T):bool|null $filter
      * @return array<T>
@@ -218,6 +224,8 @@ class JsonRpcDocBlock
             if ($annotationClassName !== null && !$annotation instanceof $annotationClassName) {
                 continue;
             }
+
+            /** @var T $annotation */
             if ($filter !== null && !$filter($annotation)) {
                 continue;
             }
@@ -229,7 +237,7 @@ class JsonRpcDocBlock
     }
 
     /**
-     * @template T
+     * @template T of Attributes
      * @param class-string<T> $annotationClassName
      * @param callable(T):bool|null $filter
      * @return T|null
@@ -254,22 +262,20 @@ class JsonRpcDocBlock
     }
 
     /**
-     * @template T of object
-     * @param class-string<T>|null $annotationClassName
-     * @return iterable<T>
+     * @return iterable<Attributes>
      */
-    private function getAnnotationsByReflector(?string $annotationClassName = null): iterable
+    private function getAnnotationsByReflector(): iterable
     {
         if ($this->reflector instanceof \ReflectionClass) {
-            return $this->annotationReader->getClassMetadata($this->reflector, $annotationClassName);
+            return $this->annotationReader->getClassMetadata($this->reflector);
         } elseif ($this->reflector instanceof \ReflectionProperty) {
-            return $this->annotationReader->getPropertyMetadata($this->reflector, $annotationClassName);
+            return $this->annotationReader->getPropertyMetadata($this->reflector);
         } elseif ($this->reflector instanceof \ReflectionFunctionAbstract) {
-            return $this->annotationReader->getFunctionMetadata($this->reflector, $annotationClassName);
+            return $this->annotationReader->getFunctionMetadata($this->reflector);
         } elseif ($this->reflector instanceof \ReflectionParameter) {
-            return $this->annotationReader->getParameterMetadata($this->reflector, $annotationClassName);
+            return $this->annotationReader->getParameterMetadata($this->reflector);
         } elseif ($this->reflector instanceof \ReflectionClassConstant) {
-            return $this->annotationReader->getConstantMetadata($this->reflector, $annotationClassName);
+            return $this->annotationReader->getConstantMetadata($this->reflector);
         } else {
             return [];
         }

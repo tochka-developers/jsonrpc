@@ -11,6 +11,9 @@ use phpDocumentor\Reflection\Types\Object_;
 use phpDocumentor\Reflection\Types\String_;
 use Tochka\JsonRpc\Support\LegacyEnum;
 
+/**
+ * @psalm-api
+ */
 final class ParameterTypeEnum extends LegacyEnum
 {
     private const TYPE_STRING = 'string';

@@ -7,6 +7,9 @@ use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
 use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
 
+/**
+ * @psalm-api
+ */
 interface JsonRpcServerInterface
 {
     public function handle(

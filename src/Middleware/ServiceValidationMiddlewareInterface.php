@@ -8,6 +8,9 @@ use Tochka\JsonRpc\Contracts\HttpRequestMiddlewareInterface;
 use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\ForbiddenException;
 
+/**
+ * @psalm-api
+ */
 class ServiceValidationMiddlewareInterface implements HttpRequestMiddlewareInterface
 {
     private array|string $servers;

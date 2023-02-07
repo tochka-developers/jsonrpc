@@ -10,6 +10,9 @@ use Tochka\JsonRpc\Standard\Exceptions\Additional\ForbiddenException;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\UnauthorizedException;
 use Tochka\JsonRpc\Standard\Exceptions\MethodNotFoundException;
 
+/**
+ * @psalm-api
+ */
 class AccessControlListMiddleware implements JsonRpcRequestMiddlewareInterface
 {
     private array $acl;

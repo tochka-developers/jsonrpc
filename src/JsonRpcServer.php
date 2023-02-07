@@ -26,6 +26,9 @@ class JsonRpcServer implements JsonRpcServerInterface
     private ExceptionHandlerInterface $exceptionHandler;
     private MiddlewareRegistryInterface $middlewareRegistry;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(
         ParserInterface $parser,
         HandleResolverInterface $resolver,

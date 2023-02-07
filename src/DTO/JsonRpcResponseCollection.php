@@ -6,6 +6,11 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
 
+/**
+ * @psalm-api
+ * @psalm-import-type JsonRpcResponseArray from JsonRpcResponse
+ * @psalm-suppress MissingTemplateParam
+ */
 class JsonRpcResponseCollection implements Jsonable, Arrayable, \JsonSerializable
 {
     /** @var array<JsonRpcResponse> */
@@ -31,7 +36,7 @@ class JsonRpcResponseCollection implements Jsonable, Arrayable, \JsonSerializabl
     }
 
     /**
-     * @inheritDoc
+     * @return array<int, JsonRpcResponseArray>|JsonRpcResponseArray
      */
     public function toArray(): array
     {

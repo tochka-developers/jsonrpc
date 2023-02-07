@@ -1,0 +1,8 @@
+{
+    "symbol-whitelist" : [
+        "BenSampo\\Enum\\Enum",
+        "BenSampo\\Enum\\Exceptions\\InvalidEnumMemberException",
+        "Carbon\\Carbon",
+        "enum_exists"
+    ]
+}

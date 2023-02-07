@@ -2,7 +2,6 @@
 
 namespace Tochka\JsonRpc\Support;
 
-use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Tochka\JsonRpc\Contracts\ParserInterface;
 use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
@@ -24,13 +23,13 @@ class Parser implements ParserInterface
         }
 
         try {
-            /** @var object $data */
+            /** @var array<object>|object $data */
             $data = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable $e) {
             throw new ParseErrorException(previous: $e);
         }
 
-        $calls = Arr::wrap($data);
+        $calls = is_array($data) ? $data : [$data];
 
         return array_map(
             fn (object $rawRequest) => new JsonRpcServerRequest($request, JsonRpcRequest::from($rawRequest)),

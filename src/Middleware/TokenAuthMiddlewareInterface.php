@@ -8,6 +8,9 @@ use Tochka\JsonRpc\Contracts\AuthInterface;
 use Tochka\JsonRpc\DTO\JsonRpcClient;
 use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 
+/**
+ * @psalm-api
+ */
 class TokenAuthMiddlewareInterface implements HttpRequestMiddlewareInterface
 {
     private string $headerName;

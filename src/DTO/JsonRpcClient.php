@@ -2,6 +2,9 @@
 
 namespace Tochka\JsonRpc\DTO;
 
+/**
+ * @psalm-api
+ */
 class JsonRpcClient
 {
     public const GUEST = 'guest';

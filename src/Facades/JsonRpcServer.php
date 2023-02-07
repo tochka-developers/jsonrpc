@@ -10,6 +10,8 @@ use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
 use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
 
 /**
+ * @psalm-api
+ *
  * @method static JsonRpcResponseCollection handle(ServerRequestInterface $request, string $serverName = 'default', string $group = null, string $action = null)
  * @method static JsonRpcResponse|null handleRequest(JsonRpcServerRequest $request, string $serverName, string $group = null, string $action = null)
  *

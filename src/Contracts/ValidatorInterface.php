@@ -4,6 +4,9 @@ namespace Tochka\JsonRpc\Contracts;
 
 use Tochka\JsonRpc\Standard\Exceptions\Errors\InvalidParameterError;
 
+/**
+ * @psalm-api
+ */
 interface ValidatorInterface
 {
     public function validate(array $data, array $rules, array $messages = []): bool;

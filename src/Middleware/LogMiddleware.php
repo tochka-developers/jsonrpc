@@ -9,6 +9,9 @@ use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
 use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
 use Tochka\JsonRpc\Standard\Exceptions\JsonRpcException;
 
+/**
+ * @psalm-api
+ */
 class LogMiddleware implements JsonRpcRequestMiddlewareInterface
 {
     private string $channel;

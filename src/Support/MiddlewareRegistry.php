@@ -13,6 +13,9 @@ class MiddlewareRegistry implements MiddlewareRegistryInterface
     private array $middleware = [];
     private Container $container;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(Container $container)
     {
         $this->container = $container;

@@ -32,6 +32,9 @@ class DefaultHandleResolver implements HandleResolverInterface
     private CasterRegistryInterface $casterRegistry;
     private ValidatorInterface $validator;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(
         ParamsResolverInterface $paramsResolver,
         CasterRegistryInterface $casterRegistry,
@@ -73,7 +76,7 @@ class DefaultHandleResolver implements HandleResolverInterface
 
         $parameters = [];
 
-        /** @var array<array<InvalidParameterError>> $errors */
+        /** @var array<int, array<int, InvalidParameterError>> $errors */
         $errors = [];
 
         // если входные параметры переданы массивом - преобразуем в объект с именованными параметрами
@@ -122,7 +125,7 @@ class DefaultHandleResolver implements HandleResolverInterface
         }
 
         if (!empty($errors)) {
-            /** @var array<InvalidParameterError> $combinerErrors */
+            /** @var array<int, InvalidParameterError> $combinerErrors */
             $combinerErrors = array_merge(...$errors);
             throw InvalidParametersException::from($combinerErrors);
         }
@@ -179,7 +182,7 @@ class DefaultHandleResolver implements HandleResolverInterface
             $resultArray = [];
             $i = 0;
 
-            /** @var array<array<InvalidParameterError>> $errors */
+            /** @var array<int, array<int, InvalidParameterError>> $errors */
             $errors = [];
 
             /** @psalm-suppress MixedAssignment */
@@ -204,7 +207,7 @@ class DefaultHandleResolver implements HandleResolverInterface
             }
 
             if (!empty($errors)) {
-                /** @var array<InvalidParameterError> $combinerErrors */
+                /** @var array<int, InvalidParameterError> $combinerErrors */
                 $combinerErrors = array_merge(...$errors);
                 throw InvalidParametersException::from($combinerErrors);
             }
@@ -249,7 +252,7 @@ class DefaultHandleResolver implements HandleResolverInterface
 
         $propertyValues = (array)$value;
 
-        /** @var array<array<InvalidParameterError>> $errors */
+        /** @var array<int, array<int, InvalidParameterError>> $errors */
         $errors = [];
 
         foreach ($parameterObject->properties as $property) {
@@ -276,7 +279,7 @@ class DefaultHandleResolver implements HandleResolverInterface
         }
 
         if (!empty($errors)) {
-            /** @var array<InvalidParameterError> $combinerErrors */
+            /** @var array<int, InvalidParameterError> $combinerErrors */
             $combinerErrors = array_merge(...$errors);
             throw InvalidParametersException::from($combinerErrors);
         }

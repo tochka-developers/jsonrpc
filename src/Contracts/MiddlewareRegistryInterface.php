@@ -2,6 +2,9 @@
 
 namespace Tochka\JsonRpc\Contracts;
 
+/**
+ * @psalm-api
+ */
 interface MiddlewareRegistryInterface
 {
     /**

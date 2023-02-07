@@ -7,6 +7,8 @@ use Tochka\JsonRpc\Contracts\AuthInterface;
 use Tochka\JsonRpc\DTO\JsonRpcClient;
 
 /**
+ * @psalm-api
+ *
  * @method static JsonRpcClient getClient();
  * @method void setClient(JsonRpcClient $client)
  *

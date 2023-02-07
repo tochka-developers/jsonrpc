@@ -16,6 +16,9 @@ class CasterRegistry implements CasterRegistryInterface
     private array $casters = [];
     private Container $container;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(Container $container)
     {
         $this->container = $container;

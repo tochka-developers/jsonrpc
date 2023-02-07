@@ -10,6 +10,9 @@ class ControllerFinder
     private ?array $definedNamespaces = null;
     private string $appBasePath;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(string $appBasePath)
     {
         $this->appBasePath = $appBasePath;

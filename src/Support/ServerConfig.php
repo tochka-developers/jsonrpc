@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc\Support;
 
 /**
+ * @psalm-api
  * @psalm-type ServerConfigArray = array{
  *   summary?: string,
  *   description?: string,

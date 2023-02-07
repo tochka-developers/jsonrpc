@@ -7,6 +7,8 @@ use Tochka\JsonRpc\Contracts\ValidatorInterface;
 use Tochka\JsonRpc\Standard\Exceptions\Errors\InvalidParameterError;
 
 /**
+ * @psalm-api
+ *
  * @method static bool validate(array $data, array $rules, array $messages = [])
  * @method static array validateAndGetErrors(array $data, array $rules, array $messages = [])
  * @method static void validateAndThrow(array $data, array $rules, array $messages = [])

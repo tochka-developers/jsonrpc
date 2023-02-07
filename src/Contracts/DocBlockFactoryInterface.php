@@ -4,6 +4,9 @@ namespace Tochka\JsonRpc\Contracts;
 
 use Tochka\JsonRpc\Support\JsonRpcDocBlock;
 
+/**
+ * @psalm-api
+ */
 interface DocBlockFactoryInterface
 {
     public function make(\Reflector $reflector): ?JsonRpcDocBlock;

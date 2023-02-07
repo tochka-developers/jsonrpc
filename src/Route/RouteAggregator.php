@@ -13,6 +13,9 @@ use Tochka\JsonRpc\Contracts\RouteAggregatorInterface;
 use Tochka\JsonRpc\DTO\JsonRpcRoute;
 use Tochka\JsonRpc\Support\ServerConfig;
 
+/**
+ * @psalm-suppress PossiblyUnusedMethod
+ */
 class RouteAggregator implements RouteAggregatorInterface
 {
     private ControllerFinder $controllerFinder;
@@ -23,6 +26,9 @@ class RouteAggregator implements RouteAggregatorInterface
     /** @var array<string, ServerConfig> */
     private array $serverConfigs = [];
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(
         ControllerFinder $controllerFinder,
         AnnotationReaderInterface $annotationReader,

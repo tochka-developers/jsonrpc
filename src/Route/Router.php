@@ -12,6 +12,9 @@ class Router implements RouterInterface
     private array $routes = [];
     private RouteAggregatorInterface $routeAggregator;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(RouteAggregatorInterface $routeAggregator)
     {
         $this->routeAggregator = $routeAggregator;

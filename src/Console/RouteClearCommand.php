@@ -7,6 +7,7 @@ use Tochka\JsonRpc\Contracts\RouteCacheInterface;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
+ * @psalm-api
  */
 class RouteClearCommand extends Command
 {

@@ -6,6 +6,9 @@ use phpDocumentor\Reflection\DocBlockFactory as ReflectionDocBlock;
 use Tochka\JsonRpc\Contracts\DocBlockFactoryInterface;
 use Tochka\JsonRpc\Contracts\AnnotationReaderInterface;
 
+/**
+ * @psalm-api
+ */
 class DocBlockFactory implements DocBlockFactoryInterface
 {
     /** @var array<string, JsonRpcDocBlock> */
@@ -13,6 +16,9 @@ class DocBlockFactory implements DocBlockFactoryInterface
     private AnnotationReaderInterface $annotationReader;
     private ReflectionDocBlock $docBlockFactory;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(ReflectionDocBlock $docBlockFactory, AnnotationReaderInterface $annotationReader)
     {
         $this->docBlockFactory = $docBlockFactory;

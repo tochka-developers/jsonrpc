@@ -10,6 +10,7 @@ use Tochka\JsonRpc\Contracts\RouteAggregatorInterface;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
+ * @psalm-api
  */
 class RouteCacheCommand extends Command
 {

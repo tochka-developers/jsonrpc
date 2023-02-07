@@ -32,6 +32,9 @@ class ParamsResolver implements ParamsResolverInterface
     private DocBlockFactoryInterface $docBlockFactory;
     private CasterRegistryInterface $casterRegistry;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(DocBlockFactoryInterface $docBlockFactory, CasterRegistryInterface $casterRegistry)
     {
         $this->docBlockFactory = $docBlockFactory;

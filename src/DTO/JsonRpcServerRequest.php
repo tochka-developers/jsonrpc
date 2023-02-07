@@ -5,6 +5,9 @@ namespace Tochka\JsonRpc\DTO;
 use Psr\Http\Message\ServerRequestInterface;
 use Tochka\JsonRpc\Standard\DTO\JsonRpcRequest;
 
+/**
+ * @psalm-api
+ */
 class JsonRpcServerRequest
 {
     private JsonRpcRequest $jsonRpcRequest;

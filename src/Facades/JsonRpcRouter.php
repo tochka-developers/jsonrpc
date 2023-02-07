@@ -7,6 +7,8 @@ use Tochka\JsonRpc\Contracts\RouterInterface;
 use Tochka\JsonRpc\DTO\JsonRpcRoute;
 
 /**
+ * @psalm-api
+ *
  * @method static JsonRpcRoute|null get(string $serverName, string $methodName, string $group = null, string $action = null)
  * @method static void add(JsonRpcRoute $route)
  *

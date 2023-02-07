@@ -9,6 +9,9 @@ class Auth implements AuthInterface
 {
     private JsonRpcClient $client;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct()
     {
         $this->client = new JsonRpcClient();

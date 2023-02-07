@@ -8,6 +8,7 @@ use Tochka\JsonRpc\DTO\JsonRpcRoute;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
+ * @psalm-api
  */
 class RouteListCommand extends Command
 {

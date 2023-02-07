@@ -3,7 +3,7 @@
 namespace Tochka\JsonRpc;
 
 use Doctrine\Common\Annotations\AnnotationReader as DoctrineAnnotationReader;
-use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use phpDocumentor\Reflection\DocBlockFactory as ReflectionDocBlockFactory;
@@ -25,6 +25,7 @@ use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Contracts\JsonRpcServerInterface;
 use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
 use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
+use Tochka\JsonRpc\Contracts\ParserInterface;
 use Tochka\JsonRpc\Contracts\RouteAggregatorInterface;
 use Tochka\JsonRpc\Contracts\RouteCacheInterface;
 use Tochka\JsonRpc\Contracts\RouterInterface;
@@ -41,12 +42,14 @@ use Tochka\JsonRpc\Support\CasterRegistry;
 use Tochka\JsonRpc\Support\DefaultHandleResolver;
 use Tochka\JsonRpc\Support\DocBlockFactory;
 use Tochka\JsonRpc\Support\MiddlewareRegistry;
+use Tochka\JsonRpc\Support\Parser;
 use Tochka\JsonRpc\Support\RouteCache;
 use Tochka\JsonRpc\Support\ServerConfig;
 use Tochka\JsonRpc\Support\ServersConfig;
 use Tochka\JsonRpc\Support\Validator;
 
 /**
+ * @psalm-api
  * @psalm-import-type ServerConfigArray from ServerConfig
  */
 class JsonRpcServiceProvider extends ServiceProvider
@@ -84,6 +87,7 @@ class JsonRpcServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ValidatorInterface::class, Validator::class);
+        $this->app->singleton(ParserInterface::class, Parser::class);
         $this->app->singleton(AuthInterface::class, Auth::class);
         $this->app->singleton(RouteCacheInterface::class, function (): RouteCacheInterface {
             return new RouteCache($this->app->bootstrapPath('cache'), 'jsonrpc_routes');

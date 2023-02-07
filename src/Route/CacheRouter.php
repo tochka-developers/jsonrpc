@@ -12,6 +12,9 @@ class CacheRouter implements RouterInterface
     private RouterInterface $router;
     private CacheInterface $cache;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(RouterInterface $router, CacheInterface $cache)
     {
         $this->router = $router;
