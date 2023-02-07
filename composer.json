@@ -70,16 +70,5 @@
         "analyze-8.2": "psalm --config=psalm-8.1.xml --php-version=8.2 --no-cache",
         "unused": "composer-unused",
         "require-checker": "composer-require-checker"
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "/var/www/packages/jsonrpc-annotations",
-            "options": {
-                "versions": {
-                    "tochka-developers/jsonrpc-annotations": "v1.3.0"
-                }
-            }
-        }
-    ]
+    }
 }
