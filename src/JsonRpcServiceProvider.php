@@ -3,7 +3,7 @@
 namespace Tochka\JsonRpc;
 
 use Doctrine\Common\Annotations\AnnotationReader as DoctrineAnnotationReader;
-use Illuminate\Contracts\Container\Container;
+use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use phpDocumentor\Reflection\DocBlockFactory as ReflectionDocBlockFactory;

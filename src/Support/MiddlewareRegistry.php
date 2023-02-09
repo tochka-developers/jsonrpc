@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc\Support;
 
-use Illuminate\Contracts\Container\Container;
+use Illuminate\Container\Container;
 use Tochka\JsonRpc\Contracts\MiddlewareInterface;
 use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
 use Tochka\JsonRpc\Standard\Exceptions\InternalErrorException;
@@ -33,20 +33,20 @@ class MiddlewareRegistry implements MiddlewareRegistryInterface
         }
     }
 
-    public function getMiddleware(string $serverName, ?string $implements = null): array
+    public function getMiddleware(string $serverName, ?string $instanceOf = null): array
     {
         if (!array_key_exists($serverName, $this->middleware)) {
             return [];
         }
 
-        if ($implements === null) {
+        if ($instanceOf === null) {
             return $this->middleware[$serverName];
         }
 
         return array_filter(
             $this->middleware[$serverName],
-            function (MiddlewareInterface $middleware) use ($implements) {
-                return $middleware instanceof $implements;
+            function (MiddlewareInterface $middleware) use ($instanceOf) {
+                return $middleware instanceof $instanceOf;
             }
         );
     }
@@ -88,7 +88,7 @@ class MiddlewareRegistry implements MiddlewareRegistryInterface
 
             foreach ($this->middleware[$serverName] as $middlewareInstance) {
                 $resultedMiddleware[] = $middlewareInstance;
-                if (get_class($middlewareInstance) === $afterMiddleware) {
+                if ($middlewareInstance::class === $afterMiddleware) {
                     $find = true;
                     $resultedMiddleware[] = $middleware;
                 }

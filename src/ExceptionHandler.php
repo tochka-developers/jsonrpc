@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc;
 
-use Illuminate\Contracts\Container\Container;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Debug\ExceptionHandler as GlobalExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;

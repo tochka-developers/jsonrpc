@@ -11,7 +11,7 @@ use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 /**
  * @psalm-api
  */
-class TokenAuthMiddlewareInterface implements HttpRequestMiddlewareInterface
+class TokenAuthMiddleware implements HttpRequestMiddlewareInterface
 {
     private string $headerName;
     /** @var array<string, string>  */

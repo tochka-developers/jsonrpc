@@ -24,7 +24,7 @@ class BenSampoEnumCaster implements GlobalCustomCasterInterface
 
         /** @var class-string<Enum>|null $expectedType */
         $expectedType = $parameter->className;
-        if ($expectedType === null) {
+        if ($expectedType === null || !is_a($expectedType, Enum::class, true)) {
             throw new InternalErrorException();
         }
 
@@ -32,8 +32,6 @@ class BenSampoEnumCaster implements GlobalCustomCasterInterface
             return $expectedType::fromValue($value);
         } catch (InvalidEnumMemberException $e) {
             throw new InvalidEnumValueException($fieldName, $value, $expectedType::getValues(), $e);
-        } catch (\Throwable $e) {
-            throw InternalErrorException::from($e);
         }
     }
 }

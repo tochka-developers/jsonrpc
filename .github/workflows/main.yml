@@ -41,10 +41,11 @@ jobs:
       fail-fast: false
       matrix:
         php-versions: [ '8.0', '8.1', '8.2' ]
-    uses: 'tochka-developers/actions/.github/workflows/analyze.yml@v1'
+    uses: './.github/workflows/analyze.yml'
     with:
       php-version: ${{ matrix.php-versions }}
       php-extensions: ${{ needs.vars.outputs.php_extensions }}
+      psalm-config: psalm-${{ matrix.php-versions }}.xml
 
   composer-require-check:
     name: 'Composer Require check'
@@ -61,3 +62,16 @@ jobs:
     with:
       php-version: ${{ needs.vars.outputs.default_php_version }}
       php-extensions: ${{ needs.vars.outputs.php_extensions }}
+
+  tests:
+    name: 'Tests'
+    needs: vars
+    strategy:
+      fail-fast: false
+      matrix:
+        php-versions: [ '8.0', '8.1', '8.2' ]
+    uses: './.github/workflows/tests.yml'
+    with:
+      php-version: ${{ matrix.php-versions }}
+      php-extensions: ${{ needs.vars.outputs.php_extensions }}
+      phpunit-config: phpunit-${{ matrix.php-versions }}.xml

@@ -91,7 +91,7 @@ return [
                 // Канал лога, в который будут записываться все логи
                 'channel' => 'default',
             ],
-             Tochka\JsonRpc\Middleware\TokenAuthMiddlewareInterface::class         => [
+             Tochka\JsonRpc\Middleware\TokenAuthMiddleware::class         => [
                  'headerName' => 'X-Tochka-Access-Key',
                  // Ключи доступа к API
                  'tokens'     => [

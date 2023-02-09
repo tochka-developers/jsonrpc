@@ -1,0 +1,71 @@
+name: Tests
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        type: string
+        required: true
+      php-extensions:
+        type: string
+        required: true
+      cache-key:
+        type: string
+        required: false
+        default: 'cache-v1'
+      phpunit-config:
+        type: string
+        required: false
+        default: phpunit.xml
+
+jobs:
+  analyze:
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 20
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - id: cache-env
+        name: 'Setup cache environment'
+        uses: shivammathur/cache-extensions@v1
+        with:
+          php-version: '${{ inputs.php-version }}'
+          extensions: '${{ inputs.php-extensions }}'
+          key: '${{ inputs.cache-key }}'
+
+      - name: 'Cache extensions'
+        uses: actions/cache@v3
+        with:
+          path: '${{ steps.cache-env.outputs.dir }}'
+          key: '${{ steps.cache-env.outputs.key }}'
+          restore-keys: '${{ steps.cache-env.outputs.key }}'
+
+      - name: 'Setup PHP'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '${{ inputs.php-version }}'
+          extensions: '${{ inputs.php-extensions }}'
+          ini-values: memory_limit=-1
+          tools: composer:v2
+          coverage: pcov
+
+      - name: 'Setup problem matchers for PHP (aka PHP error logs)'
+        run: 'echo "::add-matcher::${{ runner.tool_cache }}/php.json"'
+
+      - name: 'Setup problem matchers for PHPUnit'
+        run: 'echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"'
+
+      - name: 'Install PHP dependencies with Composer'
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
+        working-directory: './'
+
+      - name: 'Run tests'
+        working-directory: './'
+        run: |
+          if [ -f "${{ inputs.phpunit-config }}" ]
+          then
+            ./vendor/bin/phpunit --stderr -c ${{ inputs.phpunit-config }} --coverage-clover build/logs/clover.xml
+          else
+            ./vendor/bin/phpunit --stderr --coverage-clover build/logs/clover.xml
+          fi

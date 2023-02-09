@@ -4,6 +4,7 @@ namespace Tochka\JsonRpc\Middleware;
 
 use Illuminate\Support\Facades\Request;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Tochka\JsonRpc\Contracts\HttpRequestMiddlewareInterface;
 use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\ForbiddenException;
@@ -11,7 +12,7 @@ use Tochka\JsonRpc\Standard\Exceptions\Additional\ForbiddenException;
 /**
  * @psalm-api
  */
-class ServiceValidationMiddlewareInterface implements HttpRequestMiddlewareInterface
+class ServiceValidationMiddleware implements HttpRequestMiddlewareInterface
 {
     private array|string $servers;
 
@@ -41,9 +42,7 @@ class ServiceValidationMiddlewareInterface implements HttpRequestMiddlewareInter
             return $next($request);
         }
 
-        // $request->getServerParams()['']
-        $ip = Request::ip();
-        if (!in_array($ip, $this->servers, true)) {
+        if (!IpUtils::checkIp(Request::ip(), $this->servers)) {
             throw new ForbiddenException();
         }
 

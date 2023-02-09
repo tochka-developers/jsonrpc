@@ -40,7 +40,7 @@ class EnumCaster implements GlobalCustomCasterInterface
 
         /** @var class-string<\BackedEnum>|null $expectedType */
         $expectedType = $parameter->className;
-        if ($expectedType === null) {
+        if ($expectedType === null || !enum_exists($expectedType)) {
             throw new InternalErrorException();
         }
 
@@ -48,8 +48,6 @@ class EnumCaster implements GlobalCustomCasterInterface
             return $expectedType::from($value);
         } catch (\ValueError $e) {
             throw new InvalidEnumValueException($fieldName, $value, $expectedType::cases(), $e);
-        } catch (\Throwable $e) {
-            throw InternalErrorException::from($e);
         }
     }
 }

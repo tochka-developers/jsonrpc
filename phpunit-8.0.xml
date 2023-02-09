@@ -16,6 +16,7 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>./tests/Units</directory>
+            <exclude>./tests/Units/Casters/EnumCasterTest.php</exclude>
         </testsuite>
     </testsuites>
     <php>

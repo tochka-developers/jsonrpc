@@ -17,8 +17,9 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
     private string $channel;
     /** @var array<string, array<string>> */
     private array $hideParams;
-    private bool $logSuccessfulRequest;
+    private bool $logResponse;
     private AuthInterface $auth;
+    private array $additionalContext = [];
 
     /**
      * @param array<string, array<string>> $hideParams
@@ -27,31 +28,38 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
         AuthInterface $auth,
         string $channel = 'default',
         array $hideParams = [],
-        bool $logSuccessfulRequest = true
+        bool $logResponse = false
     ) {
         $this->channel = $channel;
         $this->hideParams = $hideParams;
-        $this->logSuccessfulRequest = $logSuccessfulRequest;
         $this->auth = $auth;
+        $this->logResponse = $logResponse;
+    }
+
+    public function appendAdditionalContext(array $context): void
+    {
+        $this->additionalContext = array_merge($this->additionalContext, $context);
     }
 
     public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): JsonRpcResponse
     {
-        $logContext = [];
+        $logContext = $this->additionalContext;
 
-        if ($request->getJsonRpcRequest()->id !== null) {
-            $logContext['id'] = $request->getJsonRpcRequest()->id;
-        }
+        $logContext['service'] = $this->auth->getClient()->getName();
 
         $route = $request->getRoute();
         $logRequest = $request->getJsonRpcRequest()->toArray();
 
         if ($route !== null) {
-            $logContext['group'] = $route->group;
-            $logContext['action'] = $route->action;
+            if ($route->group !== null) {
+                $logContext['group'] = $route->group;
+            }
+            if ($route->action !== null) {
+                $logContext['action'] = $route->action;
+            }
             $logContext['method'] = $route->jsonRpcMethodName;
             $logContext['call'] = ($route->controllerClass ?? '<NoController>') . '::' . ($route->controllerMethod ?? '<NoMethod>');
-            $logContext['service'] = $this->auth->getClient()->getName();
+
 
             $globalRules = $this->hideParams['*'] ?? [];
             if ($route->controllerClass !== null) {
@@ -73,30 +81,25 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
             );
         }
 
-        Log::channel($this->channel)->info('New request', $logContext + ['request' => $logRequest]);
+        $logContext['request'] = $logRequest;
+
+        Log::channel($this->channel)->info('New request', $logContext);
 
         try {
             $result = $next($request);
 
             if ($result->error !== null) {
-                Log::channel($this->channel)->error(
-                    'Error',
-                    $logContext + [
-                        'error' => $result->error,
-                    ]
-                );
-            } elseif ($this->logSuccessfulRequest) {
-                Log::channel($this->channel)->info('Successful request', $logContext);
+                Log::channel($this->channel)
+                    ->error('Error request', $logContext + ['error' => $result->error->toArray()]);
+            } elseif ($this->logResponse) {
+                Log::channel($this->channel)
+                    ->info('Successful request', $logContext + ['result' => $result->result]);
             }
 
             return $result;
         } catch (JsonRpcException $e) {
-            Log::channel($this->channel)->error(
-                'Error',
-                $logContext + [
-                    'error' => $e->getJsonRpcError(),
-                ]
-            );
+            Log::channel($this->channel)
+                ->error('Error request', $logContext + ['error' => $e->getJsonRpcError()->toArray()]);
 
             throw $e;
         }
@@ -148,8 +151,9 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
 
         $field = array_shift($rule);
 
-        /** @var array<string, mixed> $resultedData */
-        $resultedData = [];
+        $resultedData = $data;
+
+        //dump($data);
 
         if ($field === '*') {
             /** @psalm-suppress MixedAssignment */
@@ -162,8 +166,10 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
                 /** @psalm-suppress MixedAssignment */
                 $resultedData[$field] = $this->hideDataByRule($data[$field], $rule);
             } else {
-                $resultedData[$field] = '***';
+                $resultedData[$field] = '<hide>';
             }
+        } else {
+            return $data;
         }
 
         return $resultedData;

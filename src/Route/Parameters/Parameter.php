@@ -14,7 +14,7 @@ class Parameter
     public ?Parameter $parametersInArray = null;
     public bool $nullable = false;
     public bool $required = false;
-    public mixed $defaultValue;
+    public mixed $defaultValue = null;
     public bool $hasDefaultValue = false;
     /** @var class-string|null */
     public ?string $className = null;

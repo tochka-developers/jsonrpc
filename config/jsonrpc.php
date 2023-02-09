@@ -6,8 +6,8 @@
 
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\LogMiddleware;
-use Tochka\JsonRpc\Middleware\ServiceValidationMiddlewareInterface;
-use Tochka\JsonRpc\Middleware\TokenAuthMiddlewareInterface;
+use Tochka\JsonRpc\Middleware\ServiceValidationMiddleware;
+use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
 use Tochka\JsonRpc\Support\ServerConfig;
 
 return [
@@ -69,14 +69,14 @@ return [
                 //    'App\\Http\\TestController2' => ['password', 'data.phone_number']
                 //]
             ],
-            TokenAuthMiddlewareInterface::class => [
+            TokenAuthMiddleware::class => [
                 'headerName' => 'X-Tochka-Access-Key',
                 // Ключи доступа к API
                 'tokens' => [
                     'all' => 'TOKEN',
                 ],
             ],
-            ServiceValidationMiddlewareInterface::class => [
+            ServiceValidationMiddleware::class => [
                 // Разрешенные сервера, которые могут авторизовываться под указанными сервисами
                 'servers' => [
                     //'service1' => ['192.168.0.1', '192.168.1.5'],

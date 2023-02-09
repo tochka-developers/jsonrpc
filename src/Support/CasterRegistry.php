@@ -3,7 +3,7 @@
 namespace Tochka\JsonRpc\Support;
 
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Contracts\Container\Container;
+use Illuminate\Container\Container;
 use Tochka\JsonRpc\Contracts\CasterRegistryInterface;
 use Tochka\JsonRpc\Contracts\CustomCasterInterface;
 use Tochka\JsonRpc\Contracts\GlobalCustomCasterInterface;
@@ -26,7 +26,7 @@ class CasterRegistry implements CasterRegistryInterface
 
     public function addCaster(GlobalCustomCasterInterface $caster): void
     {
-        $this->casters[get_class($caster)] = $caster;
+        $this->casters[$caster::class] = $caster;
     }
 
     public function getCasterForClass(string $className): ?string
@@ -40,16 +40,17 @@ class CasterRegistry implements CasterRegistryInterface
         return null;
     }
 
-    /**
-     * @throws BindingResolutionException
-     */
     public function cast(string $casterName, Parameter $parameter, mixed $value, string $fieldName): ?object
     {
         if (array_key_exists($casterName, $this->casters)) {
             return $this->casters[$casterName]->cast($parameter, $value, $fieldName);
         }
 
-        $caster = $this->container->make($casterName);
+        try {
+            $caster = $this->container->make($casterName);
+        } catch (BindingResolutionException $e) {
+            throw InternalErrorException::from($e);
+        }
 
         if (!$caster instanceof CustomCasterInterface) {
             throw new InternalErrorException(

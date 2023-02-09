@@ -3,15 +3,14 @@
        xmlns="https://getpsalm.org/schema/config"
        xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
        errorLevel="1"
-       phpVersion="8.0"
        findUnusedBaselineEntry="true"
        findUnusedCode="true"
 >
     <projectFiles>
-        <directory name="src"/>
+        <directory name="src" />
         <ignoreFiles>
-            <file name="src/Casters/EnumCaster.php"/>
-            <directory name="vendor"/>
+            <directory name="tests"/>
+            <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
 </psalm>

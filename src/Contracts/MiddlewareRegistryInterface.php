@@ -10,10 +10,10 @@ interface MiddlewareRegistryInterface
     /**
      * @template T of MiddlewareInterface
      * @param string $serverName
-     * @param class-string<T>|null $implements
+     * @param class-string<T>|null $instanceOf
      * @return array<T>|array<MiddlewareInterface>
      */
-    public function getMiddleware(string $serverName, ?string $implements = null): array;
+    public function getMiddleware(string $serverName, ?string $instanceOf = null): array;
 
     public function prependMiddleware(MiddlewareInterface $middleware, ?string $serverName = null): void;
 
