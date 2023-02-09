@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         php-versions: [ '8.0', '8.1', '8.2' ]
-    uses: './.github/workflows/analyze.yml'
+    uses: 'tochka-developers/actions/.github/workflows/analyze.yml@v1'
     with:
       php-version: ${{ matrix.php-versions }}
       php-extensions: ${{ needs.vars.outputs.php_extensions }}
@@ -62,7 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         php-versions: [ '8.0', '8.1', '8.2' ]
-    uses: './.github/workflows/tests.yml'
+    uses: 'tochka-developers/actions/.github/workflows/tests.yml@v1'
     with:
       php-version: ${{ matrix.php-versions }}
       php-extensions: ${{ needs.vars.outputs.php_extensions }}
@@ -70,4 +70,4 @@ jobs:
 
   coverage:
     needs: tests
-    uses: './.github/workflows/coveralls.yml'
+    uses: 'tochka-developers/actions/.github/workflows/coveralls.yml@v1'

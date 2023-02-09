@@ -3,6 +3,7 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=bugs)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=code_smells)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=coverage)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
+[![Coverage Status](https://coveralls.io/repos/github/tochka-developers/jsonrpc/badge.svg)](https://coveralls.io/github/tochka-developers/jsonrpc)
 
 # Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
