@@ -73,7 +73,7 @@ jobs:
       - name: 'Upload coverage results to Coveralls'
         working-directory: './'
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALL_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
           COVERALLS_FLAG_NAME: php-${{ matrix.php_versions }}
         run: |
