@@ -2,10 +2,6 @@ name: Code coverage
 
 on:
   workflow_call:
-    inputs:
-      token:
-        type: string
-        required: true
 
 jobs:
   coverage:
@@ -15,5 +11,5 @@ jobs:
       - name: 'Coveralls Finished'
         uses: coverallsapp/github-action@v1.1.2
         with:
-          github-token: ${{ inputs.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true

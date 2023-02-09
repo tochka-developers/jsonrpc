@@ -71,5 +71,3 @@ jobs:
   coverage:
     needs: tests
     uses: './.github/workflows/coveralls.yml'
-    with:
-      token: ${{ secrets.GITHUB_TOKEN }}
