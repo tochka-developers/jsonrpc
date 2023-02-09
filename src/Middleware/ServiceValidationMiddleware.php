@@ -42,7 +42,12 @@ class ServiceValidationMiddleware implements HttpRequestMiddlewareInterface
             return $next($request);
         }
 
-        if (!IpUtils::checkIp(Request::ip(), $this->servers)) {
+        $ip = Request::ip();
+        if ($ip === null) {
+            throw new ForbiddenException();
+        }
+
+        if (!IpUtils::checkIp($ip, $this->servers)) {
             throw new ForbiddenException();
         }
 

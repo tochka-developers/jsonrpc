@@ -36,7 +36,9 @@ class ServiceValidationMiddlewareTest extends DefaultTestCase
         $expectedResult = new JsonRpcResponseCollection();
         $expectedResult->add(new JsonRpcResponse(result: true));
 
-        $result = $middleware->handleHttpRequest(\Mockery::mock(ServerRequestInterface::class), fn () => $expectedResult
+        $result = $middleware->handleHttpRequest(
+            \Mockery::mock(ServerRequestInterface::class),
+            fn () => $expectedResult
         );
 
         self::assertEquals($expectedResult, $result);
@@ -53,17 +55,37 @@ class ServiceValidationMiddlewareTest extends DefaultTestCase
         });
     }
 
-    public function testHandleHttpRequestAccessAllArray(): void
+    public function testHandleHttpRequestAllArray(): void
     {
         $middleware = new ServiceValidationMiddleware(['*']);
 
         $expectedResult = new JsonRpcResponseCollection();
         $expectedResult->add(new JsonRpcResponse(result: true));
 
-        $result = $middleware->handleHttpRequest(\Mockery::mock(ServerRequestInterface::class), fn () => $expectedResult
+        $result = $middleware->handleHttpRequest(
+            \Mockery::mock(ServerRequestInterface::class),
+            fn () => $expectedResult
         );
 
         self::assertEquals($expectedResult, $result);
+    }
+
+    public function testHandleHttpRequestNoIp(): void
+    {
+        $middleware = new ServiceValidationMiddleware(['192.168.0.2', '192.168.0.1']);
+
+        $expectedResult = new JsonRpcResponseCollection();
+        $expectedResult->add(new JsonRpcResponse(result: true));
+
+        $this->mockRequestIp(null);
+
+        self::expectException(ForbiddenException::class);
+        self::expectExceptionMessage(AdditionalJsonRpcException::MESSAGE_FORBIDDEN);
+
+        $middleware->handleHttpRequest(
+            \Mockery::mock(ServerRequestInterface::class),
+            fn () => $expectedResult
+        );
     }
 
     public function testHandleHttpRequestAccess(): void
@@ -75,7 +97,9 @@ class ServiceValidationMiddlewareTest extends DefaultTestCase
 
         $this->mockRequestIp('192.168.0.1');
 
-        $result = $middleware->handleHttpRequest(\Mockery::mock(ServerRequestInterface::class), fn () => $expectedResult
+        $result = $middleware->handleHttpRequest(
+            \Mockery::mock(ServerRequestInterface::class),
+            fn () => $expectedResult
         );
 
         self::assertEquals($expectedResult, $result);
@@ -96,7 +120,7 @@ class ServiceValidationMiddlewareTest extends DefaultTestCase
         $middleware->handleHttpRequest(\Mockery::mock(ServerRequestInterface::class), fn () => $expectedResult);
     }
 
-    private function mockRequestIp(string $ip): void
+    private function mockRequestIp(?string $ip): void
     {
         $container = Container::getInstance();
         $container->singleton('request', function () use ($ip) {

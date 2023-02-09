@@ -64,8 +64,8 @@
         }
     },
     "scripts": {
-        "lint": "pint --test",
-        "lint-fix": "pint",
-        "analyze": "psalm --no-cache"
+        "lint": "php8.1 vendor/bin/pint --test",
+        "lint-fix": "php8.1 vendor/bin/pint",
+        "analyze": "php8.1 vendor/bin/psalm --php-version=8.1 --no-cache"
     }
 }

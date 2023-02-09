@@ -41,7 +41,7 @@ class TokenAuthMiddlewareTest extends DefaultTestCase
         $expectedResponse = new JsonRpcResponseCollection();
         $expectedResponse->add(new JsonRpcResponse(result: true));
 
-        $response = $this->middleware->handleHttpRequest($request, fn() => $expectedResponse);
+        $response = $this->middleware->handleHttpRequest($request, fn () => $expectedResponse);
 
         self::assertEquals($expectedResponse, $response);
         self::assertEquals(JsonRpcClient::GUEST, $this->auth->getClient()->getName());
@@ -58,7 +58,7 @@ class TokenAuthMiddlewareTest extends DefaultTestCase
         $expectedResponse = new JsonRpcResponseCollection();
         $expectedResponse->add(new JsonRpcResponse(result: true));
 
-        $response = $this->middleware->handleHttpRequest($request, fn() => $expectedResponse);
+        $response = $this->middleware->handleHttpRequest($request, fn () => $expectedResponse);
 
         self::assertEquals($expectedResponse, $response);
         self::assertEquals(JsonRpcClient::GUEST, $this->auth->getClient()->getName());
@@ -75,7 +75,7 @@ class TokenAuthMiddlewareTest extends DefaultTestCase
         $expectedResponse = new JsonRpcResponseCollection();
         $expectedResponse->add(new JsonRpcResponse(result: true));
 
-        $response = $this->middleware->handleHttpRequest($request, fn() => $expectedResponse);
+        $response = $this->middleware->handleHttpRequest($request, fn () => $expectedResponse);
 
         self::assertEquals($expectedResponse, $response);
         self::assertEquals('service2', $this->auth->getClient()->getName());

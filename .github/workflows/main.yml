@@ -14,7 +14,7 @@ on:
 
 env:
   COVERAGE: '1'
-  default_php_version: '8.0'
+  default_php_version: '8.1'
   php_extensions: 'pcov, json'
 
 jobs:
@@ -46,14 +46,6 @@ jobs:
       php-version: ${{ matrix.php-versions }}
       php-extensions: ${{ needs.vars.outputs.php_extensions }}
       psalm-config: psalm-${{ matrix.php-versions }}.xml
-
-  composer-require-check:
-    name: 'Composer Require check'
-    needs: vars
-    uses: 'tochka-developers/actions/.github/workflows/composer-require-check.yml@v1'
-    with:
-      php-version: ${{ needs.vars.outputs.default_php_version }}
-      php-extensions: ${{ needs.vars.outputs.php_extensions }}
 
   composer-audit:
     name: 'Composer Audit'

@@ -316,7 +316,8 @@ class LogMiddlewareTest extends DefaultTestCase
     private function assertLog(string $level, string $message, array $context): void
     {
         Log::channel(self::TEST_CHANNEL)
-            ->assertLogged(fn (LogEntry $log) => $log->level === $level
+            ->assertLogged(
+                fn (LogEntry $log) => $log->level === $level
                 && $log->message === $message
                 && $log->context == $context
             );
@@ -326,7 +327,8 @@ class LogMiddlewareTest extends DefaultTestCase
         mixed $result = null,
         ?JsonRpcError $error = null,
         ?\Throwable $exception = null
-    ): callable {
+    ): callable
+    {
         return function (JsonRpcServerRequest $request) use ($result, $error, $exception): JsonRpcResponse {
             if ($exception !== null) {
                 throw $exception;
