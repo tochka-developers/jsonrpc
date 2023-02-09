@@ -4,7 +4,7 @@
 [![build](https://github.com/tochka-developers/jsonrpc/actions/workflows/main.yml/badge.svg)](https://github.com/tochka-developers/jsonrpc/actions/workflows/main.yml)
 [![Psalm coverage](https://shepherd.dev/github/tochka-developers/jsonrpc/coverage.svg)](https://shepherd.dev/github/tochka-developers/jsonrpc)
 [![Psalm level](https://shepherd.dev/github/tochka-developers/jsonrpc/level.svg)](https://psalm.dev)
-[![Coverage Status](https://coveralls.io/repos/github/tochka-developers/jsonrpc/badge.svg)](https://coveralls.io/github/tochka-developers/jsonrpc)
+[![Coverage Status](https://coveralls.io/repos/github/tochka-developers/jsonrpc/badge.svg?branch=master)](https://coveralls.io/github/tochka-developers/jsonrpc)
 
 # Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
