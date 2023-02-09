@@ -67,3 +67,9 @@ jobs:
       php-version: ${{ matrix.php-versions }}
       php-extensions: ${{ needs.vars.outputs.php_extensions }}
       phpunit-config: phpunit-${{ matrix.php-versions }}.xml
+
+  coverage:
+    needs: tests
+    uses: './.github/workflows/coveralls.yml'
+    with:
+      token: ${{ secrets.GITHUB_TOKEN }}
