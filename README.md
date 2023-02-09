@@ -1,16 +1,17 @@
-# JSON-RPC Server (Laravel/Lumen)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=alert_status)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=bugs)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=code_smells)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=coverage)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
+# JsonRpc 2.0 Server for Laravel (^9.0)
+[![Packagist](https://img.shields.io/packagist/v/tochka-developers/jsonrpc.svg)](https://packagist.org/packages/tochka-developers/jsonrpc)
+[![Packagist](https://img.shields.io/packagist/dt/tochka-developers/jsonrpc.svg)](https://packagist.org/packages/tochka-developers/jsonrpc)
+[![build](https://github.com/tochka-developers/jsonrpc/actions/workflows/main.yml/badge.svg)](https://github.com/tochka-developers/jsonrpc/actions/workflows/main.yml)
+[![Psalm coverage](https://shepherd.dev/github/tochka-developers/jsonrpc/coverage.svg)](https://shepherd.dev/github/tochka-developers/jsonrpc)
+[![Psalm level](https://shepherd.dev/github/tochka-developers/jsonrpc/level.svg)](https://psalm.dev)
+[![Coverage Status](https://coveralls.io/repos/github/tochka-developers/jsonrpc/badge.svg)](https://coveralls.io/github/tochka-developers/jsonrpc)
 
 # Описание
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
 
 Поддерживаемые версии:
-* Lumen >= 6.0
-* Laravel >= 6.0
-* PHP 7.4 | 8.0
+* Laravel >= 9.0
+* PHP 8.0 | 8.1 | 8.2
 
 Поддерживает:
 * вызов удаленных методов по нотификации имяКонтроллера_имяМетода, либо с разделением логики на несколько ресурсных 
@@ -36,35 +37,9 @@ composer require tochka-developers/jsonrpc
 php artisan vendor:publish
 ```
 
-Для того, чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
+Для того чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
 ```shell script
 php artisan vendor:publish --tag="jsonrpc-config"
-```
-
-### Lumen
-В Lumen отсутствует команда _vendor:publish_, поэтому делается это вручную. 
-Если в проекте еще нет директории для конфигураций - создайте ее:
-```shell script
-mkdir config
-```
-Скопируйте в нее конфигрурацию jsonrpc:
-```shell script
-cp vendor/tochka-developers/jsonrpc/config/jsonrpc.php config/jsonrpc.php
-```
-Вместо _config/jsonrpc.php_ нужно указать любую другую директорию, где хранятся ваши конфиги и название будущего конфига.
-Далее необходимо прописать скопированный конфиг в _bootstrap/app.php_
-```php
-$app->configure('jsonrpc');
-```
-Так же прописать провайдер:
-```php
-$app->register(\Tochka\JsonRpc\JsonRpcServiceProvider::class);
-```
-Где _jsonrpc_ - имя файла конфига
-
-Для корректной работы так же необходимы фасады:
-```php
-$app->withFacades();
 ```
 
 # Настройка точек входа
@@ -82,6 +57,7 @@ Route::post('/api/v1/jsonrpc/{group}[/{action}]', function (Illuminate\Http\Requ
 ```
 
 # Конфигурация
+
 ```php
 return [
     // можно настроить несколько разных конфигурация для разных точек входа
@@ -277,8 +253,9 @@ Laravel `config:cache`).
 раз при входящем запросе.
 
 Также вы можете динамически добавлять новые маршруты в список:
+
 ```php
-$route = new \Tochka\JsonRpc\Route\JsonRpcRoute('default', 'my_dynamic_method');
+$route = new \Tochka\JsonRpc\DTO\JsonRpcRoute('default', 'my_dynamic_method');
 $route->controllerClass = MyController::class;
 $route->controllerMethod = 'methodName';
 

@@ -2,48 +2,46 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
-use Illuminate\Http\Request;
-use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
-use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Psr\Http\Message\ServerRequestInterface;
+use Tochka\JsonRpc\Contracts\HttpRequestMiddlewareInterface;
+use Tochka\JsonRpc\Contracts\AuthInterface;
+use Tochka\JsonRpc\DTO\JsonRpcClient;
+use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 
 /**
- * Авторизация сервиса по токену в заголовке
- * Параметры:
- * string headerName - имя заголовка, откуда вычитывать токен
- * array tokens - ассоциативный массив вида [имя_сервиса => токен]
+ * @psalm-api
  */
-class TokenAuthMiddleware implements OnceExecutedMiddleware
+class TokenAuthMiddleware implements HttpRequestMiddlewareInterface
 {
+    private string $headerName;
+    /** @var array<string, string>  */
+    private array $tokens;
+    private AuthInterface $auth;
+
     /**
-     * @param JsonRpcRequest[] $requests
-     * @param callable $next
-     * @param Request $httpRequest
-     * @param string $headerName
-     * @param array $tokens
-     *
-     * @return mixed
+     * @param array<string, string> $tokens
      */
-    public function handle(
-        array $requests,
-        callable $next,
-        Request $httpRequest,
-        string $headerName = 'X-Access-Key',
-        array $tokens = []
-    ) {
-        if (!$key = $httpRequest->header($headerName)) {
-            return $next($requests);
+    public function __construct(AuthInterface $auth, string $headerName = 'X-Access-Key', array $tokens = [])
+    {
+        $this->headerName = $headerName;
+        $this->tokens = $tokens;
+        $this->auth = $auth;
+    }
+
+    public function handleHttpRequest(ServerRequestInterface $request, callable $next): JsonRpcResponseCollection
+    {
+        if (!$key = $request->getHeaderLine($this->headerName)) {
+            return $next($request);
         }
-        
-        $service = array_search($key, $tokens, true);
-        
+
+        $service = array_search($key, $this->tokens, true);
+
         if ($service === false) {
-            return $next($requests);
+            return $next($request);
         }
-        
-        foreach ($requests as $request) {
-            $request->setAuthName($service);
-        }
-        
-        return $next($requests);
+
+        $this->auth->setClient(new JsonRpcClient($service));
+
+        return $next($request);
     }
 }

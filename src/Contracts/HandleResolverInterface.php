@@ -2,13 +2,9 @@
 
 namespace Tochka\JsonRpc\Contracts;
 
-use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
 
 interface HandleResolverInterface
 {
-    /**
-     * @param JsonRpcRequest $request
-     * @return mixed
-     */
-    public function handle(JsonRpcRequest $request);
+    public function handle(JsonRpcServerRequest $request): mixed;
 }

@@ -3,45 +3,52 @@
 namespace Tochka\JsonRpc\Middleware;
 
 use Illuminate\Support\Facades\Request;
-use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\HttpFoundation\IpUtils;
+use Tochka\JsonRpc\Contracts\HttpRequestMiddlewareInterface;
+use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
+use Tochka\JsonRpc\Standard\Exceptions\Additional\ForbiddenException;
 
-class ServiceValidationMiddleware
+/**
+ * @psalm-api
+ */
+class ServiceValidationMiddleware implements HttpRequestMiddlewareInterface
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param JsonRpcRequest    $request
-     * @param callable          $next
-     * @param array|string|null $servers
-     *
-     * @return mixed
-     * @throws JsonRpcException
-     */
-    public function handle(JsonRpcRequest $request, callable $next, $servers = [])
+    private array|string $servers;
+
+    public function __construct(array|string $servers = [])
+    {
+        $this->servers = $servers;
+    }
+
+    public function handleHttpRequest(ServerRequestInterface $request, callable $next): JsonRpcResponseCollection
     {
         // если не заданы настройки - по умолчанию запрещаем доступ
-        if (empty($servers)) {
-            throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
+        if (empty($this->servers)) {
+            throw new ForbiddenException();
         }
 
         // если разрешено всем
-        if ($servers === '*') {
+        if ($this->servers === '*') {
             return $next($request);
         }
 
-        if (!is_array($servers)) {
-            throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
+        if (!is_array($this->servers)) {
+            throw new ForbiddenException();
         }
 
         // если разрешено всем
-        if (in_array('*', $servers, true)) {
+        if (in_array('*', $this->servers, true)) {
             return $next($request);
         }
 
         $ip = Request::ip();
-        if (!in_array($ip, $servers, true)) {
-            throw new JsonRpcException(JsonRpcException::CODE_FORBIDDEN);
+        if ($ip === null) {
+            throw new ForbiddenException();
+        }
+
+        if (!IpUtils::checkIp($ip, $this->servers)) {
+            throw new ForbiddenException();
         }
 
         return $next($request);

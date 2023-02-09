@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<psalm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="https://getpsalm.org/schema/config"
+       xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+       errorLevel="1"
+       phpVersion="8.0"
+       findUnusedBaselineEntry="true"
+       findUnusedCode="true"
+>
+    <projectFiles>
+        <directory name="src"/>
+        <ignoreFiles>
+            <file name="src/Casters/EnumCaster.php"/>
+            <directory name="tests"/>
+            <directory name="vendor"/>
+        </ignoreFiles>
+    </projectFiles>
+</psalm>

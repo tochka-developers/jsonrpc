@@ -2,16 +2,24 @@
 
 namespace Tochka\JsonRpc\Route;
 
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 
 class ControllerFinder
 {
-    /** @var array<string> */
+    /** @var array<string, string> */
     private ?array $definedNamespaces = null;
-    
+    private string $appBasePath;
+
     /**
-     * @return array<string>
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function __construct(string $appBasePath)
+    {
+        $this->appBasePath = $appBasePath;
+    }
+
+    /**
+     * @return array<class-string>
      * @throws \JsonException
      */
     public function find(string $namespace, string $suffix = ''): array
@@ -21,22 +29,22 @@ class ControllerFinder
         if ($namespaceDirectory === null) {
             return [];
         }
-        
-        $files = scandir($this->getNamespaceDirectory($namespace), SCANDIR_SORT_ASCENDING);
-        
+
+        $files = scandir($namespaceDirectory, SCANDIR_SORT_ASCENDING);
+
         $controllers = [];
         $controllerList = [];
-        
+
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') {
                 continue;
             }
-            
+
             $directory = $this->getNamespaceDirectory($namespace . '\\' . $file);
             if ($directory === null) {
                 continue;
             }
-            
+
             if (is_dir($directory)) {
                 $controllerList[] = $this->find($namespace . '\\' . $file, $suffix);
             } else {
@@ -46,10 +54,10 @@ class ControllerFinder
                 }
             }
         }
-        
+
         return array_merge($controllers, ...$controllerList);
     }
-    
+
     /**
      * @param string $namespace
      *
@@ -59,40 +67,42 @@ class ControllerFinder
     protected function getNamespaceDirectory(string $namespace): ?string
     {
         $composerNamespaces = $this->getDefinedNamespaces();
-        
+
         $namespaceFragments = explode('\\', $namespace);
         $undefinedNamespaceFragments = [];
-        
+
         while ($namespaceFragments) {
             $possibleNamespace = implode('\\', $namespaceFragments) . '\\';
             if (array_key_exists($possibleNamespace, $composerNamespaces)) {
-                $path = App::basePath() . DIRECTORY_SEPARATOR . $composerNamespaces[$possibleNamespace] . implode(
-                        '/',
-                        array_reverse($undefinedNamespaceFragments)
-                    );
-                
+                $path = $this->appBasePath . DIRECTORY_SEPARATOR . $composerNamespaces[$possibleNamespace] . implode(
+                    '/',
+                    array_reverse($undefinedNamespaceFragments)
+                );
+
                 $realPath = realpath($path);
-                
+
                 return $realPath !== false ? $realPath : null;
             }
-            
+
             $undefinedNamespaceFragments[] = array_pop($namespaceFragments);
         }
-        
+
         return null;
     }
-    
+
     /**
+     * @return array<string, string>
      * @throws \JsonException
      */
     protected function getDefinedNamespaces(): array
     {
         if ($this->definedNamespaces === null) {
-            $composerJsonPath = App::basePath() . DIRECTORY_SEPARATOR . 'composer.json';
-            $composerConfig = json_decode(file_get_contents($composerJsonPath), false, 512, JSON_THROW_ON_ERROR);
-            $this->definedNamespaces = (array)$composerConfig->autoload->{'psr-4'};
+            $composerJsonPath = $this->appBasePath . DIRECTORY_SEPARATOR . 'composer.json';
+            /** @var array{autoload: array{psr-4: array<string, string>}} $composerConfig */
+            $composerConfig = json_decode(file_get_contents($composerJsonPath), true, 512, JSON_THROW_ON_ERROR);
+            $this->definedNamespaces = $composerConfig['autoload']['psr-4'] ?? [];
         }
-        
+
         return $this->definedNamespaces;
     }
 }

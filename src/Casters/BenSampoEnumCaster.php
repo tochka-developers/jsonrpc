@@ -5,38 +5,33 @@ namespace Tochka\JsonRpc\Casters;
 use BenSampo\Enum\Enum;
 use BenSampo\Enum\Exceptions\InvalidEnumMemberException;
 use Tochka\JsonRpc\Contracts\GlobalCustomCasterInterface;
-use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Exceptions\InvalidEnumValueException;
+use Tochka\JsonRpc\Route\Parameters\Parameter;
+use Tochka\JsonRpc\Standard\Exceptions\InternalErrorException;
 
 class BenSampoEnumCaster implements GlobalCustomCasterInterface
 {
     public function canCast(string $expectedType): bool
     {
-        return is_subclass_of($expectedType, '\BenSampo\Enum\Enum');
+        return class_exists('\\BenSampo\\Enum\\Enum') && is_a($expectedType, Enum::class, true);
     }
-    
-    /**
-     * @throws JsonRpcException
-     */
-    public function cast(string $expectedType, $value, string $fieldName): ?Enum
+
+    public function cast(Parameter $parameter, mixed $value, string $fieldName): ?Enum
     {
         if ($value === null) {
             return null;
         }
-        
+
+        /** @var class-string<Enum>|null $expectedType */
+        $expectedType = $parameter->className;
+        if ($expectedType === null || !is_a($expectedType, Enum::class, true)) {
+            throw new InternalErrorException();
+        }
+
         try {
-            /** @var Enum $expectedType */
             return $expectedType::fromValue($value);
         } catch (InvalidEnumMemberException $e) {
-            throw new JsonRpcInvalidParameterException(
-                'incorrect_value',
-                sprintf(
-                    'Invalid value for field. Expected: [%s], Actual: [%s]',
-                    implode(',', $expectedType::getValues()),
-                    $value
-                ),
-                $fieldName
-            );
+            throw new InvalidEnumValueException($fieldName, $value, $expectedType::getValues(), $e);
         }
     }
 }

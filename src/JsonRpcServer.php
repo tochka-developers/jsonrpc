@@ -3,47 +3,65 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Pipeline\Pipeline;
+use Psr\Http\Message\ServerRequestInterface;
+use Tochka\JsonRpc\Contracts\ExceptionHandlerInterface;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
-use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
-use Tochka\JsonRpc\Exceptions\JsonRpcException;
-use Tochka\JsonRpc\Facades\ExceptionHandler;
+use Tochka\JsonRpc\Contracts\HttpRequestMiddlewareInterface;
+use Tochka\JsonRpc\Contracts\JsonRpcRequestMiddlewareInterface;
+use Tochka\JsonRpc\Contracts\JsonRpcServerInterface;
+use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
+use Tochka\JsonRpc\Contracts\ParserInterface;
+use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
+use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
 use Tochka\JsonRpc\Facades\JsonRpcRouter;
-use Tochka\JsonRpc\Support\JsonRpcRequest;
-use Tochka\JsonRpc\Support\JsonRpcResponse;
-use Tochka\JsonRpc\Support\MiddlewarePipeline;
-use Tochka\JsonRpc\Support\ResponseCollection;
-use Tochka\JsonRpc\Support\ServerConfig;
+use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
+use Tochka\JsonRpc\Standard\Exceptions\MethodNotFoundException;
 
-/**
- * JsonRpcServer
- */
-class JsonRpcServer
+class JsonRpcServer implements JsonRpcServerInterface
 {
-    private JsonRpcParserInterface $parser;
+    private ParserInterface $parser;
     private HandleResolverInterface $resolver;
-    private ServerConfig $config;
+    private Container $container;
+    private ExceptionHandlerInterface $exceptionHandler;
+    private MiddlewareRegistryInterface $middlewareRegistry;
 
-    public function __construct(JsonRpcParserInterface $parser, HandleResolverInterface $resolver)
-    {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function __construct(
+        ParserInterface $parser,
+        HandleResolverInterface $resolver,
+        ExceptionHandlerInterface $exceptionHandler,
+        MiddlewareRegistryInterface $middlewareRegistry,
+        Container $container
+    ) {
         $this->parser = $parser;
         $this->resolver = $resolver;
+        $this->container = $container;
+        $this->exceptionHandler = $exceptionHandler;
+        $this->middlewareRegistry = $middlewareRegistry;
     }
-    
-    public function handle(string $content, string $serverName = 'default', string $group = null, string $action = null): ResponseCollection
-    {
+
+    public function handle(
+        ServerRequestInterface $request,
+        string $serverName = 'default',
+        string $group = null,
+        string $action = null
+    ): JsonRpcResponseCollection {
         try {
-            $this->config = new ServerConfig(Config::get('jsonrpc.' . $serverName, []));
-            $pipeline = new MiddlewarePipeline(Container::getInstance());
+            $pipeline = new Pipeline($this->container);
 
-            $requests = $this->parser->parse($content);
-
-            $responses = $pipeline->send($requests)
-                ->through($this->config->onceExecutedMiddleware)
-                ->via('handle')
+            /** @var JsonRpcResponseCollection $responses */
+            $responses = $pipeline->send($request)
+                ->through($this->middlewareRegistry->getMiddleware($serverName, HttpRequestMiddlewareInterface::class))
+                ->via('handleHttpRequest')
                 ->then(
-                    function (array $requests) use ($serverName, $group, $action) {
-                        $responses = new ResponseCollection();
+                    function (ServerRequestInterface $httpRequest) use ($serverName, $group, $action) {
+                        $requests = $this->parser->parse($httpRequest);
+
+                        $responses = new JsonRpcResponseCollection();
+
                         foreach ($requests as $request) {
                             $response = $this->handleRequest($request, $serverName, $group, $action);
 
@@ -55,42 +73,63 @@ class JsonRpcServer
                         return $responses;
                     }
                 );
-        } catch (\Exception $e) {
-            $responses = new ResponseCollection();
-            $responses->add(JsonRpcResponse::error(ExceptionHandler::handle($e)));
+        } catch (\Throwable $e) {
+            $responses = new JsonRpcResponseCollection();
+
+            $responses->add(
+                new JsonRpcResponse(
+                    id:    'empty',
+                    error: $this->exceptionHandler->handle($e)
+                )
+            );
         }
 
         return $responses;
     }
 
-    public function handleRequest(JsonRpcRequest $request, string $serverName, string $group = null, string $action = null): ?JsonRpcResponse {
+    public function handleRequest(
+        JsonRpcServerRequest $request,
+        string $serverName,
+        string $group = null,
+        string $action = null
+    ): ?JsonRpcResponse {
         try {
-            $pipeline = new MiddlewarePipeline(Container::getInstance());
-            
-            $route = JsonRpcRouter::get($serverName, $request->getMethod(), $group, $action);
-            
+            $pipeline = new Pipeline($this->container);
+
+            $route = JsonRpcRouter::get($serverName, $request->getJsonRpcRequest()->method, $group, $action);
+
             if ($route === null) {
-                throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
+                throw new MethodNotFoundException();
             }
-            
+
             $request->setRoute($route);
-            
+
+            /** @var JsonRpcResponse|null */
             return $pipeline->send($request)
-                ->through($this->config->middleware)
-                ->via('handle')
+                ->through(
+                    $this->middlewareRegistry->getMiddleware($serverName, JsonRpcRequestMiddlewareInterface::class)
+                )
+                ->via('handleJsonRpcRequest')
                 ->then(
-                    function (JsonRpcRequest $request) {
+                    function (JsonRpcServerRequest $request) {
+                        /** @psalm-suppress MixedAssignment */
                         $result = $this->resolver->handle($request);
 
-                        if ($request->getId() === null) {
+                        if ($request->getJsonRpcRequest()->id === null) {
                             return null;
                         }
 
-                        return JsonRpcResponse::result($result, $request->getId());
+                        return new JsonRpcResponse(
+                            id:     $request->getJsonRpcRequest()->id,
+                            result: $result
+                        );
                     }
                 );
-        } catch (\Exception $e) {
-            return JsonRpcResponse::error(ExceptionHandler::handle($e), $request->getId());
+        } catch (\Throwable $e) {
+            return new JsonRpcResponse(
+                id:    $request->getJsonRpcRequest()->id ?? 'empty',
+                error: $this->exceptionHandler->handle($e)
+            );
         }
     }
 }
