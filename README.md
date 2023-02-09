@@ -1,8 +1,9 @@
 # JsonRpc 2.0 Server for Laravel (^9.0)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=alert_status)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=bugs)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=code_smells)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=tochka-developers_jsonrpc&metric=coverage)](https://sonarcloud.io/dashboard?id=tochka-developers_jsonrpc)
+[![Packagist](https://img.shields.io/packagist/v/tochka-developers/jsonrpc.svg)](https://packagist.org/packages/tochka-developers/jsonrpc)
+[![Packagist](https://img.shields.io/packagist/dt/tochka-developers/jsonrpc.svg)](https://packagist.org/packages/tochka-developers/jsonrpc)
+[![build](https://github.com/tochka-developers/jsonrpc/actions/workflows/main.yml/badge.svg)](https://github.com/tochka-developers/jsonrpc/actions/workflows/main.yml)
+[![Psalm coverage](https://shepherd.dev/github/tochka-developers/jsonrpc/coverage.svg)](https://shepherd.dev/github/tochka-developers/jsonrpc)
+[![Psalm level](https://shepherd.dev/github/tochka-developers/jsonrpc/level.svg)](https://psalm.dev)
 [![Coverage Status](https://coveralls.io/repos/github/tochka-developers/jsonrpc/badge.svg)](https://coveralls.io/github/tochka-developers/jsonrpc)
 
 # Описание
