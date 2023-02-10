@@ -41,7 +41,7 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
         $this->additionalContext = array_merge($this->additionalContext, $context);
     }
 
-    public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): JsonRpcResponse
+    public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): ?JsonRpcResponse
     {
         $logContext = $this->additionalContext;
 
@@ -87,6 +87,10 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
 
         try {
             $result = $next($request);
+
+            if ($result === null) {
+                return null;
+            }
 
             if ($result->error !== null) {
                 Log::channel($this->channel)

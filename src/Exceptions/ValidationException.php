@@ -28,23 +28,23 @@ class ValidationException extends InvalidParametersException
 
         /** @var array<string, array<string, array>> $failedRules */
         $failedRules = $validator->failed();
+        $failedMessages = $validator->getMessageBag();
 
         foreach ($failedRules as $attributeName => $rule) {
-            foreach ($rule as $ruleName => $parameters) {
-                /** @psalm-suppress MixedAssignment */
-                $message = $validator->getMessage($attributeName, $ruleName);
+            /** @var array<array-key, string> $attributeMessages */
+            $attributeMessages = $failedMessages->get($attributeName);
+
+            foreach ($rule as $ruleName => $_) {
+                if (count($attributeMessages) === 0) {
+                    $message = $ruleName;
+                } else {
+                    $message = array_shift($attributeMessages);
+                }
+
+
 
                 /** @psalm-suppress MixedArgument */
-                $errors[] = new InvalidParameterError(
-                    $attributeName,
-                    $ruleName,
-                    $validator->makeReplacements(
-                        $message,
-                        $attributeName,
-                        $ruleName,
-                        $parameters
-                    )
-                );
+                $errors[] = new InvalidParameterError($attributeName, $ruleName, $message);
             }
         }
 

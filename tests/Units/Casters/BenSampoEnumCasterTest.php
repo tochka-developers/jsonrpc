@@ -3,18 +3,18 @@
 namespace Tochka\JsonRpc\Tests\Units\Casters;
 
 use BenSampo\Enum\Enum;
-use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Casters\BenSampoEnumCaster;
 use Tochka\JsonRpc\Exceptions\InvalidEnumValueException;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\AdditionalJsonRpcException;
 use Tochka\JsonRpc\Standard\Exceptions\InternalErrorException;
 use Tochka\JsonRpc\Standard\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Tests\Stubs\FakeBenSampoEnum;
+use Tochka\JsonRpc\Tests\Units\DefaultTestCase;
 
 /**
  * @covers \Tochka\JsonRpc\Casters\BenSampoEnumCaster
  */
-class BenSampoEnumCasterTest extends TestCase
+class BenSampoEnumCasterTest extends DefaultTestCase
 {
     use MakeParameterTrait;
 

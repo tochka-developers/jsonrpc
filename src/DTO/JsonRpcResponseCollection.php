@@ -14,7 +14,7 @@ use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
 class JsonRpcResponseCollection implements Jsonable, Arrayable, \JsonSerializable
 {
     /** @var array<JsonRpcResponse> */
-    public array $items = [];
+    private array $items = [];
 
     public function add(JsonRpcResponse $response): void
     {
@@ -57,7 +57,7 @@ class JsonRpcResponseCollection implements Jsonable, Arrayable, \JsonSerializabl
         if (count($this->items) === 1) {
             $response = array_shift($this->items);
 
-            return $response->toArray();
+            return $response->jsonSerialize();
         }
 
         return array_map(

@@ -12,8 +12,8 @@ interface JsonRpcRequestMiddlewareInterface extends MiddlewareInterface
 {
     /**
      * @param JsonRpcServerRequest $request
-     * @param callable(JsonRpcServerRequest): JsonRpcResponse $next
-     * @return JsonRpcResponse
+     * @param callable(JsonRpcServerRequest): ?JsonRpcResponse $next
+     * @return JsonRpcResponse|null
      */
-    public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): JsonRpcResponse;
+    public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): ?JsonRpcResponse;
 }

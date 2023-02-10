@@ -12,9 +12,9 @@ use Tochka\JsonRpc\Contracts\JsonRpcRequestMiddlewareInterface;
 use Tochka\JsonRpc\Contracts\JsonRpcServerInterface;
 use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
 use Tochka\JsonRpc\Contracts\ParserInterface;
+use Tochka\JsonRpc\Contracts\RouterInterface;
 use Tochka\JsonRpc\DTO\JsonRpcResponseCollection;
 use Tochka\JsonRpc\DTO\JsonRpcServerRequest;
-use Tochka\JsonRpc\Facades\JsonRpcRouter;
 use Tochka\JsonRpc\Standard\DTO\JsonRpcResponse;
 use Tochka\JsonRpc\Standard\Exceptions\MethodNotFoundException;
 
@@ -25,6 +25,7 @@ class JsonRpcServer implements JsonRpcServerInterface
     private Container $container;
     private ExceptionHandlerInterface $exceptionHandler;
     private MiddlewareRegistryInterface $middlewareRegistry;
+    private RouterInterface $router;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod
@@ -34,6 +35,7 @@ class JsonRpcServer implements JsonRpcServerInterface
         HandleResolverInterface $resolver,
         ExceptionHandlerInterface $exceptionHandler,
         MiddlewareRegistryInterface $middlewareRegistry,
+        RouterInterface $router,
         Container $container
     ) {
         $this->parser = $parser;
@@ -41,6 +43,7 @@ class JsonRpcServer implements JsonRpcServerInterface
         $this->container = $container;
         $this->exceptionHandler = $exceptionHandler;
         $this->middlewareRegistry = $middlewareRegistry;
+        $this->router = $router;
     }
 
     public function handle(
@@ -52,12 +55,18 @@ class JsonRpcServer implements JsonRpcServerInterface
         try {
             $pipeline = new Pipeline($this->container);
 
+            $middleware = $this->middlewareRegistry->getMiddleware($serverName, HttpRequestMiddlewareInterface::class);
+
             /** @var JsonRpcResponseCollection $responses */
             $responses = $pipeline->send($request)
-                ->through($this->middlewareRegistry->getMiddleware($serverName, HttpRequestMiddlewareInterface::class))
+                ->through($middleware)
                 ->via('handleHttpRequest')
                 ->then(
-                    function (ServerRequestInterface $httpRequest) use ($serverName, $group, $action) {
+                    function (ServerRequestInterface $httpRequest) use (
+                        $serverName,
+                        $group,
+                        $action
+                    ): JsonRpcResponseCollection {
                         $requests = $this->parser->parse($httpRequest);
 
                         $responses = new JsonRpcResponseCollection();
@@ -77,10 +86,7 @@ class JsonRpcServer implements JsonRpcServerInterface
             $responses = new JsonRpcResponseCollection();
 
             $responses->add(
-                new JsonRpcResponse(
-                    id:    'empty',
-                    error: $this->exceptionHandler->handle($e)
-                )
+                new JsonRpcResponse(error: $this->exceptionHandler->handle($e))
             );
         }
 
@@ -96,7 +102,7 @@ class JsonRpcServer implements JsonRpcServerInterface
         try {
             $pipeline = new Pipeline($this->container);
 
-            $route = JsonRpcRouter::get($serverName, $request->getJsonRpcRequest()->method, $group, $action);
+            $route = $this->router->get($serverName, $request->getJsonRpcRequest()->method, $group, $action);
 
             if ($route === null) {
                 throw new MethodNotFoundException();
@@ -104,14 +110,17 @@ class JsonRpcServer implements JsonRpcServerInterface
 
             $request->setRoute($route);
 
+            $middleware = $this->middlewareRegistry->getMiddleware(
+                $serverName,
+                JsonRpcRequestMiddlewareInterface::class
+            );
+
             /** @var JsonRpcResponse|null */
             return $pipeline->send($request)
-                ->through(
-                    $this->middlewareRegistry->getMiddleware($serverName, JsonRpcRequestMiddlewareInterface::class)
-                )
+                ->through($middleware)
                 ->via('handleJsonRpcRequest')
                 ->then(
-                    function (JsonRpcServerRequest $request) {
+                    function (JsonRpcServerRequest $request): ?JsonRpcResponse {
                         /** @psalm-suppress MixedAssignment */
                         $result = $this->resolver->handle($request);
 
@@ -127,7 +136,7 @@ class JsonRpcServer implements JsonRpcServerInterface
                 );
         } catch (\Throwable $e) {
             return new JsonRpcResponse(
-                id:    $request->getJsonRpcRequest()->id ?? 'empty',
+                id:    $request->getJsonRpcRequest()->id,
                 error: $this->exceptionHandler->handle($e)
             );
         }

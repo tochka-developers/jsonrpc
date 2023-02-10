@@ -23,7 +23,7 @@ class RouteListCommand extends Command
             ['Server', 'Group:Action', 'JsonRpc Method', 'Controller@Method'],
             array_map(static fn (JsonRpcRoute $route) => [
                 $route->serverName,
-                ($route->group ?? '@') . ':' . ($route->action ?? '@'),
+                ($route->group ?? '*') . ':' . ($route->action ?? '*'),
                 $route->jsonRpcMethodName,
                 ($route->controllerClass ?? '<NoController>') . '@' . ($route->controllerMethod ?? '<NoMethod>')
             ], $routes)

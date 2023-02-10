@@ -31,7 +31,7 @@ class HttpExceptionError extends InternalError
         return [
             'exception' => [
                 'name' => $this->exception::class,
-                'code' => $this->exception->getCode(),
+                'code' => $this->exception->getStatusCode(),
                 'message' => $message,
             ]
         ];

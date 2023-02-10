@@ -3,16 +3,16 @@
 namespace Tochka\JsonRpc\Tests\Units\Casters;
 
 use Carbon\Carbon;
-use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Annotations\TimeZone;
 use Tochka\JsonRpc\Casters\CarbonCaster;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\AdditionalJsonRpcException;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\InvalidParameterException;
+use Tochka\JsonRpc\Tests\Units\DefaultTestCase;
 
 /**
  * @covers \Tochka\JsonRpc\Casters\CarbonCaster
  */
-class CarbonCasterTest extends TestCase
+class CarbonCasterTest extends DefaultTestCase
 {
     use MakeParameterTrait;
 

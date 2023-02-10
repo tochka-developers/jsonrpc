@@ -2,7 +2,6 @@
 
 namespace Tochka\JsonRpc\Tests\Units\Casters;
 
-use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Casters\EnumCaster;
 use Tochka\JsonRpc\Exceptions\InvalidEnumValueException;
 use Tochka\JsonRpc\Standard\Exceptions\Additional\AdditionalJsonRpcException;
@@ -10,11 +9,12 @@ use Tochka\JsonRpc\Standard\Exceptions\Additional\InvalidParameterException;
 use Tochka\JsonRpc\Standard\Exceptions\InternalErrorException;
 use Tochka\JsonRpc\Standard\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Tests\Stubs\FakeEnum;
+use Tochka\JsonRpc\Tests\Units\DefaultTestCase;
 
 /**
  * @covers \Tochka\JsonRpc\Casters\EnumCaster
  */
-class EnumCasterTest extends TestCase
+class EnumCasterTest extends DefaultTestCase
 {
     use MakeParameterTrait;
 

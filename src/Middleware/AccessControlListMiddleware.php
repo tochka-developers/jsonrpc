@@ -24,7 +24,7 @@ class AccessControlListMiddleware implements JsonRpcRequestMiddlewareInterface
         $this->auth = $auth;
     }
 
-    public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): JsonRpcResponse
+    public function handleJsonRpcRequest(JsonRpcServerRequest $request, callable $next): ?JsonRpcResponse
     {
         $route = $request->getRoute();
 

@@ -2,9 +2,7 @@
 
 namespace Tochka\JsonRpc;
 
-use Illuminate\Container\Container;
-use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Contracts\Debug\ExceptionHandler as GlobalExceptionHandler;
+use Illuminate\Contracts\Debug\ExceptionHandler as LaravelExceptionHandlerInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 use Tochka\JsonRpc\Contracts\ExceptionHandlerInterface;
 use Tochka\JsonRpc\Exceptions\HttpException;
@@ -14,19 +12,18 @@ use Tochka\JsonRpc\Standard\Exceptions\InternalErrorException;
 
 class ExceptionHandler implements ExceptionHandlerInterface
 {
-    private Container $container;
+    private LaravelExceptionHandlerInterface $exceptionHandler;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function __construct(Container $container)
+    public function __construct(LaravelExceptionHandlerInterface $exceptionHandler)
     {
-        $this->container = $container;
+        $this->exceptionHandler = $exceptionHandler;
     }
 
     /**
      * @throws \Throwable
-     * @throws BindingResolutionException
      */
     public function handle(\Throwable $exception): JsonRpcError
     {
@@ -38,9 +35,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
             $error = (InternalErrorException::from($exception))->getJsonRpcError();
         }
 
-        /** @var GlobalExceptionHandler $handler */
-        $handler = $this->container->make(GlobalExceptionHandler::class);
-        $handler->report($exception);
+        $this->exceptionHandler->report($exception);
 
         return $error;
     }
