@@ -2,20 +2,20 @@
 
 namespace Tochka\JsonRpc\Route;
 
-use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
+use Tochka\JsonRpc\Contracts\RouteCacheInterface;
 use Tochka\JsonRpc\Contracts\RouterInterface;
 use Tochka\JsonRpc\DTO\JsonRpcRoute;
 
 class CacheRouter implements RouterInterface
 {
     private RouterInterface $router;
-    private CacheInterface $cache;
+    private RouteCacheInterface $cache;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function __construct(RouterInterface $router, CacheInterface $cache)
+    public function __construct(RouterInterface $router, RouteCacheInterface $cache)
     {
         $this->router = $router;
         $this->cache = $cache;
