@@ -15,7 +15,7 @@ use Tochka\JsonRpc\Route\Parameters\Parameter;
  * @method static object|null cast(string $casterName, Parameter $parameter, mixed $value, string $fieldName)
  *
  * @see CasterRegistryInterface
- * @see \Tochka\JsonRpc\Support\CasterRegistryCasterRegistry
+ * @see \Tochka\JsonRpc\Support\CasterRegistry
  */
 class JsonRpcCasterRegistry extends Facade
 {

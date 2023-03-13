@@ -10,6 +10,7 @@
     ],
     "keywords": [
         "jsonrpc",
+        "jsonrpc-server",
         "laravel"
     ],
     "require": {

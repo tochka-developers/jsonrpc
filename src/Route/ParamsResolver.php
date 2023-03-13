@@ -19,6 +19,7 @@ use Tochka\JsonRpc\Contracts\CasterRegistryInterface;
 use Tochka\JsonRpc\Contracts\CustomCasterInterface;
 use Tochka\JsonRpc\Contracts\DocBlockFactoryInterface;
 use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
+use Tochka\JsonRpc\Facades\JsonRpcCasterRegistry;
 use Tochka\JsonRpc\Route\Parameters\Parameter;
 use Tochka\JsonRpc\Route\Parameters\ParameterObject;
 use Tochka\JsonRpc\Route\Parameters\ParameterTypeEnum;
