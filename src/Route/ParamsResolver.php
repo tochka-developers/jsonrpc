@@ -56,7 +56,7 @@ class ParamsResolver implements ParamsResolverInterface
         
         $docBlock = JsonRpcDocBlockFactory::make($reflectionMethod);
         
-        $parameter = $this->getParameterTypeFromReflection('', $reflectionType, $docBlock, DocBlockTypeEnum::RETURN());
+        $parameter = $this->getParameterTypeFromReflection('Result', $reflectionType, $docBlock, DocBlockTypeEnum::RETURN());
         $parameter->required = true;
         $parameter->description = $this->getParameterDescriptionFromPhpDoc('', $docBlock, DocBlockTypeEnum::RETURN());
         
