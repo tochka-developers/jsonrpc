@@ -10,14 +10,13 @@ use Tochka\JsonRpc\Standard\DTO\JsonRpcRequest;
  */
 class JsonRpcServerRequest
 {
-    private JsonRpcRequest $jsonRpcRequest;
-    private ServerRequestInterface $serverRequest;
     private ?JsonRpcRoute $route = null;
 
-    public function __construct(ServerRequestInterface $serverRequest, JsonRpcRequest $jsonRpcRequest)
+    public function __construct(
+        private readonly ServerRequestInterface $serverRequest,
+        private readonly JsonRpcRequest $jsonRpcRequest,
+    )
     {
-        $this->serverRequest = $serverRequest;
-        $this->jsonRpcRequest = $jsonRpcRequest;
     }
 
     public function getJsonRpcRequest(): JsonRpcRequest

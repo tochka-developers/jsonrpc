@@ -8,6 +8,8 @@ use Tochka\JsonRpc\DTO\JsonRpcRoute;
 
 class Router implements RouterInterface
 {
+    use RouteName;
+
     /** @var array<string, JsonRpcRoute> */
     private array $routes = [];
     private RouteAggregatorInterface $routeAggregator;
@@ -26,17 +28,16 @@ class Router implements RouterInterface
         string $group = null,
         string $action = null
     ): ?JsonRpcRoute {
-        $requestedRoute = new JsonRpcRoute($serverName, $methodName, $group, $action);
-        $requestedRouteName = $requestedRoute->getRouteName();
+        $routeName = $this->getRouteName($serverName, $methodName, $group, $action);
 
-        if (array_key_exists($requestedRouteName, $this->routes)) {
-            return $this->routes[$requestedRouteName];
+        if (array_key_exists($routeName, $this->routes)) {
+            return $this->routes[$routeName];
         }
 
-        $route = $this->resolveMethod($requestedRoute);
+        $route = $this->resolveMethod($serverName, $routeName);
 
         if ($route !== null) {
-            $this->routes[$requestedRouteName] = $route;
+            $this->routes[$routeName] = $route;
         }
 
         return $route;
@@ -47,10 +48,10 @@ class Router implements RouterInterface
         $this->routes[$route->getRouteName()] = $route;
     }
 
-    private function resolveMethod(JsonRpcRoute $requestedRoute): ?JsonRpcRoute
+    private function resolveMethod(string $serverName, string $routeName): ?JsonRpcRoute
     {
-        $routes = $this->routeAggregator->getRoutesForServer($requestedRoute->serverName);
+        $routes = $this->routeAggregator->getRoutesForServer($serverName);
 
-        return $routes[$requestedRoute->getRouteName()] ?? null;
+        return $routes[$routeName] ?? null;
     }
 }

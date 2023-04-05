@@ -36,18 +36,9 @@ class AccessControlListMiddleware implements JsonRpcRequestMiddlewareInterface
 
         $globalRules = (array)($this->acl['*'] ?? []);
 
-        if ($route->controllerClass !== null) {
-            $controllerRules = (array)($this->acl[$route->controllerClass] ?? []);
-            if ($route->controllerMethod !== null) {
-                $methodRules = (array)($this->acl[$route->controllerClass . '@' . $route->controllerMethod] ?? []);
-            } else {
-                $methodRules = [];
-            }
-        } else {
-            $controllerRules = [];
-            $methodRules = [];
-        }
 
+        $controllerRules = (array)($this->acl[$route->methodDefinition->className] ?? []);
+        $methodRules = (array)($this->acl[$route->methodDefinition->className . '@' . $route->methodDefinition->methodName] ?? []);
 
         // если не попали ни под одно правило - значит сервису нельзя
         if (empty($globalRules) && empty($controllerRules) && empty($methodRules)) {
@@ -57,10 +48,10 @@ class AccessControlListMiddleware implements JsonRpcRequestMiddlewareInterface
         // если есть правила для метода - ориентируемся только на них
         if (!empty($methodRules)) {
             $this->checkRules($service, $methodRules);
-        // иначе смотрим на правила для контроллера
+            // иначе смотрим на правила для контроллера
         } elseif (!empty($controllerRules)) {
             $this->checkRules($service, $controllerRules);
-        // ну и если даже их нет - смотрим глобальные правила
+            // ну и если даже их нет - смотрим глобальные правила
         } elseif (!empty($globalRules)) {
             $this->checkRules($service, $globalRules);
         }

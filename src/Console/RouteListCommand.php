@@ -25,7 +25,7 @@ class RouteListCommand extends Command
                 $route->serverName,
                 ($route->group ?? '*') . ':' . ($route->action ?? '*'),
                 $route->jsonRpcMethodName,
-                ($route->controllerClass ?? '<NoController>') . '@' . ($route->controllerMethod ?? '<NoMethod>')
+                $route->methodDefinition->className . '@' . $route->methodDefinition->methodName
             ], $routes)
         );
     }

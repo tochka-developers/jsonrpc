@@ -58,21 +58,12 @@ class LogMiddleware implements JsonRpcRequestMiddlewareInterface
                 $logContext['action'] = $route->action;
             }
             $logContext['method'] = $route->jsonRpcMethodName;
-            $logContext['call'] = ($route->controllerClass ?? '<NoController>') . '::' . ($route->controllerMethod ?? '<NoMethod>');
+            $logContext['call'] = $route->methodDefinition->className . '::' . $route->methodDefinition->methodName;
 
 
             $globalRules = $this->hideParams['*'] ?? [];
-            if ($route->controllerClass !== null) {
-                $controllerRules = $this->hideParams[$route->controllerClass] ?? [];
-                if ($route->controllerMethod !== null) {
-                    $methodRules = $this->hideParams[$route->controllerClass . '@' . $route->controllerMethod] ?? [];
-                } else {
-                    $methodRules = [];
-                }
-            } else {
-                $controllerRules = [];
-                $methodRules = [];
-            }
+            $controllerRules = $this->hideParams[$route->methodDefinition->className] ?? [];
+            $methodRules = $this->hideParams[$route->methodDefinition->className . '@' . $route->methodDefinition->methodName] ?? [];
 
             $rules = array_merge($globalRules, $controllerRules, $methodRules);
             $logRequest['params'] = $this->hidePrivateData(

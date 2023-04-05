@@ -4,18 +4,17 @@ namespace Tochka\JsonRpc\Route;
 
 use Illuminate\Support\Str;
 
-class ControllerFinder
+final class ControllerFinder
 {
     /** @var array<string, string> */
     private ?array $definedNamespaces = null;
-    private string $appBasePath;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function __construct(string $appBasePath)
-    {
-        $this->appBasePath = $appBasePath;
+    public function __construct(
+        private readonly string $appBasePath
+    ) {
     }
 
     /**
@@ -64,7 +63,7 @@ class ControllerFinder
      * @return string|null
      * @throws \JsonException
      */
-    protected function getNamespaceDirectory(string $namespace): ?string
+    private function getNamespaceDirectory(string $namespace): ?string
     {
         $composerNamespaces = $this->getDefinedNamespaces();
 
@@ -75,9 +74,9 @@ class ControllerFinder
             $possibleNamespace = implode('\\', $namespaceFragments) . '\\';
             if (array_key_exists($possibleNamespace, $composerNamespaces)) {
                 $path = $this->appBasePath . DIRECTORY_SEPARATOR . $composerNamespaces[$possibleNamespace] . implode(
-                    '/',
-                    array_reverse($undefinedNamespaceFragments)
-                );
+                        '/',
+                        array_reverse($undefinedNamespaceFragments)
+                    );
 
                 $realPath = realpath($path);
 
@@ -94,11 +93,11 @@ class ControllerFinder
      * @return array<string, string>
      * @throws \JsonException
      */
-    protected function getDefinedNamespaces(): array
+    private function getDefinedNamespaces(): array
     {
         if ($this->definedNamespaces === null) {
             $composerJsonPath = $this->appBasePath . DIRECTORY_SEPARATOR . 'composer.json';
-            /** @var array{autoload: array{psr-4: array<string, string>}} $composerConfig */
+            /** @var array{autoload: array{"psr-4": array<string, string>}} $composerConfig */
             $composerConfig = json_decode(file_get_contents($composerJsonPath), true, 512, JSON_THROW_ON_ERROR);
             $this->definedNamespaces = $composerConfig['autoload']['psr-4'] ?? [];
         }

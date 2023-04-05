@@ -8,45 +8,72 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use phpDocumentor\Reflection\DocBlockFactory as ReflectionDocBlockFactory;
 use Spiral\Attributes\AnnotationReader as SpiralAnnotationReader;
-use Spiral\Attributes\AttributeReader;
+use Spiral\Attributes\AttributeReader as SpiralAttributeReader;
 use Spiral\Attributes\Composite\MergeReader;
-use Tochka\JsonRpc\Casters\BenSampoEnumCaster;
-use Tochka\JsonRpc\Casters\CarbonCaster;
-use Tochka\JsonRpc\Casters\EnumCaster;
+use Tochka\Hydrator\Contracts\ClassDefinitionParserInterface;
+use Tochka\Hydrator\Contracts\ClassDefinitionsRegistryInterface;
+use Tochka\Hydrator\Contracts\ExtractorInterface;
+use Tochka\Hydrator\Contracts\HydratorInterface;
+use Tochka\Hydrator\Contracts\MethodDefinitionParserInterface;
+use Tochka\Hydrator\Definitions\ClassDefinitionParser;
+use Tochka\Hydrator\Definitions\ClassDefinitionsRegistry;
+use Tochka\Hydrator\Definitions\MethodDefinitionParser;
+use Tochka\Hydrator\Extractor;
+use Tochka\Hydrator\Extractors\ArrayExtractor;
+use Tochka\Hydrator\Extractors\BenSampoEnumExtractor;
+use Tochka\Hydrator\Extractors\CarbonExtractor;
+use Tochka\Hydrator\Extractors\DateTimeExtractor;
+use Tochka\Hydrator\Extractors\DIExtractor;
+use Tochka\Hydrator\Extractors\EnumExtractor;
+use Tochka\Hydrator\Extractors\ExtractByExtractor;
+use Tochka\Hydrator\Extractors\NamedObjectExtractor;
+use Tochka\Hydrator\Extractors\NullExtractor;
+use Tochka\Hydrator\Extractors\ObjectExtractor;
+use Tochka\Hydrator\Extractors\StringExtractor;
+use Tochka\Hydrator\Extractors\StrongScalarExtractor;
+use Tochka\Hydrator\Extractors\UnionExtractor;
+use Tochka\Hydrator\Hydrator;
+use Tochka\Hydrator\Hydrators\ArrayableHydrator;
+use Tochka\Hydrator\Hydrators\ArrayHydrator;
+use Tochka\Hydrator\Hydrators\BenSampoEnumHydrator;
+use Tochka\Hydrator\Hydrators\DateTimeHydrator;
+use Tochka\Hydrator\Hydrators\EnumHydrator;
+use Tochka\Hydrator\Hydrators\HydrateByHydrator;
+use Tochka\Hydrator\Hydrators\NamedObjectHydrator;
+use Tochka\Hydrator\Hydrators\ScalarHydrator;
+use Tochka\Hydrator\Registrar;
 use Tochka\JsonRpc\Console\RouteCacheCommand;
 use Tochka\JsonRpc\Console\RouteClearCommand;
 use Tochka\JsonRpc\Console\RouteListCommand;
-use Tochka\JsonRpc\Contracts\AnnotationReaderInterface;
 use Tochka\JsonRpc\Contracts\AuthInterface;
-use Tochka\JsonRpc\Contracts\CasterRegistryInterface;
-use Tochka\JsonRpc\Contracts\DocBlockFactoryInterface;
 use Tochka\JsonRpc\Contracts\ExceptionHandlerInterface;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Contracts\JsonRpcServerInterface;
 use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
-use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
 use Tochka\JsonRpc\Contracts\ParserInterface;
 use Tochka\JsonRpc\Contracts\RouteAggregatorInterface;
 use Tochka\JsonRpc\Contracts\RouteCacheInterface;
 use Tochka\JsonRpc\Contracts\RouterInterface;
 use Tochka\JsonRpc\Contracts\ValidatorInterface;
-use Tochka\JsonRpc\Route\CacheParamsResolver;
 use Tochka\JsonRpc\Route\CacheRouter;
 use Tochka\JsonRpc\Route\ControllerFinder;
-use Tochka\JsonRpc\Route\ParamsResolver;
 use Tochka\JsonRpc\Route\RouteAggregator;
 use Tochka\JsonRpc\Route\Router;
-use Tochka\JsonRpc\Support\AnnotationReader;
 use Tochka\JsonRpc\Support\Auth;
-use Tochka\JsonRpc\Support\CasterRegistry;
 use Tochka\JsonRpc\Support\DefaultHandleResolver;
-use Tochka\JsonRpc\Support\DocBlockFactory;
 use Tochka\JsonRpc\Support\MiddlewareRegistry;
 use Tochka\JsonRpc\Support\Parser;
 use Tochka\JsonRpc\Support\RouteCache;
 use Tochka\JsonRpc\Support\ServerConfig;
 use Tochka\JsonRpc\Support\ServersConfig;
 use Tochka\JsonRpc\Support\Validator;
+use Tochka\TypeParser\AttributeReader;
+use Tochka\TypeParser\Contracts\AttributeReaderInterface;
+use Tochka\TypeParser\Contracts\ExtendedReflectionFactoryInterface;
+use Tochka\TypeParser\ExtendedReflectionFactory;
+use Tochka\TypeParser\ExtendedTypeFactory;
+use Tochka\TypeParser\TypeFactories\DocBlockTypeFactoryMiddleware;
+use Tochka\TypeParser\TypeFactories\ReflectionTypeFactoryMiddleware;
 
 /**
  * @psalm-api
@@ -74,6 +101,8 @@ class JsonRpcServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerIgnoredAnnotations();
+        $this->registerTypeSystem();
+        $this->registerHydrator();
 
         $this->app->when(ControllerFinder::class)
             ->needs('$appBasePath')
@@ -92,54 +121,6 @@ class JsonRpcServiceProvider extends ServiceProvider
         $this->app->singleton(RouteCacheInterface::class, function (): RouteCacheInterface {
             return new RouteCache($this->app->bootstrapPath('cache'), 'jsonrpc_routes');
         });
-
-        $this->app->singleton(AnnotationReaderInterface::class, function (): AnnotationReaderInterface {
-            return new AnnotationReader(
-                new MergeReader(
-                    [
-                        new SpiralAnnotationReader(),
-                        new AttributeReader(),
-                    ]
-                )
-            );
-        });
-
-        $this->app->singleton(
-            DocBlockFactoryInterface::class,
-            function (Container $container): DocBlockFactoryInterface {
-                /** @var DocBlockFactory */
-                return $container->make(
-                    DocBlockFactory::class,
-                    ['docBlockFactory' => ReflectionDocBlockFactory::createInstance()]
-                );
-            }
-        );
-
-        $this->app->singleton(
-            CasterRegistryInterface::class,
-            function (CasterRegistry $registry): CasterRegistryInterface {
-                if (class_exists('\BenSampo\Enum\Enum')) {
-                    $registry->addCaster(new BenSampoEnumCaster());
-                }
-                if (class_exists('\Carbon\Carbon')) {
-                    $registry->addCaster(new CarbonCaster());
-                }
-                if (function_exists('enum_exists')) {
-                    $registry->addCaster(new EnumCaster());
-                }
-
-                return $registry;
-            }
-        );
-
-        $this->app->singleton(ParamsResolverInterface::class, ParamsResolver::class);
-        $this->app->extend(
-            ParamsResolverInterface::class,
-            function (ParamsResolverInterface $paramsResolver, Container $container): ParamsResolverInterface {
-                /** @var CacheParamsResolver */
-                return $container->make(CacheParamsResolver::class, ['paramsResolver' => $paramsResolver]);
-            }
-        );
 
         $this->app->singleton(RouterInterface::class, Router::class);
         $this->app->extend(
@@ -173,7 +154,6 @@ class JsonRpcServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(HandleResolverInterface::class, DefaultHandleResolver::class);
-
         $this->app->singleton(JsonRpcServerInterface::class, JsonRpcServer::class);
         $this->app->singleton(ExceptionHandlerInterface::class, ExceptionHandler::class);
     }
@@ -204,5 +184,56 @@ class JsonRpcServiceProvider extends ServiceProvider
         foreach (self::IGNORED_ANNOTATIONS as $annotationName) {
             DoctrineAnnotationReader::addGlobalIgnoredName($annotationName);
         }
+    }
+
+    private function registerTypeSystem(): void
+    {
+        $this->app->singleton(AttributeReaderInterface::class, function (): AttributeReaderInterface {
+            return new AttributeReader(
+                new MergeReader(
+                    [
+                        new SpiralAnnotationReader(),
+                        new SpiralAttributeReader(),
+                    ]
+                )
+            );
+        });
+
+        $this->app->when(ExtendedTypeFactory::class)
+            ->needs('$typeFactoryMiddleware')
+            ->give(
+                [
+                    ReflectionTypeFactoryMiddleware::class,
+                    DocBlockTypeFactoryMiddleware::class
+                ]
+            );
+
+        $this->app->singleton(
+            ExtendedReflectionFactoryInterface::class,
+            function (Container $container): ExtendedReflectionFactoryInterface {
+                /** @var ExtendedReflectionFactory */
+                return $container->make(
+                    ExtendedReflectionFactory::class,
+                    ['docBlockFactory' => ReflectionDocBlockFactory::createInstance()]
+                );
+            }
+        );
+    }
+
+    private function registerHydrator(): void
+    {
+        $this->app->singleton(ClassDefinitionsRegistryInterface::class, ClassDefinitionsRegistry::class);
+        $this->app->singleton(ClassDefinitionParserInterface::class, ClassDefinitionParser::class);
+        $this->app->singleton(MethodDefinitionParserInterface::class, MethodDefinitionParser::class);
+        $this->app->singleton(ExtractorInterface::class, Extractor::class);
+        $this->app->singleton(HydratorInterface::class, Hydrator::class);
+
+        $this->app->afterResolving(ExtractorInterface::class, function (ExtractorInterface $extractor) {
+            Registrar::registerDefaultExtractors($extractor);
+        });
+
+        $this->app->afterResolving(HydratorInterface::class, function (HydratorInterface $hydrator) {
+            Registrar::registerDefaultHydrators($hydrator);
+        });
     }
 }

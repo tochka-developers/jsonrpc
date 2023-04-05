@@ -3,42 +3,27 @@
 namespace Tochka\JsonRpc\Route;
 
 use Illuminate\Support\Str;
+use Tochka\Hydrator\Contracts\MethodDefinitionParserInterface;
 use Tochka\JsonRpc\Annotations\ApiIgnore;
 use Tochka\JsonRpc\Annotations\ApiIgnoreMethod;
-use Tochka\JsonRpc\Contracts\ApiAnnotationInterface;
-use Tochka\JsonRpc\Contracts\DocBlockFactoryInterface;
-use Tochka\JsonRpc\Contracts\AnnotationReaderInterface;
-use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
 use Tochka\JsonRpc\Contracts\RouteAggregatorInterface;
 use Tochka\JsonRpc\DTO\JsonRpcRoute;
 use Tochka\JsonRpc\Support\ServerConfig;
+use Tochka\TypeParser\Contracts\ExtendedReflectionFactoryInterface;
+use Tochka\TypeParser\Contracts\ExtendedReflectionInterface;
+use Tochka\TypeParser\Enums\MethodModifierEnum;
+use Tochka\TypeParser\Reflectors\ExtendedMethodReflection;
 
-/**
- * @psalm-suppress PossiblyUnusedMethod
- */
 class RouteAggregator implements RouteAggregatorInterface
 {
-    private ControllerFinder $controllerFinder;
-    private AnnotationReaderInterface $annotationReader;
-    private ParamsResolverInterface $paramsResolver;
-    private DocBlockFactoryInterface $docBlockFactory;
-
     /** @var array<string, ServerConfig> */
     private array $serverConfigs = [];
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
-        ControllerFinder $controllerFinder,
-        AnnotationReaderInterface $annotationReader,
-        DocBlockFactoryInterface $docBlockFactory,
-        ParamsResolverInterface $paramsResolver
+        private readonly ControllerFinder $controllerFinder,
+        private readonly ExtendedReflectionFactoryInterface $extendedReflectionFactory,
+        private readonly MethodDefinitionParserInterface $methodDefinitionParser,
     ) {
-        $this->controllerFinder = $controllerFinder;
-        $this->annotationReader = $annotationReader;
-        $this->docBlockFactory = $docBlockFactory;
-        $this->paramsResolver = $paramsResolver;
     }
 
     public function addServer(string $serverName, ServerConfig $serverConfig): void
@@ -77,39 +62,36 @@ class RouteAggregator implements RouteAggregatorInterface
         $controllers = $this->controllerFinder->find($config->namespace, $config->controllerSuffix);
 
         foreach ($controllers as $controller) {
-            $reflectionController = new \ReflectionClass($controller);
-            if ($this->ignoreThis($reflectionController)) {
+            $classReflection = $this->extendedReflectionFactory->makeForClass($controller);
+
+            if ($this->isIgnored($classReflection)) {
                 continue;
             }
-            $ignoredMethods = $this->getIgnoredMethodsFromController($reflectionController);
 
-            $reflectionMethods = $reflectionController->getMethods(\ReflectionMethod::IS_PUBLIC);
+            $methods = $classReflection->getMethods(MethodModifierEnum::IS_PUBLIC);
 
-            foreach ($reflectionMethods as $reflectionMethod) {
-                if ($reflectionMethod->getDeclaringClass()->getName() !== $controller) {
+            foreach ($methods as $reflectionMethod) {
+                if ($reflectionMethod->getReflection()->getDeclaringClass()->getName() !== $controller) {
                     continue;
                 }
 
-                if (
-                    $this->ignoreThis($reflectionMethod)
-                    || in_array($reflectionMethod->getName(), $ignoredMethods, true)
-                ) {
+                if ($this->isIgnored($reflectionMethod) || $this->isMethodIgnored($reflectionMethod)) {
                     continue;
                 }
 
                 $controllerName = $this->getControllerNameByClass(
-                    $reflectionController->getName(),
+                    $classReflection->getName(),
                     $config->controllerSuffix
                 );
 
                 switch ($config->dynamicEndpoint) {
                     case ServerConfig::DYNAMIC_ENDPOINT_CONTROLLER_NAMESPACE:
-                        $group = $this->diffControllerNamespace($reflectionController->getName(), $config->namespace);
+                        $group = $this->diffControllerNamespace($classReflection->getName(), $config->namespace);
                         $action = null;
                         $methodName = $controllerName . $config->methodDelimiter . $reflectionMethod->getName();
                         break;
                     case ServerConfig::DYNAMIC_ENDPOINT_FULL_CONTROLLER_NAME:
-                        $group = $this->diffControllerNamespace($reflectionController->getName(), $config->namespace);
+                        $group = $this->diffControllerNamespace($classReflection->getName(), $config->namespace);
                         $action = $controllerName;
                         $methodName = $reflectionMethod->getName();
                         break;
@@ -121,12 +103,13 @@ class RouteAggregator implements RouteAggregatorInterface
                         break;
                 }
 
-                $route = new JsonRpcRoute($serverName, $methodName, $group, $action);
-                $route->controllerClass = $reflectionController->getName();
-                $route->controllerMethod = $reflectionMethod->getName();
-                $route->parameters = $this->paramsResolver->resolveParameters($reflectionMethod);
-                $route->result = $this->paramsResolver->resolveResult($reflectionMethod);
-                $route->annotations = $this->getAnnotations($reflectionMethod);
+                $route = new JsonRpcRoute(
+                    $serverName,
+                    $methodName,
+                    $group,
+                    $action,
+                    $this->methodDefinitionParser->getDefinitionFromReflection($reflectionMethod)
+                );
 
                 $routes[$route->getRouteName()] = $route;
             }
@@ -136,43 +119,20 @@ class RouteAggregator implements RouteAggregatorInterface
     }
 
     /**
-     * Возвращает список методов, которые не нужно описывать в документации
-     *
-     * @return array<string>
-     */
-    private function getIgnoredMethodsFromController(\ReflectionClass $reflectionClass): array
-    {
-        $ignoredMethods = [];
-        $classAnnotations = $this->annotationReader->getClassMetadata($reflectionClass, ApiIgnoreMethod::class);
-
-        foreach ($classAnnotations as $classAnnotation) {
-            $ignoredMethods[] = $classAnnotation->name;
-        }
-
-        return $ignoredMethods;
-    }
-
-    /**
      * Возвращает метку, нужно ли игнорировать текущий контроллер или метод в нем при описании документации
      */
-    private function ignoreThis(\Reflector $reflection): bool
+    private function isIgnored(ExtendedReflectionInterface $reflection): bool
     {
-        if ($reflection instanceof \ReflectionClass) {
-            $ignoreAnnotation = $this->annotationReader->firstClassMetadata($reflection, ApiIgnore::class);
-            if (!empty($ignoreAnnotation)) {
-                return true;
-            }
-        }
+        return $reflection->getAttributes()->has(ApiIgnore::class);
+    }
 
-        if ($reflection instanceof \ReflectionMethod) {
-            $ignoreAnnotation = $this->annotationReader->firstFunctionMetadata($reflection, ApiIgnore::class);
-
-            if (!empty($ignoreAnnotation)) {
-                return true;
-            }
-        }
-
-        return false;
+    private function isMethodIgnored(ExtendedMethodReflection $reflection): bool
+    {
+        return !$reflection
+                ->getAttributes()
+                ->type(ApiIgnoreMethod::class)
+                ->filter(fn (ApiIgnoreMethod $item) => $item->name === $reflection->getName())
+                ->empty();
     }
 
     private function getControllerNameByClass(string $className, string $controllerSuffix): string
@@ -202,18 +162,5 @@ class RouteAggregator implements RouteAggregatorInterface
         }
 
         return implode('\\', $resultNamespace);
-    }
-
-    /**
-     * @return array<ApiAnnotationInterface>
-     */
-    private function getAnnotations(\Reflector $reflector): array
-    {
-        $docBlock = $this->docBlockFactory->make($reflector);
-        if ($docBlock === null) {
-            return [];
-        }
-
-        return $docBlock->getAnnotations(ApiAnnotationInterface::class);
     }
 }

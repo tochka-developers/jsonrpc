@@ -4,9 +4,9 @@ namespace Tochka\JsonRpc\Console;
 
 use Illuminate\Console\Command;
 use Psr\SimpleCache\InvalidArgumentException;
-use Tochka\JsonRpc\Contracts\RouteCacheInterface;
-use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
+use Tochka\Hydrator\Contracts\ClassDefinitionsRegistryInterface;
 use Tochka\JsonRpc\Contracts\RouteAggregatorInterface;
+use Tochka\JsonRpc\Contracts\RouteCacheInterface;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
@@ -22,7 +22,7 @@ class RouteCacheCommand extends Command
      */
     public function handle(
         RouteCacheInterface $cache,
-        ParamsResolverInterface $paramsResolver,
+        ClassDefinitionsRegistryInterface $classDefinitionsRegistry,
         RouteAggregatorInterface $routeAggregator
     ): void {
         $cache->clear();
@@ -31,7 +31,7 @@ class RouteCacheCommand extends Command
         $cache->setMultiple(
             [
                 'routes' => $routeAggregator->getRoutes(),
-                'classes' => $paramsResolver->getClasses(),
+                'classes' => $classDefinitionsRegistry->getAll()
             ]
         );
         $this->info('JsonRpc routes cached successfully!');

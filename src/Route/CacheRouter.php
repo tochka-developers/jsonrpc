@@ -9,16 +9,12 @@ use Tochka\JsonRpc\DTO\JsonRpcRoute;
 
 class CacheRouter implements RouterInterface
 {
-    private RouterInterface $router;
-    private RouteCacheInterface $cache;
+    use RouteName;
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
-    public function __construct(RouterInterface $router, RouteCacheInterface $cache)
-    {
-        $this->router = $router;
-        $this->cache = $cache;
+    public function __construct(
+        private readonly RouterInterface $router,
+        private readonly RouteCacheInterface $cache,
+    ) {
     }
 
     /**
@@ -30,8 +26,7 @@ class CacheRouter implements RouterInterface
         string $group = null,
         string $action = null
     ): ?JsonRpcRoute {
-        $route = new JsonRpcRoute($serverName, $methodName, $group, $action);
-        $routeName = $route->getRouteName();
+        $routeName = $this->getRouteName($serverName, $methodName, $group, $action);
 
         /** @var array<string, JsonRpcRoute> $routes */
         $routes = $this->cache->get('routes', []);
