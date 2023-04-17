@@ -14,6 +14,7 @@ use Tochka\JsonRpc\Casters\BenSampoEnumCaster;
 use Tochka\JsonRpc\Console\RouteCache;
 use Tochka\JsonRpc\Console\RouteClear;
 use Tochka\JsonRpc\Console\RouteList;
+use Tochka\JsonRpc\Contracts\MiddlewareRegistryInterface;
 use Tochka\JsonRpc\Contracts\ParamsResolverInterface;
 use Tochka\JsonRpc\Exceptions\ExceptionHandler;
 use Tochka\JsonRpc\Facades\JsonRpcDocBlockFactory as JsonRpcDocBlockFactoryFacade;
@@ -59,7 +60,7 @@ class JsonRpcServiceProvider extends ServiceProvider
         $this->app->singleton('JsonRpcRouteCache', function () {
             return new ArrayFileCache('jsonrpc_routes');
         });
-    
+        
         $this->registerIgnoredAnnotations();
         
         $annotationReader = new MergeReader(
@@ -105,6 +106,21 @@ class JsonRpcServiceProvider extends ServiceProvider
                 return $aggregator;
             }
         );
+        
+        $this->app->singleton(MiddlewareRegistryInterface::class, function () {
+            $middlewareRegistry = new MiddlewareRegistry();
+            $servers = Facades\JsonRpcRouteAggregator::getServers();
+            foreach ($servers as $serverName) {
+                $serverConfig = Facades\JsonRpcRouteAggregator::getServerConfig($serverName);
+                $middlewareRegistry->setMiddleware(
+                    $serverName,
+                    $serverConfig->middleware,
+                    $serverConfig->onceExecutedMiddleware
+                );
+            }
+            
+            return $middlewareRegistry;
+        });
         
         $this->app->singleton(
             Facades\JsonRpcRequestCast::class,

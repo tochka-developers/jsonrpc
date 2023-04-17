@@ -3,17 +3,16 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
-use Illuminate\Support\Facades\Config;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\ExceptionHandler;
 use Tochka\JsonRpc\Facades\JsonRpcRouter;
+use Tochka\JsonRpc\Facades\MiddlewareRegistry as MiddlewareRegistryFacade;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\JsonRpcResponse;
 use Tochka\JsonRpc\Support\MiddlewarePipeline;
 use Tochka\JsonRpc\Support\ResponseCollection;
-use Tochka\JsonRpc\Support\ServerConfig;
 
 /**
  * JsonRpcServer
@@ -22,7 +21,6 @@ class JsonRpcServer
 {
     private JsonRpcParserInterface $parser;
     private HandleResolverInterface $resolver;
-    private ServerConfig $config;
 
     public function __construct(JsonRpcParserInterface $parser, HandleResolverInterface $resolver)
     {
@@ -33,13 +31,12 @@ class JsonRpcServer
     public function handle(string $content, string $serverName = 'default', string $group = null, string $action = null): ResponseCollection
     {
         try {
-            $this->config = new ServerConfig(Config::get('jsonrpc.' . $serverName, []));
             $pipeline = new MiddlewarePipeline(Container::getInstance());
 
             $requests = $this->parser->parse($content);
 
             $responses = $pipeline->send($requests)
-                ->through($this->config->onceExecutedMiddleware)
+                ->through(MiddlewareRegistryFacade::getOnceExecutedMiddleware($serverName))
                 ->via('handle')
                 ->then(
                     function (array $requests) use ($serverName, $group, $action) {
@@ -76,7 +73,7 @@ class JsonRpcServer
             $request->setRoute($route);
             
             return $pipeline->send($request)
-                ->through($this->config->middleware)
+                ->through(MiddlewareRegistryFacade::getMiddleware($serverName))
                 ->via('handle')
                 ->then(
                     function (JsonRpcRequest $request) {

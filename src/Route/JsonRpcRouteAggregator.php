@@ -27,6 +27,16 @@ class JsonRpcRouteAggregator
         $this->serverConfigs[$serverName] = $serverConfig;
     }
     
+    public function getServers(): array
+    {
+        return array_keys($this->serverConfigs);
+    }
+    
+    public function getServerConfig(string $serverName): ?ServerConfig
+    {
+        return $this->serverConfigs[$serverName] ?? null;
+    }
+    
     /**
      * @throws \ReflectionException
      * @throws \JsonException
