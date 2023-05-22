@@ -110,6 +110,9 @@ return [
         // Разделитель для имен методов
         'methodDelimiter' => '_',
         
+        // Использовать методы родителя при наследовании
+        'allowParentMethods' => false,
+        
         // список Middleware, обрабатывающих запросы
         // описание middleware ниже
         'middleware' => [ //

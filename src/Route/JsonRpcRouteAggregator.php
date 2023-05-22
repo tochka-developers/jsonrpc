@@ -77,7 +77,7 @@ class JsonRpcRouteAggregator
             $reflectionMethods = $reflectionController->getMethods(\ReflectionMethod::IS_PUBLIC);
             
             foreach ($reflectionMethods as $reflectionMethod) {
-                if ($reflectionMethod->getDeclaringClass()->getName() !== $controller) {
+                if (!$config->allowParentMethods && $reflectionMethod->getDeclaringClass()->getName() !== $controller) {
                     continue;
                 }
                 

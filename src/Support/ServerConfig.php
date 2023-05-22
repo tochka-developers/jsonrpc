@@ -19,6 +19,7 @@ class ServerConfig
     public string $methodDelimiter;
     public array $middleware = [];
     public array $onceExecutedMiddleware = [];
+    public bool $allowParentMethods;
 
     public function __construct(array $config)
     {
@@ -29,6 +30,7 @@ class ServerConfig
         $this->methodDelimiter = data_get($config, 'methodDelimiter', '_');
         $this->endpoint = data_get($config, 'endpoint', '/api/v1/public/jsonrpc');
         $this->dynamicEndpoint = data_get($config, 'dynamicEndpoint', self::DYNAMIC_ENDPOINT_NONE);
+        $this->allowParentMethods = data_get($config, 'allowParentMethods', false);
         
         $middleware = $this->parseMiddlewareConfiguration($config['middleware'] ?? []);
         $this->sortMiddleware($middleware);
