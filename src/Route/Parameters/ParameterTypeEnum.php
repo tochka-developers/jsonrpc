@@ -94,9 +94,9 @@ final class ParameterTypeEnum extends Enum
         }
     }
     
-    public static function __set_state(array $array): self
+    public static function __set_state(array $enum): static
     {
-        return self::coerce($array['value']) ?? self::TYPE_MIXED();
+        return self::coerce($enum['value']) ?? self::TYPE_MIXED();
     }
     
     public function toJsonType(): string
