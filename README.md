@@ -119,6 +119,8 @@ return [
             Tochka\JsonRpc\Middleware\LogMiddleware::class               => [
                 // Канал лога, в который будут записываться все логи
                 'channel' => 'default',
+                // Заголовки которые нужно писать в лог
+                'headers' => ['accept', 'encoding']
             ],
              Tochka\JsonRpc\Middleware\TokenAuthMiddleware::class         => [
                  'headerName' => 'X-Tochka-Access-Key',

@@ -71,6 +71,13 @@ return [
                 //    'App\\Http\\TestController1@method' => ['password', 'data.phone_number'],
                 //    'App\\Http\\TestController2' => ['password', 'data.phone_number']
                 //]
+                /**
+                 * Заголовки которые необходимо логировать
+                 */
+                //'headers' => [
+                //    'accept',
+                //    'encoding'
+                //]
             ],
             TokenAuthMiddleware::class         => [
                 'headerName' => 'X-Tochka-Access-Key',

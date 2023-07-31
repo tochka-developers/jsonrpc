@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Middleware;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
 use Tochka\JsonRpc\Helpers\LogHelper;
@@ -9,8 +10,14 @@ use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 class LogMiddleware
 {
-    public function handle(JsonRpcRequest $request, $next, string $channel = 'default', array $hideParams = [])
-    {
+    public function handle(
+        JsonRpcRequest $request,
+        $next,
+        Request $httpRequest,
+        string $channel = 'default',
+        array $hideParams = [],
+        array $headers = []
+    ) {
         $logContext = [
             'id' => $request->getId(),
         ];
@@ -31,6 +38,10 @@ class LogMiddleware
             $rules = array_merge($globalRules, $controllerRules, $methodRules);
             $logRequest['params'] = LogHelper::hidePrivateData((array) ($request->getRawRequest()->params ?? []), $rules);
         }
+        
+        if (!empty($headers)) {
+            $logContext['headers'] = $this->addHeaders($httpRequest, $headers);
+        }
 
         Log::channel($channel)->info('New request', $logContext + ['request' => $logRequest]);
 
@@ -47,6 +58,16 @@ class LogMiddleware
             Log::channel($channel)->info('Successful request', $logContext);
         }
 
+        return $result;
+    }
+    
+    protected function addHeaders(Request $httpRequest, array $headers = []): array
+    {
+        $result = [];
+        foreach ($headers as $header) {
+            $result[$header] = $httpRequest->header($header);
+        }
+        
         return $result;
     }
 }
