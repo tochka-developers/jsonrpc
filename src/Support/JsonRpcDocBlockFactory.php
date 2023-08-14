@@ -55,9 +55,9 @@ class JsonRpcDocBlockFactory
         if ($reflector instanceof \ReflectionParameter) {
             return $this->getOrMakeFromReflection(
                 $this->getKeyForParameter(
-                    $reflector->getDeclaringFunction(),
+                    $reflector->getDeclaringFunction()->getName(),
                     $reflector->getName(),
-                    $reflector->getDeclaringClass()
+                    $reflector->getDeclaringClass()->getName()
                 ),
                 $callable
             );
@@ -82,7 +82,7 @@ class JsonRpcDocBlockFactory
                     return new \ReflectionClass($className);
                 }
             );
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException) {
             return null;
         }
     }
@@ -96,7 +96,7 @@ class JsonRpcDocBlockFactory
                     return new \ReflectionMethod($className, $methodName);
                 }
             );
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException) {
             return null;
         }
     }
@@ -110,7 +110,7 @@ class JsonRpcDocBlockFactory
                     return new \ReflectionProperty($className, $propertyName);
                 }
             );
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException) {
             return null;
         }
     }
@@ -124,7 +124,7 @@ class JsonRpcDocBlockFactory
                     return new \ReflectionParameter([$className, $methodName], $parameterName);
                 }
             );
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException) {
             return null;
         }
     }
