@@ -9,10 +9,9 @@ class JsonRpcRequest
     private object $rawRequest;
     
     private string $jsonrpc;
-    private ?string $id;
+    private string|int|null $id;
     private string $method;
-    /** @var object|array */
-    private $params;
+    private mixed $params;
     
     private ?JsonRpcRoute $route = null;
     private string $authName = 'guest';
@@ -32,7 +31,7 @@ class JsonRpcRequest
         return $this->rawRequest;
     }
     
-    public function getId(): string
+    public function getId(): string|int|null
     {
         return $this->id;
     }
@@ -47,10 +46,7 @@ class JsonRpcRequest
         return $this->method;
     }
     
-    /**
-     * @return array|object
-     */
-    public function getParams()
+    public function getParams(): mixed
     {
         return $this->params;
     }
