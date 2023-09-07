@@ -8,13 +8,11 @@ use Illuminate\Contracts\Support\Jsonable;
 class JsonRpcResponse implements Jsonable, Arrayable
 {
     public string $jsonrpc = '2.0';
-    public ?string $id = null;
-    /** @var mixed */
-    public $error = null;
-    /** @var mixed */
-    public $result = null;
+    public string|int|null $id = null;
+    public mixed $error = null;
+    public mixed $result = null;
 
-    public static function result($result, string $id = null): self
+    public static function result(mixed $result, string|int|null $id = null): self
     {
         $instance = new self();
         $instance->result = $result;
@@ -23,7 +21,7 @@ class JsonRpcResponse implements Jsonable, Arrayable
         return $instance;
     }
 
-    public static function error($error, string $id = null): self
+    public static function error(mixed $error, string|int|null $id = null): self
     {
         $instance = new self();
         $instance->error = $error;
