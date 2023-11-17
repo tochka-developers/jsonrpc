@@ -99,23 +99,16 @@ final class ParameterTypeEnum extends Enum
         return self::coerce($enum['value']) ?? self::TYPE_MIXED();
     }
     
-    public function toJsonType(): string
+    public function toJsonType(): string|array
     {
-        switch ($this->value) {
-            case self::TYPE_STRING:
-                return 'string';
-            case self::TYPE_FLOAT:
-                return 'number';
-            case self::TYPE_BOOLEAN:
-                return 'boolean';
-            case self::TYPE_INTEGER:
-                return 'integer';
-            case self::TYPE_ARRAY:
-                return 'array';
-            case self::TYPE_OBJECT:
-                return 'object';
-            default:
-                return 'any';
-        }
+        return match($this->value) {
+            self::TYPE_STRING => 'string',
+            self::TYPE_FLOAT => 'number',
+            self::TYPE_BOOLEAN => 'boolean',
+            self::TYPE_INTEGER => 'integer',
+            self::TYPE_ARRAY => 'array',
+            self::TYPE_OBJECT => 'object',
+            default => ['string', 'number', 'boolean', 'integer', 'array', 'object', 'null'],
+        };
     }
 }
