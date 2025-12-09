@@ -61,12 +61,12 @@ class JsonRpcResponse implements Jsonable, Arrayable
 
     private function valueToArray($value)
     {
-        if ($value instanceof Arrayable) {
-            return $value->toArray();
-        }
-
         if ($value instanceof \JsonSerializable) {
             return $value->jsonSerialize();
+        }
+        
+        if ($value instanceof Arrayable) {
+            return $this->toArray();
         }
 
         return $value;
