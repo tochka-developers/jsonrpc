@@ -3,35 +3,45 @@
 namespace Tochka\JsonRpc\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\App;
-use Psr\SimpleCache\CacheInterface;
+use Illuminate\Support\Facades\Config;
 use Psr\SimpleCache\InvalidArgumentException;
-use Tochka\JsonRpc\Facades\JsonRpcParamsResolver;
-use Tochka\JsonRpc\Facades\JsonRpcRouteAggregator;
+use Tochka\JsonRpc\Router\Router;
+use Tochka\JsonRpc\Support\ServerConfig;
 
 class RouteCache extends Command
 {
-    protected $signature = 'jsonrpc:route:cache';
+    protected $signature = 'jsonrpc:route:cache {server?}';
     protected $description = 'Cache JsonRpc routes';
     
     /**
      * @throws InvalidArgumentException
+     * @throws \ReflectionException
      */
     public function handle(): void
     {
-        /** @var CacheInterface $cache */
-        $cache = App::make('JsonRpcRouteCache');
+        $serverName = $this->argument('server');
+        $configs = Config::get('jsonrpc');
         
-        $cache->clear();
-        $this->info('JsonRpc routes cache cleared!');
+        if ($serverName) {
+            $this->handleOne(new ServerConfig($serverName, $configs[$serverName] ?? []));
+            return;
+        }
         
-        $routes = JsonRpcRouteAggregator::getRoutes();
-        $classes = JsonRpcParamsResolver::getClasses();
-        
-        $cache->setMultiple([
-            'routes' => $routes,
-            'classes' => $classes,
-        ]);
-        $this->info('JsonRpc routes cached successfully!');
+        foreach ($configs as $name => $config) {
+            $this->handleOne(new ServerConfig($name, $config));
+        }
+    }
+    
+    /**
+     * @throws \ReflectionException
+     * @throws InvalidArgumentException
+     */
+    protected function handleOne(ServerConfig $config): void
+    {
+        $router = new Router($config);
+        $router->clearRoutesCache();
+        $this->info('ServerName:' . $config->serverName. 'cache cleared');
+        $router->cacheRoutes();
+        $this->info('ServerName:' . $config->serverName. 'cache created');
     }
 }

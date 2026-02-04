@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc\Support;
 
-use Tochka\JsonRpc\Route\JsonRpcRoute;
+use Tochka\JsonRpc\Router\Route;
 
 class JsonRpcRequest
 {
@@ -13,7 +13,7 @@ class JsonRpcRequest
     private string $method;
     private mixed $params;
     
-    private ?JsonRpcRoute $route = null;
+    private ?Route $route = null;
     private string $authName = 'guest';
     
     public function __construct(object $rawRequest)
@@ -51,12 +51,12 @@ class JsonRpcRequest
         return $this->params;
     }
     
-    public function getRoute(): ?JsonRpcRoute
+    public function getRoute(): ?Route
     {
         return $this->route;
     }
     
-    public function setRoute(JsonRpcRoute $route): void
+    public function setRoute(Route $route): void
     {
         $this->route = $route;
     }
