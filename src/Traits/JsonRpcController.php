@@ -5,7 +5,6 @@ namespace Tochka\JsonRpc\Traits;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
-use Tochka\JsonRpc\Annotations\ApiIgnore;
 use Tochka\JsonRpc\Exceptions\RPC\InvalidParametersException;
 use Tochka\JsonRpc\Helpers\ArrayHelper;
 use Tochka\JsonRpc\Support\JsonRpcRequest;

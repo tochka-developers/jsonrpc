@@ -26,9 +26,7 @@ class LogMiddleware
         $logRequest = ArrayHelper::fromObject($request->getRawRequest());
         
         if ($route !== null) {
-            $logContext['group'] = $route->group;
-            $logContext['action'] = $route->action;
-            $logContext['method'] = $route->jsonRpcMethodName;
+            $logContext['method'] = $route->name;
             $logContext['call'] = $route->controllerClass . '::' . $route->controllerMethod;
             $logContext['service'] = $request->getAuthName();
     

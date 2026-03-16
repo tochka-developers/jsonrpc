@@ -8,38 +8,9 @@ use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\LogMiddleware;
 use Tochka\JsonRpc\Middleware\ServiceValidationMiddleware;
 use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
-use Tochka\JsonRpc\Support\ServerConfig;
 
 return [
     'default' => [
-        // Точка входа в указанный сервер
-        'endpoint' => '/api/v1/public/jsonrpc',
-        
-        /**
-         * Тип формирования точки входа (получать или нет из конечного URI группу методов и метод
-         *
-         * ServerConfig::DYNAMIC_ENDPOINT_NONE - точка входа статична, все контроллеры располагаются в одном пространстве имен
-         * Пример:
-         * uri: /api/v1/public/jsonrpc
-         * jsonrpc method: test_ping
-         * controller@method: \Default\Controller\Namespace\TestController@ping
-         *
-         * ServerConfig::DYNAMIC_ENDPOINT_CONTROLLER_NAMESPACE - все, что отличается в URI от указанной точки входа -
-         * является постфиксом к пространству имен контроллеров (group).
-         * Пример:
-         * uri: /api/v1/public/jsonrpc/foo/bar
-         * jsonrpc method: test_ping
-         * controller@method: \Default\Controller\Namespace\Foo\Bar\TestController@ping
-         *
-         * ServerConfig::DYNAMIC_ENDPOINT_FULL_CONTROLLER_NAME - последний элемент URI является именем контроллера (action),
-         * предыдущие элементы до указанной точки входа - постфикс к пространству имен контроллеров.
-         * Пример:
-         * uri: /api/v1/public/jsonrpc/foo/bar
-         * jsonrpc method: test_ping
-         * controller@method: \Default\Controller\Namespace\Foo\BarController@test_ping
-         */
-        'dynamicEndpoint' => ServerConfig::DYNAMIC_ENDPOINT_NONE,
-       
         // Краткое описание сервера
         'summary' => 'Основная точка входа',
         
@@ -55,8 +26,14 @@ return [
         // Разделитель для имен методов
         'methodDelimiter' => '_',
         
-        // Использовать методы родителя при наследовании
+        // Использовать методы родителя при наследовании (Будет удалено)
         'allowParentMethods' => false,
+        
+        // Список дополнительный обработчиков типов. Будут выполняться перед встроенными.
+        // Должны наследовать AbstractPropertyCaster
+        'customCasters' => [
+        
+        ],
 
         // Обработчики запросов
         'middleware'  => [

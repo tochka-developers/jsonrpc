@@ -2,40 +2,49 @@
 
 namespace Tochka\JsonRpc\Support;
 
+use Illuminate\Support\Facades\Config;
 use Tochka\JsonRpc\Contracts\OnceExecutedMiddleware;
 
 class ServerConfig
 {
-    public const DYNAMIC_ENDPOINT_NONE = 'none';
-    public const DYNAMIC_ENDPOINT_CONTROLLER_NAMESPACE = 'controller_namespace';
-    public const DYNAMIC_ENDPOINT_FULL_CONTROLLER_NAME = 'controller_name';
+    public readonly string $serverName;
+    public readonly string $summary;
+    public readonly string $description;
+    public readonly string $namespace;
+    public readonly string $controllerSuffix;
+    public readonly string $methodDelimiter;
+    public array $middlewares = [];
+    public array $onceExecutedMiddlewares = [];
+    public readonly bool $allowParentMethods;
+    public array $customCasters;
     
-    public string $endpoint;
-    public string $dynamicEndpoint;
-    public string $summary;
-    public string $description;
-    public string $namespace;
-    public string $controllerSuffix;
-    public string $methodDelimiter;
-    public array $middleware = [];
-    public array $onceExecutedMiddleware = [];
-    public bool $allowParentMethods;
-
-    public function __construct(array $config)
+    public function __construct(string $serverName, array $config)
     {
+        $this->serverName = $serverName;
         $this->summary = data_get($config, 'summary', 'JsonRpc Server');
         $this->description = data_get($config, 'description', 'JsonRpc Server');
         $this->namespace = data_get($config, 'namespace', 'App\Http\Controllers');
         $this->controllerSuffix = data_get($config, 'controllerSuffix', 'Controller');
         $this->methodDelimiter = data_get($config, 'methodDelimiter', '_');
-        $this->endpoint = data_get($config, 'endpoint', '/api/v1/public/jsonrpc');
-        $this->dynamicEndpoint = data_get($config, 'dynamicEndpoint', self::DYNAMIC_ENDPOINT_NONE);
         $this->allowParentMethods = data_get($config, 'allowParentMethods', false);
-        
+        $this->customCasters = data_get($config, 'customCasters', []);
         $middleware = $this->parseMiddlewareConfiguration($config['middleware'] ?? []);
         $this->sortMiddleware($middleware);
     }
-
+    
+    /**
+     * Загружает конфигурацию из файла.
+     * @param string $serverName
+     * @param string $configName
+     * @return self
+     */
+    public static function makeFromConfigFile(string $serverName, string $configName = 'jsonrpc'): self
+    {
+        $config = Config::get($configName . '.' . $serverName, []);
+        
+        return new self($serverName, $config);
+    }
+    
     /**
      * @param $middleware
      *
@@ -51,10 +60,10 @@ class ServerConfig
                 $result[] = [$m, []];
             }
         }
-
+        
         return $result;
     }
-
+    
     /**
      * @param array $middleware
      */
@@ -63,9 +72,9 @@ class ServerConfig
         foreach ($middleware as $m) {
             $implements = class_implements($m[0]);
             if ($implements && in_array(OnceExecutedMiddleware::class, $implements, true)) {
-                $this->onceExecutedMiddleware[] = $m;
+                $this->onceExecutedMiddlewares[] = $m;
             } else {
-                $this->middleware[] = $m;
+                $this->middlewares[] = $m;
             }
         }
     }

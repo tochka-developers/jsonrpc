@@ -13,7 +13,7 @@ class ArrayFileCache implements CacheInterface
     
     public function __construct(string $cacheName, ?string $cachePath = null)
     {
-        $this->cacheName = $cacheName;
+        $this->cacheName = 'jsonrpc_' . $cacheName;
         if ($cachePath === null) {
             $this->cachePath = App::bootstrapPath('cache');
         } else {
