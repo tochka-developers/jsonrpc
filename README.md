@@ -354,6 +354,35 @@ class ApiController extends BaseController
 }
 ```
 
+# Валидация данных
+Можно проверить все параметры запроса с помощью объекта запроса.
+```php
+public function testValidation(#[ApiDi] \Tochka\JsonRpc\Support\JsonRpcRequest $request, object $data)
+{
+    // в validated попадут только те поля для которых указаны правила валидации
+    $validated = $request->validate([
+        'object.field' => 'int|string',
+        'object.field2' => 'required|bool',
+    ]);    
+}
+```
+Стандартный метод $request->validate при ошибках валидации выбрасывает InvalidParametersException.
+Если по какой-то причине вы хотите обработать ошибки самостоятельно, можно вызвать validateSilent
+```php
+public function testValidation(#[ApiDi] \Tochka\JsonRpc\Support\JsonRpcRequest $request, object $data)
+{
+    // В этом случае не будет исключений при провале валидации
+    $validated = $request->validateSilent([
+        'object.field' => 'int|string',
+        'object.field2' => 'required|bool',
+    ]);
+    // получить список ошибок
+    $request->getValidationErrors();
+    // получить список полей что не прошли валидацию
+    $request->getValidationFailed();
+}
+```
+
 # Как это работает
 Клиент посылает валидный JsonRpc2.0-запрос:
 ```json

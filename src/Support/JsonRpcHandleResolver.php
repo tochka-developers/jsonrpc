@@ -8,7 +8,6 @@ use Tochka\JsonRpc\Casters\AbstractPropertyCaster;
 use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParametersException;
-use Tochka\JsonRpc\Router\RouteParam;
 
 class JsonRpcHandleResolver implements HandleResolverInterface
 {
@@ -38,32 +37,29 @@ class JsonRpcHandleResolver implements HandleResolverInterface
     public function handle(JsonRpcRequest $request)
     {
         $controllerInstance = $this->initializeController($request);
-        $route = $request->getRoute();
-        if ($route === null) {
+        if ($request->getRoute() === null) {
             throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
         }
         
-        $parameters = $this->mapParameters($request->getParams(), $route->getParams());
+        $parameters = $this->mapParameters($request);
         return $controllerInstance->{$request->getRoute()->controllerMethod}(...$parameters);
     }
     
     /**
-     * @param array|object $rawInputParameters
-     * @param array<RouteParam> $methodParameters
+     * @param JsonRpcRequest $request
      * @return array
-     * @throws JsonRpcInvalidParametersException
      * @throws JsonRpcException
+     * @throws JsonRpcInvalidParametersException
      */
-    private function mapParameters(array|object $rawInputParameters, array $methodParameters): array
+    private function mapParameters(JsonRpcRequest $request): array
     {
-        $rawInputParameters = (object)$rawInputParameters;
         $parameters = [];
         $errors = [];
         try {
-            foreach ($methodParameters as $parameter) {
+            foreach ($request->getRoute()->getParams() as $parameter) {
                 foreach ($this->casters as $caster) {
                     if ($caster::canCast($parameter)) {
-                        $value = $caster::cast($parameter, $rawInputParameters);
+                        $value = $caster::cast($parameter, $request);
                         if ($value instanceof VoidValue) {
                             continue 2;
                         }
@@ -101,10 +97,6 @@ class JsonRpcHandleResolver implements HandleResolverInterface
         }
         
         $container = Container::getInstance();
-        $container->when([$route->controllerClass])
-            ->needs(JsonRpcRequest::class)
-            ->give(fn() => $request);
-        
         $controller = $container->make($route->controllerClass);
         
         // todo rm v6

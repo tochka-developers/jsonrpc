@@ -5,6 +5,7 @@ namespace Tochka\JsonRpc\Casters;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 class PrimitiveCaster extends AbstractPropertyCaster
 {
@@ -16,9 +17,9 @@ class PrimitiveCaster extends AbstractPropertyCaster
     /**
      * @throws JsonRpcInvalidParameterException
      */
-    public static function cast(RouteParam $param, object $input): mixed
+    public static function cast(RouteParam $param, JsonRpcRequest $request): mixed
     {
-        $value = self::getValue($param, $input);
+        $value = self::getValue($param, $request->params);
         
         if (self::optionalCheck($param, $value)) {
             return $value;

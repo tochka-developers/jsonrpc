@@ -98,7 +98,7 @@ class JsonRpcServer
         try {
             $pipeline = new MiddlewarePipeline(Container::getInstance());
             
-            $route = $this->router->getRoute($request->getMethod());
+            $route = $this->router->getRoute($request->method);
             if ($route === null) {
                 throw new JsonRpcException(JsonRpcException::CODE_METHOD_NOT_FOUND);
             }

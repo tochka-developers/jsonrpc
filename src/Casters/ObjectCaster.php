@@ -7,6 +7,7 @@ use Tochka\JsonRpc\Contracts\ShouldValidate;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 class ObjectCaster extends AbstractPropertyCaster
 {
@@ -19,9 +20,9 @@ class ObjectCaster extends AbstractPropertyCaster
      * @throws JsonRpcInvalidParameterException
      * @throws \ReflectionException
      */
-    public static function cast(RouteParam $param, object $input): mixed
+    public static function cast(RouteParam $param, JsonRpcRequest $request): mixed
     {
-        $value = self::getValue($param, $input);
+        $value = self::getValue($param, $request->params);
         if (self::optionalCheck($param, $value)) {
             return $value;
         }
@@ -33,11 +34,11 @@ class ObjectCaster extends AbstractPropertyCaster
         $class = $param->className;
         
         if (is_subclass_of($class, ShouldValidate::class)) {
-            $class::dataValidate($input);
+            $class::dataValidate($request->params);
         }
         
         if (is_subclass_of($class, ShouldMapped::class)) {
-            return $class::dataMap($input);
+            return $class::dataMap($request->params);
         }
         return self::createObjectWithoutConstructor($param, $value);
     }
