@@ -12,7 +12,7 @@ class RouteParam
         public string|null $className = null,
         public bool $isOptional = false,
     ) {
-        if ($this->isNullable && !empty($this->allowedTypes) && !\in_array('null', $this->allowedTypes)) {
+        if ($this->isNullable && !\in_array('null', $this->allowedTypes)) {
             $this->allowedTypes[] = 'null';
         }
     }

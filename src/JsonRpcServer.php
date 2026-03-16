@@ -38,9 +38,9 @@ class JsonRpcServer
      */
     public function __construct(
         ServerConfig $config,
-        JsonRpcParserInterface $parser = null,
-        HandleResolverInterface $resolver = null,
-        Router $router = null,
+        ?JsonRpcParserInterface $parser = null,
+        ?HandleResolverInterface $resolver = null,
+        ?Router $router = null,
     ) {
         $this->config = $config;
         $this->parser = $parser ?: new JsonRpcParser();

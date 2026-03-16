@@ -76,7 +76,7 @@ class JsonRpcHandleResolver implements HandleResolverInterface
             $errors[] = $e->getErrors();
         } catch (JsonRpcException $e) {
             throw $e;
-        } catch (\Exception) {
+        } catch (\Throwable) {
             throw new JsonRpcException(JsonRpcException::CODE_INTERNAL_ERROR);
         }
         
