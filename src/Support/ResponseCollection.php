@@ -24,7 +24,7 @@ class ResponseCollection implements Jsonable, Arrayable
      * @inheritDoc
      * @throws \JsonException
      */
-    public function toJson($options = 0)
+    public function toJson($options = 0): string
     {
         return json_encode($this->toArray(), JSON_THROW_ON_ERROR | $options | JSON_UNESCAPED_UNICODE);
     }

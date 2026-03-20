@@ -2,8 +2,9 @@
 
 namespace Tochka\JsonRpc\Casters;
 
+use Illuminate\Validation\ValidationException;
 use Tochka\JsonRpc\Contracts\ShouldMapped;
-use Tochka\JsonRpc\Contracts\ShouldValidate;
+use Tochka\JsonRpc\Contracts\ShouldValidated;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
@@ -19,13 +20,14 @@ class ParamsCaster extends AbstractPropertyCaster
     /**
      * @throws \ReflectionException
      * @throws JsonRpcInvalidParameterException
+     * @throws ValidationException
      */
     public static function cast(RouteParam $param, JsonRpcRequest $request): mixed
     {
         $class = $param->className;
         
-        if (is_subclass_of($class, ShouldValidate::class)) {
-            $class::dataValidate($request->params);
+        if (is_subclass_of($class, ShouldValidated::class)) {
+            self::doValidation($class::rules(), $request->params);
         }
         
         if (is_subclass_of($class, ShouldMapped::class)) {

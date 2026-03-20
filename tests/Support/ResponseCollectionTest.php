@@ -2,17 +2,18 @@
 
 namespace Tochka\JsonRpc\Tests\Support;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Support\JsonRpcResponse;
 use Tochka\JsonRpc\Support\ResponseCollection;
 use Tochka\JsonRpc\Tests\TestHelpers\ReflectionTrait;
 
+#[CoversClass(ResponseCollection::class)]
 class ResponseCollectionTest extends TestCase
 {
     use ReflectionTrait;
 
     /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::add
      * @throws \ReflectionException
      */
     public function testAdd(): void
@@ -30,9 +31,6 @@ class ResponseCollectionTest extends TestCase
         $this->assertCount(2, $items);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::empty
-     */
     public function testEmpty(): void
     {
         $collection = new ResponseCollection();
@@ -58,9 +56,6 @@ class ResponseCollectionTest extends TestCase
         $this->assertEquals($response->toArray(), $result);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::toArray
-     */
     public function testToArrayMultiple(): void
     {
         $response1 = JsonRpcResponse::result(['method' => 'foo'], '11111');
@@ -81,9 +76,6 @@ class ResponseCollectionTest extends TestCase
         $this->assertEquals($response2->toArray(), $responseResult2);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::toJson
-     */
     public function testToJson(): void
     {
         $response1 = JsonRpcResponse::result(['method' => 'foo'], '11111');

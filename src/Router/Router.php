@@ -82,9 +82,8 @@ class Router
                 if ($this->checkIsIgnored($reflectionClass, $method)) {
                     continue;
                 }
-                $routeName = $this->getMethodNameFromStruct($reflectionClass, $method);
                 $route = $this->getMethodParams($reflectionClass, $method);
-                $routes[$routeName] = $route;
+                $routes[$route->name] = $route;
             }
         }
         
@@ -187,6 +186,7 @@ class Router
     
     /**
      * @throws \ReflectionException
+     * @throws JsonPrcRouterException
      */
     protected function paramTypeSingular(\ReflectionParameter $param, \ReflectionNamedType $type): RouteParam
     {
@@ -211,10 +211,13 @@ class Router
         if (enum_exists($type->getName())) {
             $enumReflector = new \ReflectionEnum($type->getName());
             $enumType = $enumReflector->getBackingType()?->getName();
+            if(!$enumType) {
+                throw new JsonPrcRouterException('Not supported pure enum for property, they cant be serialized');
+            }
             return new RouteParam(
                 name:         $param->getName(),
                 propType:     PropType::Enum,
-                allowedTypes: $enumType ? [$enumType] : [],
+                allowedTypes: [$enumType],
                 isNullable:   $param->allowsNull(),
                 className:    $type->getName(),
                 isOptional:   $param->isOptional(),

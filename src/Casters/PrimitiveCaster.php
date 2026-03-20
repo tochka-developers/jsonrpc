@@ -21,11 +21,15 @@ class PrimitiveCaster extends AbstractPropertyCaster
     {
         $value = self::getValue($param, $request->params);
         
-        if (self::optionalCheck($param, $value)) {
+        if (self::isVoidAndAllowVoid($param, $value)) {
             return $value;
         }
         
-        self::typeCheck($param, $value);
+        if (self::isNullAndAllowNull($param, $value)) {
+            return $value;
+        }
+        
+        self::typePassOrThrow($param, $value);
         
         return $value;
     }
