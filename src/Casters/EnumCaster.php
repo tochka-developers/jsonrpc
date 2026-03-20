@@ -6,6 +6,7 @@ use BackedEnum;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\VoidValue;
 
 class EnumCaster extends AbstractPropertyCaster
@@ -18,9 +19,13 @@ class EnumCaster extends AbstractPropertyCaster
     /**
      * @throws JsonRpcInvalidParameterException
      */
-    public static function cast(RouteParam $param, object $input): VoidValue|BackedEnum|null
+    public static function cast(RouteParam $param, JsonRpcRequest $request): VoidValue|BackedEnum|null
     {
-        $value = self::getValue($param, $input);
+        $value = self::getValue($param, $request->params);
+        
+        if ($value === null && $param->isNullable) {
+            return null;
+        }
         
         if (self::optionalCheck($param, $value)) {
             return $value;

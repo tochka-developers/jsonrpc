@@ -20,7 +20,8 @@
         "illuminate/container": "^10.0|^11.0|^12.0",
         "illuminate/pipeline": "^10.0|^11.0|^12.0",
         "illuminate/console": "^10.0|^11.0|^12.0",
-        "psr/simple-cache": "^1.0|^2.0"
+        "psr/simple-cache": "^1.0|^2.0",
+        "illuminate/validation": "^10.0|^11.0|^12.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",

@@ -6,13 +6,14 @@ use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterError;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterTypeException;
 use Tochka\JsonRpc\Router\RouteParam;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\VoidValue;
 
 abstract class AbstractPropertyCaster
 {
     abstract public static function canCast(RouteParam $param): bool;
     
-    abstract public static function cast(RouteParam $param, object $input): mixed;
+    abstract public static function cast(RouteParam $param, JsonRpcRequest $request): mixed;
     
     
     public static function getValue(RouteParam $param, object|array $input): mixed

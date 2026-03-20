@@ -6,6 +6,7 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 class DICaster extends AbstractPropertyCaster
 {
@@ -17,8 +18,12 @@ class DICaster extends AbstractPropertyCaster
     /**
      * @throws BindingResolutionException
      */
-    public static function cast(RouteParam $param, object $input): mixed
+    public static function cast(RouteParam $param, JsonRpcRequest $request): mixed
     {
+        if ($param->className === JsonRpcRequest::class) {
+            return $request;
+        }
+        
         return Container::getInstance()->make($param->className);
     }
 }
