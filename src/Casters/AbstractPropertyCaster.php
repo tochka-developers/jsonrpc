@@ -5,7 +5,6 @@ namespace Tochka\JsonRpc\Casters;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterError;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterTypeException;
@@ -13,7 +12,6 @@ use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\VoidValue;
 
-#[CoversClass(AbstractPropertyCaster::class)]
 abstract class AbstractPropertyCaster
 {
     abstract public static function canCast(RouteParam $param): bool;

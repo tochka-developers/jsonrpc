@@ -2,6 +2,7 @@
 
 namespace Tochka\JsonRpc\Tests\Casters;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Casters\AbstractPropertyCaster;
@@ -10,6 +11,7 @@ use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\VoidValue;
 
+#[CoversClass(AbstractPropertyCaster::class)]
 class AbstractPropertyCasterTest extends TestCase
 {
     public static function providerGetTypeNormalized(): array
