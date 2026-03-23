@@ -60,7 +60,7 @@ abstract class AbstractPropertyCaster
      */
     public static function typePassOrThrow(RouteParam $param, mixed $value): void
     {
-        if (empty($param->allowedTypes)) {
+        if ($param->allowedTypes === []) {
             return;
         }
         
