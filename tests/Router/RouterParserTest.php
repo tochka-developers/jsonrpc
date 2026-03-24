@@ -192,8 +192,6 @@ class RouterParserTest extends TestCase
     // api params and di
     // api params with other params must be error
     // api params twice
-    // api params cant be optional
-    // api params cant nullable
     /**
      * @throws \Exception
      */
