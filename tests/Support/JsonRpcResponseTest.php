@@ -2,14 +2,13 @@
 
 namespace Tochka\JsonRpc\Tests\Support;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Support\JsonRpcResponse;
 
+#[CoversClass(JsonRpcResponse::class)]
 class JsonRpcResponseTest extends TestCase
 {
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::result
-     */
     public function testResult(): void
     {
         $data = ['data' => 'data'];
@@ -23,9 +22,6 @@ class JsonRpcResponseTest extends TestCase
         $this->assertNull($response->error);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::error
-     */
     public function testError(): void
     {
         $error = ['error' => 'error'];
@@ -39,9 +35,6 @@ class JsonRpcResponseTest extends TestCase
         $this->assertNull($response->result);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::toArray
-     */
     public function testToArrayResult(): void
     {
         $data = ['data' => 'data'];
@@ -57,9 +50,6 @@ class JsonRpcResponseTest extends TestCase
         $this->assertEquals($result, $response);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::toArray
-     */
     public function testToArrayError(): void
     {
         $error = ['error' => 'message'];
@@ -75,9 +65,6 @@ class JsonRpcResponseTest extends TestCase
         $this->assertEquals($result, $response);
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\JsonRpcResponse::toJson
-     */
     public function testToJson(): void
     {
         $data = ['data' => 'data'];

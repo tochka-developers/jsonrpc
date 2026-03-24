@@ -24,6 +24,11 @@ class Route
         return $this->params;
     }
     
+    /**
+     * @param array $array
+     * @return self
+     * @codeCoverageIgnore Надо переделать сериализацию и избавится от этого метода
+     */
     public static function __set_state(array $array): self
     {
         $instance = new self($array['name'], $array['controllerClass'], $array['controllerMethod']);

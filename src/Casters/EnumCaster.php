@@ -23,13 +23,15 @@ class EnumCaster extends AbstractPropertyCaster
     {
         $value = self::getValue($param, $request->params);
         
-        if ($value === null && $param->isNullable) {
+        if (self::isVoidAndAllowVoid($param, $value)) {
+            return $value;
+        }
+        
+        if (self::isNullAndAllowNull($param, $value)) {
             return null;
         }
         
-        if (self::optionalCheck($param, $value)) {
-            return $value;
-        }
+        self::typePassOrThrow($param, $value);
         
         /** @var \BackedEnum $className */
         $className = $param->className;

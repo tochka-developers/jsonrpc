@@ -11,6 +11,7 @@ use Tochka\JsonRpc\Support\JsonRpcRequest;
 
 /**
  * @deprecated
+ * @codeCoverageIgnore
  */
 trait JsonRpcController
 {

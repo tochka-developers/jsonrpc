@@ -2,6 +2,9 @@
 
 namespace Tochka\JsonRpc\Casters;
 
+
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterError;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterTypeException;
@@ -19,7 +22,11 @@ abstract class AbstractPropertyCaster
     public static function getValue(RouteParam $param, object|array $input): mixed
     {
         if (is_array($input)) {
-            return $input[$param->name] ?? new VoidValue();
+            if (array_key_exists($param->name, $input)) {
+                return $input[$param->name];
+            } else {
+                return new VoidValue();
+            }
         }
         
         if (property_exists($input, $param->name)) {
@@ -32,25 +39,34 @@ abstract class AbstractPropertyCaster
     /**
      * @throws JsonRpcInvalidParameterException
      */
-    public static function typeCheck(RouteParam $param, mixed $value): bool
+    public static function isNullAndAllowNull(RouteParam $param, mixed $value): bool
     {
-        if ($value === null) {
-            if ($param->isNullable) {
-                return true;
-            }
-            throw new JsonRpcInvalidParameterException(
-                JsonRpcInvalidParameterError::PARAMETER_ERROR_NOT_NULLABLE,
-                $param->name,
-            );
+        if ($value !== null) {
+            return false;
+        }
+        // if null and allow null say true, and null can be returned as value
+        if ($param->isNullable) {
+            return true;
         }
         
-        if (empty($param->allowedTypes)) {
-            return false;
+        throw new JsonRpcInvalidParameterException(
+            JsonRpcInvalidParameterError::PARAMETER_ERROR_NOT_NULLABLE,
+            $param->name,
+        );
+    }
+    
+    /**
+     * @throws JsonRpcInvalidParameterException
+     */
+    public static function typePassOrThrow(RouteParam $param, mixed $value): void
+    {
+        if ($param->allowedTypes === []) {
+            return;
         }
         
         $type = self::getTypeNormalized($value);
         if (\in_array($type, $param->allowedTypes, true)) {
-            return false;
+            return;
         }
         
         throw new JsonRpcInvalidParameterTypeException($param->name, implode('|', $param->allowedTypes), $type);
@@ -59,7 +75,7 @@ abstract class AbstractPropertyCaster
     /**
      * @throws JsonRpcInvalidParameterException
      */
-    public static function optionalCheck(RouteParam $param, mixed $value): bool
+    public static function isVoidAndAllowVoid(RouteParam $param, mixed $value): bool
     {
         if ($value instanceof VoidValue) {
             if ($param->isOptional) {
@@ -70,12 +86,14 @@ abstract class AbstractPropertyCaster
                 );
             }
         }
+        
         return false;
     }
     
     /**
      * @throws \ReflectionException
      * @throws JsonRpcInvalidParameterException
+     * todo for test need test object
      */
     public static function createObjectWithoutConstructor(RouteParam $param, array|object $data): object
     {
@@ -110,5 +128,14 @@ abstract class AbstractPropertyCaster
             'NULL' => 'null',
             default => $type,
         };
+    }
+    
+    /**
+     * @throws ValidationException
+     * @codeCoverageIgnore
+     */
+    public static function doValidation(array $rules, object|array $data): void
+    {
+        Validator::make($data, $rules)->validate();
     }
 }

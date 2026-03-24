@@ -7,6 +7,7 @@ use Tochka\JsonRpc\Router\Route;
 class JsonRpcRequest
 {
     use RequestValidation;
+    use RequestFake;
     
     private object $rawRequest;
     
