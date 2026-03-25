@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Tochka\JsonRpc\Attributes\ApiDI;
 use Tochka\JsonRpc\Exceptions\JsonPrcRouterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\Route;
@@ -13,6 +14,7 @@ use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Router\RouteParser;
 use Tochka\JsonRpc\Tests\TestControllers\ParserTestController;
 use Tochka\JsonRpc\Tests\TestParams\ApiParamsObject;
+use Tochka\JsonRpc\Tests\TestParams\ObjectWithValidation;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumInt;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumString;
 
@@ -187,6 +189,28 @@ class RouterParserTest extends TestCase
                     isOptional:   false,
                 )
             ],
+            'api DI' => [
+                'method' => 'apiDI',
+                'expected' => new RouteParam(
+                    name:         'one',
+                    propType:     PropType::DI,
+                    allowedTypes: [],
+                    isNullable:   false,
+                    className:    ApiDI::class,
+                    isOptional:   false,
+                )
+            ],
+            'api object' => [
+                'method' => 'apiObject',
+                'expected' => new RouteParam(
+                    name:         'one',
+                    propType:     PropType::Object,
+                    allowedTypes: ['object'],
+                    isNullable:   false,
+                    className:    ObjectWithValidation::class,
+                    isOptional:   false,
+                )
+            ],
         ];
     }
     // api params and di
@@ -226,6 +250,12 @@ class RouterParserTest extends TestCase
             'apiParams not class' => ['method' => 'apiParamsNotClass'],
             'apiParams not class, interface' => ['method' => 'apiParamsInterface'],
             'apiParams abstract' => ['method' => 'apiParamsAbstract'],
+            'api DI union' => ['method' => 'apiDIUnion'],
+            'api DI intersection' => ['method' => 'apiDiIntersection'],
+            'api DI optional' => ['method' => 'apiDIOptional'],
+            'api DI nullable' => ['method' => 'apiDINullable'],
+            'api DI not class or interface' => ['method' => 'apiDINotClass'],
+            'union type with class' => ['method' => 'unionWithClass'],
         ];
     }
     

@@ -18,7 +18,7 @@ class RouteParser
             $class->getName(),
             $method->getName(),
         );
-
+        
         foreach ($method->getParameters() as $param) {
             $types = $param->getType();
             // тип не определён считаем его mixed и даём пихать что угодно
@@ -31,24 +31,67 @@ class RouteParser
                 $route->addParam($this->paramTypeApiParams($param, $types));
                 continue;
             }
-
+            
+            $apiDIAttr = $param->getAttributes(ApiDI::class);
+            if ($apiDIAttr) {
+                $route->addParam($this->paramTypeDI($param, $types));
+                continue;
+            }
+            
             if ($types instanceof \ReflectionIntersectionType) {
                 throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for property');
             }
-
+            
             if ($types instanceof \ReflectionUnionType) {
                 $route->addParam($this->paramTypeUnion($param, $types));
                 continue;
             }
-
+            
             if ($types instanceof \ReflectionNamedType) {
                 $route->addParam($this->paramTypeSingular($param, $types));
             }
         }
-
+        
         return $route;
     }
-
+    
+    /**
+     * @throws JsonPrcRouterException
+     */
+    protected function paramTypeDI(\ReflectionParameter $param, \ReflectionType $type): RouteParam
+    {
+        if ($type instanceof \ReflectionUnionType) {
+            throw new JsonPrcRouterException('Not supported ReflectionUnionType for ApiDI');
+        }
+        
+        if ($type instanceof \ReflectionIntersectionType) {
+            throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for ApiDI');
+        }
+        
+        if ($param->isOptional()) {
+            throw new JsonPrcRouterException('ApiDI can`t be optional');
+        }
+        
+        if ($param->allowsNull()) {
+            throw new JsonPrcRouterException('ApiDI can`t be nullable');
+        }
+        
+        /** @var \ReflectionNamedType $type */
+        $class = $type->getName();
+        if (!class_exists($class) && !interface_exists($class)) {
+            throw new JsonPrcRouterException('ApiDI must be valid and existing class or interface');
+        }
+        
+        return new RouteParam(
+            name:         $param->getName(),
+            propType:     PropType::DI,
+            allowedTypes: [],
+            isNullable:   false,
+            className:    $type->getName(),
+            isOptional:   false,
+        );
+    }
+    
     /**
      * @throws \Tochka\JsonRpc\Exceptions\JsonPrcRouterException
      */
@@ -57,52 +100,52 @@ class RouteParser
         if ($type instanceof \ReflectionUnionType) {
             throw new JsonPrcRouterException('Not supported ReflectionUnionType for ApiParams');
         }
-
+        
         if ($type instanceof \ReflectionIntersectionType) {
             throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for ApiParams');
         }
-
+        
         if ($param->isOptional()) {
             throw new JsonPrcRouterException('ApiParams can`t be optional');
         }
-
+        
         if ($param->allowsNull()) {
             throw new JsonPrcRouterException('ApiParams can`t be nullable');
         }
-
+        
         /** @var \ReflectionNamedType $type */
         $class = $type->getName();
         if (!class_exists($class)) {
             throw new JsonPrcRouterException('ApiParams must be valid and existing class');
         }
-
+        
         $reflectionClass = new \ReflectionClass($class);
         if (!$reflectionClass->isInstantiable()) {
             throw new JsonPrcRouterException('ApiParams class must be instantiable');
         }
-
+        
         return new RouteParam(
-            name: $param->getName(),
-            propType: PropType::RequestObject,
+            name:         $param->getName(),
+            propType:     PropType::RequestObject,
             allowedTypes: [],
-            isNullable: false,
-            className: $class,
-            isOptional: false,
+            isNullable:   false,
+            className:    $class,
+            isOptional:   false,
         );
     }
-
+    
     protected function paramTypeMixed(\ReflectionParameter $param): RouteParam
     {
         return new RouteParam(
-            name: $param->getName(),
-            propType: PropType::Mixed,
+            name:         $param->getName(),
+            propType:     PropType::Mixed,
             allowedTypes: [],
-            isNullable: true,
-            className: null,
-            isOptional: $param->isOptional(),
+            isNullable:   true,
+            className:    null,
+            isOptional:   $param->isOptional(),
         );
     }
-
+    
     /**
      * @throws JsonPrcRouterException
      */
@@ -114,21 +157,21 @@ class RouteParser
             $isBuiltinCheck[] = $typeItem->isBuiltin();
             $allowedTypes[] = $typeItem->getName();
         }
-
+        
         if (!array_all($isBuiltinCheck, fn($v) => $v)) {
             throw new JsonPrcRouterException('Not supported property union type with class types');
         }
-
+        
         return new RouteParam(
-            name: $param->getName(),
-            propType: PropType::Primitive,
+            name:         $param->getName(),
+            propType:     PropType::Primitive,
             allowedTypes: $allowedTypes,
-            isNullable: $type->allowsNull(),
-            className: null,
-            isOptional: $param->isOptional()
+            isNullable:   $type->allowsNull(),
+            className:    null,
+            isOptional:   $param->isOptional()
         );
     }
-
+    
     /**
      * @throws \ReflectionException
      * @throws JsonPrcRouterException
@@ -139,61 +182,49 @@ class RouteParser
         if ($type->getName() === 'mixed') {
             return $this->paramTypeMixed($param);
         }
-
+        
         // primitive type
         if ($type->isBuiltin()) {
             if (\in_array($type->getName(), ['callable', 'iterable'])) {
                 throw new JsonPrcRouterException('Not supported this type ' . $type->getName());
             }
-
+            
             return new RouteParam(
-                name: $param->getName(),
-                propType: PropType::Primitive,
+                name:         $param->getName(),
+                propType:     PropType::Primitive,
                 allowedTypes: [$type->getName()],
-                isNullable: $param->allowsNull(),
-                className: null,
-                isOptional: $param->isOptional(),
+                isNullable:   $param->allowsNull(),
+                className:    null,
+                isOptional:   $param->isOptional(),
             );
         }
-
+        
         // enum type
         if (enum_exists($type->getName())) {
             $enumReflector = new \ReflectionEnum($type->getName());
             $enumType = $enumReflector->getBackingType()?->getName();
             if (!$enumType) {
-                throw new JsonPrcRouterException('Not supported pure enum for property, they cant be serialized');
+                throw new JsonPrcRouterException('Not supported pure enum for property, they cant be created');
             }
-
+            
             return new RouteParam(
-                name: $param->getName(),
-                propType: PropType::Enum,
+                name:         $param->getName(),
+                propType:     PropType::Enum,
                 allowedTypes: [$enumType],
-                isNullable: $param->allowsNull(),
-                className: $type->getName(),
-                isOptional: $param->isOptional(),
+                isNullable:   $param->allowsNull(),
+                className:    $type->getName(),
+                isOptional:   $param->isOptional(),
             );
         }
-
-        $apiDI = $param->getAttributes(ApiDI::class);
-        if ($apiDI) {
-            return new RouteParam(
-                name: $param->getName(),
-                propType: PropType::DI,
-                allowedTypes: [],
-                isNullable: false,
-                className: $type->getName(),
-                isOptional: false,
-            );
-        }
-
+        
         // structured type
         return new RouteParam(
-            name: $param->getName(),
-            propType: PropType::Object,
+            name:         $param->getName(),
+            propType:     PropType::Object,
             allowedTypes: ['object'],
-            isNullable: $param->allowsNull(),
-            className: $type->getName(),
-            isOptional: $param->isOptional(),
+            isNullable:   $param->allowsNull(),
+            className:    $type->getName(),
+            isOptional:   $param->isOptional(),
         );
     }
 }
