@@ -1,6 +1,6 @@
 <?php
 
-namespace Tochka\JsonRpc\Casters;
+namespace Tochka\JsonRpc\Resolvers\Handlers;
 
 use Illuminate\Validation\ValidationException;
 use Tochka\JsonRpc\Contracts\ShouldMapped;
@@ -10,7 +10,7 @@ use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 
-class ParamsCaster extends AbstractPropertyCaster
+class ParamsResolver extends AbstractResolver
 {
     public static function canCast(RouteParam $param): bool
     {

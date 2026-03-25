@@ -4,18 +4,18 @@ namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
 use Psr\SimpleCache\InvalidArgumentException;
-use Tochka\JsonRpc\Casters\DICaster;
-use Tochka\JsonRpc\Casters\EnumCaster;
-use Tochka\JsonRpc\Casters\MixedCaster;
-use Tochka\JsonRpc\Casters\ObjectCaster;
-use Tochka\JsonRpc\Casters\ParamsCaster;
-use Tochka\JsonRpc\Casters\PrimitiveCaster;
-use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\ExceptionHandler;
+use Tochka\JsonRpc\Resolvers\JsonRpcParamsResolver;
+use Tochka\JsonRpc\Resolvers\Handlers\DIResolver;
+use Tochka\JsonRpc\Resolvers\Handlers\EnumResolver;
+use Tochka\JsonRpc\Resolvers\Handlers\MixedResolver;
+use Tochka\JsonRpc\Resolvers\Handlers\ObjectResolver;
+use Tochka\JsonRpc\Resolvers\Handlers\ParamsResolver;
+use Tochka\JsonRpc\Resolvers\Handlers\PrimitiveResolver;
+use Tochka\JsonRpc\Resolvers\ParamsResolverInterface;
 use Tochka\JsonRpc\Router\Router;
-use Tochka\JsonRpc\Support\JsonRpcHandleResolver;
 use Tochka\JsonRpc\Support\JsonRpcParser;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\JsonRpcResponse;
@@ -30,7 +30,7 @@ class JsonRpcServer
 {
     private ServerConfig $config;
     private JsonRpcParserInterface $parser;
-    private HandleResolverInterface $resolver;
+    private ParamsResolverInterface $resolver;
     private Router $router;
     
     /**
@@ -39,19 +39,19 @@ class JsonRpcServer
     public function __construct(
         ServerConfig $config,
         ?JsonRpcParserInterface $parser = null,
-        ?HandleResolverInterface $resolver = null,
+        ?ParamsResolverInterface $resolver = null,
         ?Router $router = null,
     ) {
         $this->config = $config;
         $this->parser = $parser ?: new JsonRpcParser();
-        $this->resolver = $resolver ?: new JsonRpcHandleResolver(
+        $this->resolver = $resolver ?: new JsonRpcParamsResolver(
             [
-                DICaster::class,
-                EnumCaster::class,
-                MixedCaster::class,
-                ObjectCaster::class,
-                PrimitiveCaster::class,
-                ParamsCaster::class,
+                DIResolver::class,
+                EnumResolver::class,
+                MixedResolver::class,
+                ObjectResolver::class,
+                PrimitiveResolver::class,
+                ParamsResolver::class,
             ],
             $config->customCasters,
         );

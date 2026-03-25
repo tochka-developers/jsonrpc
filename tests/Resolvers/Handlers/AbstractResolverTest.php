@@ -1,18 +1,18 @@
 <?php
 
-namespace Tochka\JsonRpc\Tests\Casters;
+namespace Tochka\JsonRpc\Tests\Resolvers\Handlers;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Casters\AbstractPropertyCaster;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Resolvers\Handlers\AbstractResolver;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\VoidValue;
 
-#[CoversClass(AbstractPropertyCaster::class)]
-class AbstractPropertyCasterTest extends TestCase
+#[CoversClass(AbstractResolver::class)]
+class AbstractResolverTest extends TestCase
 {
     public static function providerGetTypeNormalized(): array
     {
@@ -31,7 +31,7 @@ class AbstractPropertyCasterTest extends TestCase
     #[DataProvider('providerGetTypeNormalized')]
     public function testGetTypeNormalized(mixed $input, mixed $expected): void
     {
-        $result = AbstractPropertyCaster::getTypeNormalized($input);
+        $result = AbstractResolver::getTypeNormalized($input);
         $this->assertSame($expected, $result);
     }
 
@@ -59,7 +59,7 @@ class AbstractPropertyCasterTest extends TestCase
     #[DataProvider('providerGetValue')]
     public function testGetValue(RouteParam $param, object|array $input, mixed $expected): void
     {
-        $result = AbstractPropertyCaster::getValue($param, $input);
+        $result = AbstractResolver::getValue($param, $input);
         if ($expected instanceof VoidValue) {
             $this->assertInstanceOf(VoidValue::class, $result);
         } else {
@@ -97,7 +97,7 @@ class AbstractPropertyCasterTest extends TestCase
         if ($expectException) {
             $this->expectException(JsonRpcInvalidParameterException::class);
         }
-        AbstractPropertyCaster::typePassOrThrow($param, $value);
+        AbstractResolver::typePassOrThrow($param, $value);
         if (!$expectException) {
             $this->assertTrue(true);
         }
@@ -131,7 +131,7 @@ class AbstractPropertyCasterTest extends TestCase
         if ($expected === null) {
             $this->expectException(JsonRpcInvalidParameterException::class);
         }
-        $result = AbstractPropertyCaster::isNullAndAllowNull($param, $value);
+        $result = AbstractResolver::isNullAndAllowNull($param, $value);
         if ($expected !== null) {
             $this->assertSame($expected, $result);
         }
@@ -164,7 +164,7 @@ class AbstractPropertyCasterTest extends TestCase
         if ($expected === null) {
             $this->expectException(JsonRpcInvalidParameterException::class);
         }
-        $result = AbstractPropertyCaster::isVoidAndAllowVoid($param, $value);
+        $result = AbstractResolver::isVoidAndAllowVoid($param, $value);
         if ($expected !== null) {
             $this->assertSame($expected, $result);
         }

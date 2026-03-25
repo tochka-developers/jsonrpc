@@ -1,17 +1,18 @@
 <?php
 
-namespace Tochka\JsonRpc\Support;
+namespace Tochka\JsonRpc\Resolvers;
 
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Tochka\JsonRpc\Casters\AbstractPropertyCaster;
-use Tochka\JsonRpc\Contracts\HandleResolverInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParametersException;
+use Tochka\JsonRpc\Resolvers\Handlers\AbstractResolver;
+use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Support\VoidValue;
 
-class JsonRpcHandleResolver implements HandleResolverInterface
+class JsonRpcParamsResolver implements ParamsResolverInterface
 {
-    /** @var array<AbstractPropertyCaster> */
+    /** @var array<AbstractResolver> */
     protected array $casters;
     
     /**
@@ -21,10 +22,10 @@ class JsonRpcHandleResolver implements HandleResolverInterface
     {
         $this->casters = [...$customCasters, ...$casters];
         foreach ($casters as $caster) {
-            if (!is_subclass_of($caster, AbstractPropertyCaster::class)) {
+            if (!is_subclass_of($caster, AbstractResolver::class)) {
                 throw new JsonRpcException(
                     JsonRpcException::CODE_INTERNAL_ERROR,
-                    $caster . 'must be child of AbstractPropertyCaster'
+                    $caster . 'must be child of '. AbstractResolver::class
                 );
             }
         }
