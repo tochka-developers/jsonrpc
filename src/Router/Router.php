@@ -4,9 +4,6 @@ namespace Tochka\JsonRpc\Router;
 
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
-use Tochka\JsonRpc\Attributes\ApiDI;
-use Tochka\JsonRpc\Attributes\ApiParams;
-use Tochka\JsonRpc\Exceptions\JsonPrcRouterException;
 use Tochka\JsonRpc\Helpers\ArrayFileCache;
 use Tochka\JsonRpc\Support\ServerConfig;
 
@@ -15,11 +12,12 @@ class Router
     protected array|null $routes = null;
     
     protected string $serverName;
-    public string $namespace;
-    public string $controllerSuffix;
-    public string $methodDelimiter;
-    public bool $allowParentMethods;
-    public CacheInterface $cache;
+    protected string $namespace;
+    protected string $controllerSuffix;
+    protected string $methodDelimiter;
+    protected bool $allowParentMethods;
+    protected CacheInterface $cache;
+    protected RouteParser $routeParser;
     
     public function __construct(ServerConfig $config)
     {
@@ -30,6 +28,40 @@ class Router
         $this->allowParentMethods = $config->allowParentMethods;
         // todo надо сделать по нормальному
         $this->cache = new ArrayFileCache($config->serverName);
+        $this->routeParser = new RouteParser();
+    }
+    
+    /**
+     * @throws \ReflectionException
+     * @throws InvalidArgumentException
+     */
+    public function getRoute(string $method): Route|null
+    {
+        return $this->loadRoutes()[$method] ?? null;
+    }
+    
+    /**
+     * @throws \ReflectionException
+     * @throws InvalidArgumentException
+     */
+    public function getAll(): array
+    {
+        return $this->loadRoutes();
+    }
+    
+    /**
+     * @throws \ReflectionException
+     * @throws InvalidArgumentException
+     */
+    public function cacheRoutes(): void
+    {
+        $routes = $this->parseRoutes();
+        $this->cache->set($this->serverName, $routes);
+    }
+    
+    public function clearRoutesCache(): void
+    {
+        $this->cache->clear();
     }
     
     /**
@@ -53,21 +85,6 @@ class Router
     
     /**
      * @throws \ReflectionException
-     * @throws InvalidArgumentException
-     */
-    public function cacheRoutes(): void
-    {
-        $routes = $this->parseRoutes();
-        $this->cache->set($this->serverName, $routes);
-    }
-    
-    public function clearRoutesCache(): void
-    {
-        $this->cache->clear();
-    }
-    
-    /**
-     * @throws \ReflectionException
      * @throws \Exception
      */
     protected function parseRoutes(): array
@@ -82,12 +99,22 @@ class Router
                 if ($this->checkIsIgnored($reflectionClass, $method)) {
                     continue;
                 }
-                $route = $this->getMethodParams($reflectionClass, $method);
+                $methodName = $this->getMethodNameFromStruct($reflectionClass, $method);
+                $route = $this->routeParser->createRoute($reflectionClass, $method, $methodName);
                 $routes[$route->name] = $route;
             }
         }
         
         return $routes;
+    }
+    
+    /** Если название метода не определено явно, то собираем его из имени контроллера и метода */
+    protected function getMethodNameFromStruct(\ReflectionClass $reflectionClass, \ReflectionMethod $method): string
+    {
+        $shortName = $reflectionClass->getShortName();
+        $prefix = lcfirst(str_replace($this->controllerSuffix, '', $shortName));
+        
+        return $prefix . $this->methodDelimiter . $method->getName();
     }
     
     // пока проверяем по старому, для обратной совместимости, потом уберём
@@ -108,179 +135,5 @@ class Router
         }
         
         return false;
-    }
-    
-    /**
-     * @throws \Exception
-     */
-    protected function getMethodParams(\ReflectionClass $class, \ReflectionMethod $method): Route
-    {
-        $route = new Route(
-            $this->getMethodNameFromStruct($class, $method),
-            $class->getName(),
-            $method->getName(),
-        );
-        
-        foreach ($method->getParameters() as $param) {
-            $types = $param->getType();
-            // тип не определён считаем его mixed и даём пихать что угодно
-            if (!$types) {
-                $route->addParam($this->paramTypeMixed($param));
-                continue;
-            }
-            
-            if ($types instanceof \ReflectionIntersectionType) {
-                throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for property');
-            }
-            
-            if ($types instanceof \ReflectionUnionType) {
-                $route->addParam($this->paramTypeUnion($param, $types));
-                continue;
-            }
-            
-            if ($types instanceof \ReflectionNamedType) {
-                $route->addParam($this->paramTypeSingular($param, $types));
-            }
-        }
-        
-        return $route;
-    }
-    
-    protected function paramTypeMixed(\ReflectionParameter $param): RouteParam
-    {
-        return new RouteParam(
-            name:         $param->getName(),
-            propType:     PropType::Mixed,
-            allowedTypes: [],
-            isNullable:   true,
-            className:    null,
-            isOptional:   $param->isOptional(),
-        );
-    }
-    
-    /**
-     * @throws JsonPrcRouterException
-     */
-    protected function paramTypeUnion(\ReflectionParameter $param, \ReflectionUnionType $type): RouteParam
-    {
-        $allowedTypes = [];
-        $isBuiltinCheck = [];
-        foreach ($type->getTypes() as $typeItem) {
-            $isBuiltinCheck[] = $typeItem->isBuiltin();
-            $allowedTypes[] = $typeItem->getName();
-        }
-        
-        if (!array_all($isBuiltinCheck, fn($v) => $v)) {
-            throw new JsonPrcRouterException('Not supported property union type with class types');
-        }
-        
-        return new RouteParam(
-            name:         $param->getName(),
-            propType:     PropType::Primitive,
-            allowedTypes: $allowedTypes,
-            isNullable:   $type->allowsNull(),
-            className:    null,
-            isOptional:   $param->isOptional()
-        );
-    }
-    
-    /**
-     * @throws \ReflectionException
-     * @throws JsonPrcRouterException
-     */
-    protected function paramTypeSingular(\ReflectionParameter $param, \ReflectionNamedType $type): RouteParam
-    {
-        // mixed type
-        if ($type->getName() === 'mixed') {
-            return $this->paramTypeMixed($param);
-        }
-        
-        // primitive type
-        if ($type->isBuiltin()) {
-            return new RouteParam(
-                name:         $param->getName(),
-                propType:     PropType::Primitive,
-                allowedTypes: [$type->getName()],
-                isNullable:   $param->allowsNull(),
-                className:    null,
-                isOptional:   $param->isOptional(),
-            );
-        }
-        
-        // enum type
-        if (enum_exists($type->getName())) {
-            $enumReflector = new \ReflectionEnum($type->getName());
-            $enumType = $enumReflector->getBackingType()?->getName();
-            if(!$enumType) {
-                throw new JsonPrcRouterException('Not supported pure enum for property, they cant be serialized');
-            }
-            return new RouteParam(
-                name:         $param->getName(),
-                propType:     PropType::Enum,
-                allowedTypes: [$enumType],
-                isNullable:   $param->allowsNull(),
-                className:    $type->getName(),
-                isOptional:   $param->isOptional(),
-            );
-        }
-        $apiParams = $param->getAttributes(ApiParams::class);
-        if ($apiParams) {
-            return new RouteParam(
-                name:         $param->getName(),
-                propType:     PropType::RequestObject,
-                allowedTypes: [],
-                isNullable:   false,
-                className:    $type->getName(),
-                isOptional:   $param->isOptional(),
-            );
-        }
-        
-        $apiDI = $param->getAttributes(ApiDI::class);
-        if ($apiDI) {
-            return new RouteParam(
-                name:         $param->getName(),
-                propType:     PropType::DI,
-                allowedTypes: [],
-                isNullable:   false,
-                className:    $type->getName(),
-                isOptional:   $param->isOptional(),
-            );
-        }
-        // structured type
-        return new RouteParam(
-            name:         $param->getName(),
-            propType:     PropType::Object,
-            allowedTypes: ['object'],
-            isNullable:   $param->allowsNull(),
-            className:    $type->getName(),
-            isOptional:   $param->isOptional(),
-        );
-    }
-    
-    /**
-     * @throws \ReflectionException
-     * @throws InvalidArgumentException
-     */
-    public function getRoute(string $method): Route|null
-    {
-        return $this->loadRoutes()[$method] ?? null;
-    }
-    
-    /**
-     * @throws \ReflectionException
-     * @throws InvalidArgumentException
-     */
-    public function getAll(): array
-    {
-        return $this->loadRoutes();
-    }
-    
-    /** Если название метода не определено явно, то собираем его из имени контроллера и метода */
-    protected function getMethodNameFromStruct(\ReflectionClass $reflectionClass, \ReflectionMethod $method): string
-    {
-        $shortName = $reflectionClass->getShortName();
-        $prefix = lcfirst(str_replace($this->controllerSuffix, '', $shortName));
-        
-        return $prefix . $this->methodDelimiter . $method->getName();
     }
 }
