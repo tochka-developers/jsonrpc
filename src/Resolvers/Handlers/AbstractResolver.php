@@ -134,8 +134,8 @@ abstract class AbstractResolver
      * @throws ValidationException
      * @codeCoverageIgnore
      */
-    public static function doValidation(array $rules, object|array $data): void
+    public static function doValidation(object|array $data, array $rules, array $messages = [], array $attributes = []): void
     {
-        Validator::make($data, $rules)->validate();
+        Validator::make($data, $rules, $messages, $attributes)->validate();
     }
 }

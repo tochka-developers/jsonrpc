@@ -3,12 +3,12 @@
 namespace Tochka\JsonRpc\Resolvers\Handlers;
 
 use Illuminate\Validation\ValidationException;
-use Tochka\JsonRpc\Contracts\ShouldMapped;
-use Tochka\JsonRpc\Contracts\ShouldValidated;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
+use Tochka\JsonRpc\Traits\WithDataMap;
+use Tochka\JsonRpc\Traits\WithValidation;
 
 class ParamsResolver extends AbstractResolver
 {
@@ -26,12 +26,19 @@ class ParamsResolver extends AbstractResolver
     {
         $class = $param->className;
         
-        if (is_subclass_of($class, ShouldValidated::class)) {
-            self::doValidation($class::rules(), $request->params);
+        $uses = class_uses_recursive($class);
+        
+        if (in_array(WithValidation::class, $uses)) {
+            /** @var WithValidation $class */
+            $rules = $class::rules();
+            if (count($rules) > 0) {
+                self::doValidation($request->params, $rules, $class::messages(), $class::attributes());
+            }
         }
         
-        if (is_subclass_of($class, ShouldMapped::class)) {
-            return $class::dataMap($request->params);
+        if(\in_array(WithDataMap::class, $uses)) {
+            /** @var WithDataMap $class */
+            return $class::dataMap($param, $request->params);
         }
         
         return self::createObjectWithoutConstructor($param, $request->params);
