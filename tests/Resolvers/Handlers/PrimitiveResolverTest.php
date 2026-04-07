@@ -1,38 +1,38 @@
 <?php
 
-namespace Tochka\JsonRpc\Tests\Casters;
+namespace Tochka\JsonRpc\Tests\Resolvers\Handlers;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Casters\PrimitiveCaster;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Resolvers\Handlers\PrimitiveResolver;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\VoidValue;
 
-#[CoversClass(PrimitiveCaster::class)]
-class PrimitiveCasterTest extends TestCase
+#[CoversClass(PrimitiveResolver::class)]
+class PrimitiveResolverTest extends TestCase
 {
     public static function providerCanCast(): array
     {
-        return CasterTestHelper::canCastCases(PropType::Primitive);
+        return ResolverTestHelper::canCastCases(PropType::Primitive);
     }
     
     
     #[DataProvider('providerCanCast')]
     public function testCanCast(RouteParam $param, $expected): void
     {
-        $result = PrimitiveCaster::canCast($param);
+        $result = PrimitiveResolver::canCast($param);
         $this->assertSame($expected, $result);
     }
     
     public static function providerCast(): array
     {
         return [
-            ...CasterTestHelper::voidCases(PropType::Primitive),
-            ...CasterTestHelper::nullCases(PropType::Primitive),
+            ...ResolverTestHelper::voidCases(PropType::Primitive),
+            ...ResolverTestHelper::nullCases(PropType::Primitive),
             'type not fit' => [
                 'param' => new RouteParam('name', PropType::Primitive, ['string'], false),
                 'request' => JsonRpcRequest::fake(['name' => 1]),
@@ -56,7 +56,7 @@ class PrimitiveCasterTest extends TestCase
         if ($expected === JsonRpcInvalidParameterException::class) {
             $this->expectException(JsonRpcInvalidParameterException::class);
         }
-        $result = PrimitiveCaster::cast($param, $request);
+        $result = PrimitiveResolver::cast($param, $request);
         
         if ($expected === VoidValue::class) {
             $this->assertInstanceOf(VoidValue::class, $result);

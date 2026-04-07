@@ -33,6 +33,6 @@ class RouteClear extends Command
     {
         $router = new Router($config);
         $router->clearRoutesCache();
-        $this->info('ServerName:' . $config->serverName. 'cache cleared');
+        $this->info('ServerName:' . $config->serverName. ' cache cleared');
     }
 }

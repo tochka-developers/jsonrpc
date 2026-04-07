@@ -1,10 +1,10 @@
 <?php
 
-namespace Tochka\JsonRpc\Contracts;
+namespace Tochka\JsonRpc\Resolvers;
 
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 
-interface HandleResolverInterface
+interface ParamsResolverInterface
 {
     /**
      * @param JsonRpcRequest $request

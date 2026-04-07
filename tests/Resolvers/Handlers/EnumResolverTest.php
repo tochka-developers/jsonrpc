@@ -1,12 +1,12 @@
 <?php
 
-namespace Tochka\JsonRpc\Tests\Casters;
+namespace Tochka\JsonRpc\Tests\Resolvers\Handlers;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Casters\EnumCaster;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Resolvers\Handlers\EnumResolver;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
@@ -14,26 +14,26 @@ use Tochka\JsonRpc\Support\VoidValue;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumInt;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumString;
 
-#[CoversClass(EnumCaster::class)]
-class EnumCasterTest extends TestCase
+#[CoversClass(EnumResolver::class)]
+class EnumResolverTest extends TestCase
 {
     public static function providerCanCast(): array
     {
-        return CasterTestHelper::canCastCases(PropType::Enum);
+        return ResolverTestHelper::canCastCases(PropType::Enum);
     }
     
     #[DataProvider('providerCanCast')]
     public function testCanCast(RouteParam $param, $expected): void
     {
-        $result = EnumCaster::canCast($param);
+        $result = EnumResolver::canCast($param);
         $this->assertSame($expected, $result);
     }
     
     public static function providerCast(): array
     {
         return [
-            ...CasterTestHelper::voidCases(PropType::Enum),
-            ...CasterTestHelper::nullCases(PropType::Enum),
+            ...ResolverTestHelper::voidCases(PropType::Enum),
+            ...ResolverTestHelper::nullCases(PropType::Enum),
             'type not fit, int => string' => [
                 'param' => new RouteParam('name', PropType::Enum, ['string'], false, TestEnumString::class),
                 'request' => JsonRpcRequest::fake(['name' => 1]),
@@ -73,7 +73,7 @@ class EnumCasterTest extends TestCase
         if ($expected === JsonRpcInvalidParameterException::class) {
             $this->expectException(JsonRpcInvalidParameterException::class);
         }
-        $result = EnumCaster::cast($param, $request);
+        $result = EnumResolver::cast($param, $request);
         
         if ($expected === VoidValue::class) {
             $this->assertInstanceOf(VoidValue::class, $result);

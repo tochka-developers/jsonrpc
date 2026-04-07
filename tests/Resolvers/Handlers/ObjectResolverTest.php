@@ -1,36 +1,38 @@
 <?php
 
-namespace Tochka\JsonRpc\Tests\Casters;
+namespace Tochka\JsonRpc\Tests\Resolvers\Handlers;
 
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Casters\ObjectCaster;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Resolvers\Handlers\ObjectResolver;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\VoidValue;
 
-class ObjectCasterTest extends TestCase
+#[CoversClass(ObjectResolver::class)]
+class ObjectResolverTest extends TestCase
 {
     public static function providerCanCast(): array
     {
-        return CasterTestHelper::canCastCases(PropType::Object);
+        return ResolverTestHelper::canCastCases(PropType::Object);
     }
     
     #[DataProvider('providerCanCast')]
     public function testCanCast(RouteParam $param, $expected): void
     {
-        $result = ObjectCaster::canCast($param);
+        $result = ObjectResolver::canCast($param);
         $this->assertSame($expected, $result);
     }
     
     public static function providerCast(): array
     {
         return [
-            ...CasterTestHelper::voidCases(PropType::Object),
-            ...CasterTestHelper::nullCases(PropType::Object),
+            ...ResolverTestHelper::voidCases(PropType::Object),
+            ...ResolverTestHelper::nullCases(PropType::Object),
             'bad type, only object allowed' => [
                 'param' => new RouteParam('name', PropType::Object, ['object'], false),
                 'request' => JsonRpcRequest::fake(['name' => 'string']),
@@ -61,7 +63,7 @@ class ObjectCasterTest extends TestCase
             $this->expectException(ValidationException::class);
         }
         
-        $result = ObjectCaster::cast($param, $request);
+        $result = ObjectResolver::cast($param, $request);
         
         if ($expected === VoidValue::class) {
             $this->assertInstanceOf(VoidValue::class, $result);

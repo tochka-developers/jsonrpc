@@ -1,37 +1,37 @@
 <?php
 
-namespace Tochka\JsonRpc\Tests\Casters;
+namespace Tochka\JsonRpc\Tests\Resolvers\Handlers;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Casters\MixedCaster;
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
+use Tochka\JsonRpc\Resolvers\Handlers\MixedResolver;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Support\VoidValue;
 
-#[CoversClass(MixedCaster::class)]
-class MixedCasterTest extends TestCase
+#[CoversClass(MixedResolver::class)]
+class MixedResolverTest extends TestCase
 {
     public static function providerCanCast(): array
     {
-        return CasterTestHelper::canCastCases(PropType::Mixed);
+        return ResolverTestHelper::canCastCases(PropType::Mixed);
     }
     
     
     #[DataProvider('providerCanCast')]
     public function testCanCast(RouteParam $param, $expected): void
     {
-        $result = MixedCaster::canCast($param);
+        $result = MixedResolver::canCast($param);
         $this->assertSame($expected, $result);
     }
     
     public static function providerCast(): array
     {
         return [
-            ...CasterTestHelper::voidCases(PropType::Mixed),
+            ...ResolverTestHelper::voidCases(PropType::Mixed),
             'all ok int' => [
                 'param' => new RouteParam('name', PropType::Mixed, [], false),
                 'request' => JsonRpcRequest::fake(['name' => 1]),
@@ -55,7 +55,7 @@ class MixedCasterTest extends TestCase
         if ($expected === JsonRpcInvalidParameterException::class) {
             $this->expectException(JsonRpcInvalidParameterException::class);
         }
-        $result = MixedCaster::cast($param, $request);
+        $result = MixedResolver::cast($param, $request);
         
         if ($expected === VoidValue::class) {
             $this->assertInstanceOf(VoidValue::class, $result);

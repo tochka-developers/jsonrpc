@@ -1,29 +1,29 @@
 <?php
 
-namespace Tochka\JsonRpc\Tests\Casters;
+namespace Tochka\JsonRpc\Tests\Resolvers\Handlers;
 
 use Illuminate\Contracts\Container\BindingResolutionException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tochka\JsonRpc\Casters\DICaster;
+use Tochka\JsonRpc\Resolvers\Handlers\DIResolver;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
 use Tochka\JsonRpc\Tests\TestParams\DIObject;
 
-#[CoversClass(DICaster::class)]
-class DICasterTest extends TestCase
+#[CoversClass(DIResolver::class)]
+class DIResolverTest extends TestCase
 {
     public static function providerCanCast(): array
     {
-        return CasterTestHelper::canCastCases(PropType::DI);
+        return ResolverTestHelper::canCastCases(PropType::DI);
     }
     
     #[DataProvider('providerCanCast')]
     public function testCanCast(RouteParam $param, $expected): void
     {
-        $result = DICaster::canCast($param);
+        $result = DIResolver::canCast($param);
         $this->assertSame($expected, $result);
     }
     
@@ -49,7 +49,7 @@ class DICasterTest extends TestCase
     #[DataProvider('providerCast')]
     public function testCast(RouteParam $param, JsonRpcRequest $request, string $expected)
     {
-        $result = DICaster::cast($param, $request);
+        $result = DIResolver::cast($param, $request);
         $this->assertInstanceOf($expected, $result);
     }
 }

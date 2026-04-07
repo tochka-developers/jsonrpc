@@ -2,9 +2,11 @@
 
 namespace Tochka\JsonRpc\Tests\TestControllers;
 
+use Tochka\JsonRpc\Attributes\ApiDI;
 use Tochka\JsonRpc\Attributes\ApiParams;
 use Tochka\JsonRpc\Tests\TestParams\ApiParamsObject;
 use Tochka\JsonRpc\Tests\TestParams\DIObject;
+use Tochka\JsonRpc\Tests\TestParams\ObjectWithValidation;
 use Tochka\JsonRpc\Tests\TestParams\TestAbstractClass;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumInt;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumPure;
@@ -68,6 +70,14 @@ class ParserTestController
     public function apiParams(#[ApiParams] ApiParamsObject $one)
     {
     }
+    
+    public function apiDI(#[ApiDI] ApiDI $one)
+    {
+    }
+    
+    public function apiObject(ObjectWithValidation $one)
+    {
+    }
 
     // not allowed types
 
@@ -98,6 +108,26 @@ class ParserTestController
     public function apiParamsAbstract(#[ApiParams] TestAbstractClass $one)
     {
     }
+    
+    public function apiDIUnion(#[ApiDI] ApiParamsObject|DIObject $one)
+    {
+    }
+    
+    public function apiDiIntersection(#[ApiDI] ApiParamsObject & TestPropInterface $one)
+    {
+    }
+    
+    public function apiDIOptional(#[ApiDI] ApiParamsObject $one = new ApiParamsObject())
+    {
+    }
+    
+    public function apiDINullable(#[ApiDI] ?ApiParamsObject $one)
+    {
+    }
+    
+    public function apiDINotClass(#[ApiDI] int $one)
+    {
+    }
 
     public function enumPure(TestEnumPure $one)
     {
@@ -114,4 +144,10 @@ class ParserTestController
     public function intersection(\Iterator&\Countable $one)
     {
     }
+    
+    public function unionWithClass(ApiParamsObject|int $one)
+    {
+    }
+    
+    
 }

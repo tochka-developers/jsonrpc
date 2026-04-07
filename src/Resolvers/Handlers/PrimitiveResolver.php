@@ -1,18 +1,17 @@
 <?php
 
-namespace Tochka\JsonRpc\Casters;
+namespace Tochka\JsonRpc\Resolvers\Handlers;
 
 use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
-use Tochka\JsonRpc\Support\VoidValue;
 
-class MixedCaster extends AbstractPropertyCaster
+class PrimitiveResolver extends AbstractResolver
 {
     public static function canCast(RouteParam $param): bool
     {
-        return $param->propType === PropType::Mixed;
+        return $param->propType === PropType::Primitive;
     }
     
     /**
@@ -23,8 +22,14 @@ class MixedCaster extends AbstractPropertyCaster
         $value = self::getValue($param, $request->params);
         
         if (self::isVoidAndAllowVoid($param, $value)) {
-            return new VoidValue();
+            return $value;
         }
+        
+        if (self::isNullAndAllowNull($param, $value)) {
+            return $value;
+        }
+        
+        self::typePassOrThrow($param, $value);
         
         return $value;
     }
