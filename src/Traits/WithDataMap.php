@@ -11,6 +11,7 @@ class WithDataMap
     /**
      * @throws JsonRpcInvalidParameterException
      * @throws \ReflectionException
+     * @codeCoverageIgnore
      */
     public static function dataMap(RouteParam $param, array|object $data): self
     {
