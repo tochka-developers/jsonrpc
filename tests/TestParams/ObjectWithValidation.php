@@ -2,10 +2,12 @@
 
 namespace Tochka\JsonRpc\Tests\TestParams;
 
-use Tochka\JsonRpc\Contracts\ShouldValidated;
+use Tochka\JsonRpc\Traits\WithValidation;
 
-class ObjectWithValidation implements ShouldValidated
+class ObjectWithValidation
 {
+    use WithValidation;
+    
     public int $int;
     public string $string;
     public bool $bool;
