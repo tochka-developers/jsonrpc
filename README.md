@@ -8,7 +8,6 @@
 JsonRpc сервер - реализация сервера по спецификации JsonRpc 2.0.
 
 Поддерживаемые версии:
-* Lumen >= 10.0
 * Laravel >= 10.0
 * PHP >= 8.2
 
@@ -36,35 +35,9 @@ composer require tochka-developers/jsonrpc
 php artisan vendor:publish
 ```
 
-Для того, чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
+Для того чтобы опубликовать только конфигурацию данного пакета, можно воспользоваться опцией tag
 ```shell script
 php artisan vendor:publish --tag="jsonrpc-config"
-```
-
-### Lumen
-В Lumen отсутствует команда _vendor:publish_, поэтому делается это вручную. 
-Если в проекте еще нет директории для конфигураций - создайте ее:
-```shell script
-mkdir config
-```
-Скопируйте в нее конфигрурацию jsonrpc:
-```shell script
-cp vendor/tochka-developers/jsonrpc/config/jsonrpc.php config/jsonrpc.php
-```
-Вместо _config/jsonrpc.php_ нужно указать любую другую директорию, где хранятся ваши конфиги и название будущего конфига.
-Далее необходимо прописать скопированный конфиг в _bootstrap/app.php_
-```php
-$app->configure('jsonrpc');
-```
-Так же прописать провайдер:
-```php
-$app->register(\Tochka\JsonRpc\JsonRpcServiceProvider::class);
-```
-Где _jsonrpc_ - имя файла конфига
-
-Для корректной работы так же необходимы фасады:
-```php
-$app->withFacades();
 ```
 
 # Настройка точек входа
@@ -336,6 +309,49 @@ class AllParamsRequestObject {
     public string $b;
     public bool $c;
 }
+```
+
+### Дополнительные возможности для RequestObject и Object
+#### WithValidation
+Объекту можно добавить трейт WithValidation, если переопределить методы то можно настроить валидациия для 
+данного объекта.
+```php
+
+    /** Если метод вернёт пустой массив, то валидация будет проигнорирована */
+    public static function rules(): array
+    {            
+        return [
+            'date' => ['nullable', 'date:Y-m-d'],
+        ];
+    }
+    
+    /**
+     * Можно переопределить сообщения об ошибках
+     */
+    public static function messages(): array
+    {
+        return [];
+    }
+    
+    /**
+     * Можно переопределить атрибуты передаваемые в Validator   
+     */
+    public static function attributes(): array
+    {
+        return [];
+    }
+```
+
+#### WithDataMap
+Объекту можно добавить трейт WithDataMap, если переопределить метод dataMap, то можно управлять
+созданием объекта.
+```php
+    // В случае если трейт подключён, но метод не переопределён, то запустится
+    // стандартное создание объекта, как если бы трейт не был указан   
+    public static function dataMap(RouteParam $param, array|object $data): self
+    {        
+        return new self($data)
+    }
 ```
 
 # Игнорирование публичных методов контроллеров
