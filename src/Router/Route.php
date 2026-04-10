@@ -51,6 +51,10 @@ class Route
             $instance->addParam($param);
         }
         
+        foreach ($array['validation'] as $field => $name) {
+            $instance->addValidation($field, $name);
+        }
+        
         return $instance;
     }
 }
