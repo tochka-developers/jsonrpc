@@ -6,6 +6,7 @@
 
 use Tochka\JsonRpc\Middleware\AccessControlListMiddleware;
 use Tochka\JsonRpc\Middleware\LogMiddleware;
+use Tochka\JsonRpc\Middleware\RequestParamsValidation;
 use Tochka\JsonRpc\Middleware\ServiceValidationMiddleware;
 use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
 
@@ -83,6 +84,7 @@ return [
                     // 'App\\Http\\TestController2' => '*',      // доступ ко всем методам контроллера есть у всех систем
                 ],
             ],
+            RequestParamsValidation::class,
         ],
     ],
 ];

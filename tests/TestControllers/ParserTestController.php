@@ -4,6 +4,7 @@ namespace Tochka\JsonRpc\Tests\TestControllers;
 
 use Tochka\JsonRpc\Attributes\ApiDI;
 use Tochka\JsonRpc\Attributes\ApiParams;
+use Tochka\JsonRpc\Attributes\ApiValidation;
 use Tochka\JsonRpc\Tests\TestParams\ApiParamsObject;
 use Tochka\JsonRpc\Tests\TestParams\DIObject;
 use Tochka\JsonRpc\Tests\TestParams\ObjectWithValidation;
@@ -149,5 +150,32 @@ class ParserTestController
     {
     }
     
+    // validation tests
+    public function noValidation($value)
+    {
+    }
     
+    public function haValidationString(#[ApiValidation('required')] $value)
+    {
+    }
+    
+    public function hasValidationMultipleStrings(#[ApiValidation('required|string')] $value)
+    {
+    }
+    
+    public function hasValidationArrayWithOne(#[ApiValidation(['required'])] $value)
+    {
+    }
+    
+    public function hasValidationArrayWithMulti(#[ApiValidation(['required', 'string'])] $value)
+    {
+    }
+    
+    public function hasValidationArrayEmpty(#[ApiValidation([])] $value)
+    {
+    }
+    
+    public function hasValidationStringEmpty(#[ApiValidation('')] $value)
+    {
+    }
 }

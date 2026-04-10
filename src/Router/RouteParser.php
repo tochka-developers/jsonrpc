@@ -4,6 +4,7 @@ namespace Tochka\JsonRpc\Router;
 
 use Tochka\JsonRpc\Attributes\ApiDI;
 use Tochka\JsonRpc\Attributes\ApiParams;
+use Tochka\JsonRpc\Attributes\ApiValidation;
 use Tochka\JsonRpc\Exceptions\JsonPrcRouterException;
 
 class RouteParser
@@ -20,10 +21,13 @@ class RouteParser
         );
         
         foreach ($method->getParameters() as $param) {
+            $apiValidation = $param->getAttributes(ApiValidation::class)[0] ?? null;
+            
             $types = $param->getType();
             // тип не определён считаем его mixed и даём пихать что угодно
             if (!$types) {
                 $route->addParam($this->paramTypeMixed($param));
+                $this->addValidationFromAttribute($route, $param->getName(), $apiValidation);
                 continue;
             }
             $apiParamsAttr = $param->getAttributes(ApiParams::class);
@@ -44,15 +48,38 @@ class RouteParser
             
             if ($types instanceof \ReflectionUnionType) {
                 $route->addParam($this->paramTypeUnion($param, $types));
+                $this->addValidationFromAttribute($route, $param->getName(), $apiValidation);
                 continue;
             }
             
             if ($types instanceof \ReflectionNamedType) {
                 $route->addParam($this->paramTypeSingular($param, $types));
+                $this->addValidationFromAttribute($route, $param->getName(), $apiValidation);
             }
         }
         
         return $route;
+    }
+    
+    protected function addValidationFromAttribute(
+        Route $route,
+        string $name,
+        \ReflectionAttribute|null $attribute
+    ): void {
+        if (!$attribute) {
+            return;
+        }
+        
+        $args = $attribute->getArguments();
+        /** @var string|array $rules */
+        $rules = $args[0] ?? $args['rules'] ?? [];
+        if (is_string($rules)) {
+            if ($rules !== '') {
+                $route->addValidation($name, explode('|', $rules));
+            }
+        } else {
+            $route->addValidation($name, $rules);
+        }
     }
     
     /**

@@ -19,6 +19,7 @@ use Tochka\JsonRpc\Tests\TestParams\TestEnumInt;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumString;
 
 #[CoversClass(RouteParser::class)]
+#[CoversClass(Route::class)]
 class RouterParserTest extends TestCase
 {
     /**
@@ -235,7 +236,6 @@ class RouterParserTest extends TestCase
     }
     
     
-    
     public static function providerErrors(): array
     {
         return [
@@ -267,5 +267,31 @@ class RouterParserTest extends TestCase
     {
         $this->expectException(JsonPrcRouterException::class);
         $this->makeRoute(ParserTestController::class, $method);
+    }
+    
+    public static function providerParameterValidation(): array
+    {
+        return [
+            'noValidation' => ['method' => 'noValidation', 'expected' => []],
+            'haValidationString' => ['method' => 'haValidationString', 'expected' => ['value' => ['required']]],
+            'hasValidationMultipleStrings' => ['method' => 'hasValidationMultipleStrings', 'expected' => ['value' => ['required', 'string']]],
+            'hasValidationArrayWithOne' => ['method' => 'hasValidationArrayWithOne', 'expected' => ['value' => ['required']]],
+            'hasValidationArrayWithMulti' => ['method' => 'hasValidationArrayWithMulti', 'expected' => ['value' => ['required', 'string']]],
+            'hasValidationArrayEmpty' => ['method' => 'hasValidationArrayEmpty', 'expected' => []],
+            'hasValidationStringEmpty' => ['method' => 'hasValidationStringEmpty', 'expected' => []],
+        ];
+    }
+    
+    /**
+     * Check apiParams add validation to route
+     * @return void
+     * @throws \Exception
+     */
+    #[DataProvider('providerParameterValidation')]
+    public function testParameterValidation(string $method, array $expected)
+    {
+        $route = $this->makeRoute(ParserTestController::class, $method);
+        $this->assertEqualsCanonicalizing($expected, $route->getValidation());
+        
     }
 }
