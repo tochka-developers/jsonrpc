@@ -16,21 +16,4 @@ class RouteParam
             $this->allowedTypes[] = 'null';
         }
     }
-    
-    /**
-     * @param array $array
-     * @return self
-     * @codeCoverageIgnore Надо переделать сериализацию и избавится от этого метода
-     */
-    public static function __set_state(array $array): self
-    {
-        return new self(
-            $array['name'],
-            $array['propType'],
-            $array['allowedTypes'],
-            $array['isNullable'],
-            $array['className'],
-            $array['isOptional'],
-        );
-    }
 }

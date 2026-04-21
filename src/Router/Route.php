@@ -38,23 +38,4 @@ class Route
     {
         return $this->validation;
     }
-    
-    /**
-     * @param array $array
-     * @return self
-     * @codeCoverageIgnore Надо переделать сериализацию и избавится от этого метода
-     */
-    public static function __set_state(array $array): self
-    {
-        $instance = new self($array['name'], $array['controllerClass'], $array['controllerMethod']);
-        foreach ($array['params'] as $param) {
-            $instance->addParam($param);
-        }
-        
-        foreach ($array['validation'] as $field => $name) {
-            $instance->addValidation($field, $name);
-        }
-        
-        return $instance;
-    }
 }

@@ -4,7 +4,7 @@ namespace Tochka\JsonRpc\Router;
 
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
-use Tochka\JsonRpc\Helpers\ArrayFileCache;
+use Tochka\JsonRpc\Helpers\FileCacheBlob;
 use Tochka\JsonRpc\Support\ServerConfig;
 
 class Router
@@ -26,8 +26,7 @@ class Router
         $this->methodDelimiter = $config->methodDelimiter;
         $this->controllerSuffix = $config->controllerSuffix;
         $this->allowParentMethods = $config->allowParentMethods;
-        // todo надо сделать по нормальному
-        $this->cache = new ArrayFileCache($config->serverName);
+        $this->cache = new FileCacheBlob();
         $this->routeParser = new RouteParser();
     }
     
@@ -59,9 +58,12 @@ class Router
         $this->cache->set($this->serverName, $routes);
     }
     
+    /**
+     * @throws InvalidArgumentException
+     */
     public function clearRoutesCache(): void
     {
-        $this->cache->clear();
+        $this->cache->delete($this->serverName);
     }
     
     /**
