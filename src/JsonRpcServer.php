@@ -112,15 +112,15 @@ class JsonRpcServer
                     function (JsonRpcRequest $request) {
                         $result = $this->resolver->handle($request);
                         
-                        if ($request->getId() === null) {
+                        if ($request->id === null) {
                             return null;
                         }
                         
-                        return JsonRpcResponse::result($result, $request->getId());
+                        return JsonRpcResponse::result($result, $request->id);
                     }
                 );
         } catch (\Exception $e) {
-            return JsonRpcResponse::error(ExceptionHandler::handle($e), $request->getId());
+            return JsonRpcResponse::error(ExceptionHandler::handle($e), $request->id);
         }
     }
 }

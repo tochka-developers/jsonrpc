@@ -6,6 +6,7 @@ class Route
 {
     /** @var array<string,RouteParam> */
     protected array $params = [];
+    protected array $validation = [];
     
     public function __construct(
         public readonly string $name,
@@ -24,6 +25,20 @@ class Route
         return $this->params;
     }
     
+    public function addValidation($fieldName, array $validation): void
+    {
+        if (count($validation) === 0) {
+            return;
+        }
+        
+        $this->validation[$fieldName] = $validation;
+    }
+    
+    public function getValidation(): array
+    {
+        return $this->validation;
+    }
+    
     /**
      * @param array $array
      * @return self
@@ -34,6 +49,10 @@ class Route
         $instance = new self($array['name'], $array['controllerClass'], $array['controllerMethod']);
         foreach ($array['params'] as $param) {
             $instance->addParam($param);
+        }
+        
+        foreach ($array['validation'] as $field => $name) {
+            $instance->addValidation($field, $name);
         }
         
         return $instance;
