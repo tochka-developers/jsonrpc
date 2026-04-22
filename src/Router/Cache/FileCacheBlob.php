@@ -1,8 +1,8 @@
 <?php
 
-namespace Tochka\JsonRpc\Helpers;
+namespace Tochka\JsonRpc\Router\Cache;
 
-class FileCacheBlob extends FileCache
+class FileCacheBlob extends FileCache implements RouterCacheContract
 {
     public function set(string $key, mixed $value, \DateInterval|int|null $ttl = null): bool
     {

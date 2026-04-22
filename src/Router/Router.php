@@ -4,7 +4,10 @@ namespace Tochka\JsonRpc\Router;
 
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
-use Tochka\JsonRpc\Helpers\FileCacheBlob;
+use Tochka\JsonRpc\Attributes\ApiMethod;
+use Tochka\JsonRpc\Exceptions\JsonPrcRouterException;
+use Tochka\JsonRpc\Router\Cache\FileCacheBlob;
+use Tochka\JsonRpc\Router\Cache\RouterCacheContract;
 use Tochka\JsonRpc\Support\ServerConfig;
 
 class Router
@@ -19,14 +22,14 @@ class Router
     protected CacheInterface $cache;
     protected RouteParser $routeParser;
     
-    public function __construct(ServerConfig $config)
+    public function __construct(ServerConfig $config, ?RouterCacheContract $cache = null)
     {
         $this->serverName = $config->serverName;
         $this->namespace = $config->namespace;
         $this->methodDelimiter = $config->methodDelimiter;
         $this->controllerSuffix = $config->controllerSuffix;
         $this->allowParentMethods = $config->allowParentMethods;
-        $this->cache = new FileCacheBlob();
+        $this->cache = $cache ?? new FileCacheBlob();
         $this->routeParser = new RouteParser();
     }
     
@@ -101,7 +104,11 @@ class Router
                 if ($this->checkIsIgnored($reflectionClass, $method)) {
                     continue;
                 }
-                $methodName = $this->getMethodNameFromStruct($reflectionClass, $method);
+                $apiMethodAttribute = $method->getAttributes(ApiMethod::class)[0] ?? null;
+                $methodName = $this->getMethodName($reflectionClass, $method, $apiMethodAttribute);
+                if (array_key_exists($methodName, $routes)) {
+                    throw new JsonPrcRouterException('route with name ' . $methodName . ' already exists.');
+                }
                 $route = $this->routeParser->createRoute($reflectionClass, $method, $methodName);
                 $routes[$route->name] = $route;
             }
@@ -110,9 +117,20 @@ class Router
         return $routes;
     }
     
-    /** Если название метода не определено явно, то собираем его из имени контроллера и метода */
-    protected function getMethodNameFromStruct(\ReflectionClass $reflectionClass, \ReflectionMethod $method): string
-    {
+    protected function getMethodName(
+        \ReflectionClass $reflectionClass,
+        \ReflectionMethod $method,
+        ?\ReflectionAttribute $attribute
+    ): string {
+        // try get from attribute
+        if ($attribute) {
+            $args = $attribute->getArguments();
+            $methodName = $args[0] ?? $args['name'] ?? null;
+            if ($methodName) {
+                return $methodName;
+            }
+        }
+        // get from struct
         $shortName = $reflectionClass->getShortName();
         $prefix = lcfirst(str_replace($this->controllerSuffix, '', $shortName));
         

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tochka\JsonRpc\Helpers;
+namespace Tochka\JsonRpc\Router\Cache;
 
 use Illuminate\Support\Facades\App;
 use Psr\SimpleCache\CacheInterface;

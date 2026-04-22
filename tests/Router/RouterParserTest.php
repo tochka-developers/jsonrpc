@@ -20,6 +20,7 @@ use Tochka\JsonRpc\Tests\TestParams\TestEnumString;
 
 #[CoversClass(RouteParser::class)]
 #[CoversClass(Route::class)]
+#[CoversClass(RouteParam::class)]
 class RouterParserTest extends TestCase
 {
     /**
