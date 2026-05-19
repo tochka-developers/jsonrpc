@@ -6,7 +6,7 @@ use Tochka\JsonRpc\Exceptions\JsonRpcInvalidParameterException;
 use Tochka\JsonRpc\Resolvers\Handlers\AbstractResolver;
 use Tochka\JsonRpc\Router\RouteParam;
 
-class WithDataMap
+trait WithDataMap
 {
     /**
      * @throws JsonRpcInvalidParameterException
