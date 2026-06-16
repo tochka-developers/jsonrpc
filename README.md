@@ -440,41 +440,36 @@ JsonRpc2.0-вызовы передать в виде массива. Кажды�
 Для генерации OpenRpc-схемы можете использовать совместимый с текущей версией jsonrpc-server пакет 
 [tochka-developers/openrpc](https://github.com/tochka-developers/openrpc)
 
-# Обновление с v3 до v4
-1. Исправьте версию в вашем composer.json на `"tochka-developers/jsonrpc": "^4.0"` и обновите пакет.
-
-2. Дополните конфигурацию `jsonrpc.php` следующими атрибутами:
-* endpoint
-* dynamicEndpoint
-* summary
-* description
-* controllerSuffix (по умолчанию: `Controller`)
-* methodDelimiter (по умолчанию: `_`)
-
-Описание параметров и возможные значения смотрите выше в разделе описания конфигурации
-3. Поправьте скрипты сборки/деплоя prod-версии приложения, добавив в них команду сборки и кеширования маршрутов:
-`php artisan jsonrpc:route:cache`
 
 # Обновление с v4 до v5
-1. Исправьте версию в вашем composer.json на `"tochka-developers/jsonrpc": "^5.0"` и обновите пакет.
-2. Удалите из конфигурации `jsonrpc.php` следующие атрибуты:
-* endpoint
-* dynamicEndpoint
-3. Если используете атрибут #[ApiIgnore], замените на @ApiIgnore (это временное решение для переезда,
+
+- Если будете использовать tochka-developers/openrpc. Перед установкой убедитесь что версия tochka-developers/jsonrpc-client больше чем 3.11 
+(в более старых несовместимость с phpdocumentor/reflection-docblock v6)
+- Удалить из config/jsonrpc строки endpoint, dynamicEndpoint
+- Если используете атрибут #[ApiIgnore], замените на @ApiIgnore (это временное решение для переезда,
 в дальнейшем методы апи будут указываться явно через #[ApiMethod])
-4. Замените вызов сервера
+- Обновляем версию
+```
+composer r tochka-developers/jsonrpc:^v5.0
+// если испльзуете tochka-developers/openrpc, её тоже нужно обновить
+composer r tochka-developers/jsonrpc:^v5.0 tochka-developers/openrpc:^v2.0
+```
+- Замените вызов сервера
 ```php
-Route::post('/api/v1/protected/jsonrpc', function (Request $request) {
-    return JsonRpcServer::handle($request->getContent(), 'serverName');
+// до
+Route::post('/api/v1/public/jsonrpc', function (Request $request) {
+    return JsonRpcServer::handle($request->getContent(), 'default');
 });
 
-
-Route::post('/api/v1/protected/jsonrpc', function (Request $request) {
-    $config = ServerConfig::makeFromConfigFile('serverName');
+// после
+Route::post('/api/v1/public/jsonrpc', function (Request $request) {
+    $config = ServerConfig::makeFromConfigFile('default');
     $server = new JsonRpcServer($config);
     return $server->handle($request->getContent());
 });
 ```
+- Если стоит tochka-developers/openrpc, обновите его конфигурацию
+
 Breaking changes
 - убрана зависимость bensampo/laravel-enum, если она вам нужна, поставьте самостоятельно, если этот
 тип объект используется как параметр апи, вам нужно сделать свой PropertyCaster
