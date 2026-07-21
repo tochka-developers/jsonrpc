@@ -35,38 +35,38 @@ class ArrayFileCache implements CacheInterface
         }
     }
     
-    protected function saveAllData(): void
+    protected function saveAllData(): bool
     {
         if (!is_dir($this->cachePath) && !mkdir($this->cachePath) && !is_dir($this->cachePath)) {
             throw new \RuntimeException(sprintf('Directory "%s" was not created', $this->cachePath));
         }
         
-        file_put_contents($this->getCacheFilePath(), '<?php return ' . var_export($this->data, true) . ';' . PHP_EOL);
+        return (bool) file_put_contents($this->getCacheFilePath(), '<?php return ' . var_export($this->data, true) . ';' . PHP_EOL);
     }
     
-    public function get($key, $default = null)
+    public function get($key, $default = null): mixed
     {
         $this->loadAllData();
         
         return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
     }
     
-    public function set($key, $value, $ttl = null)
+    public function set($key, $value, $ttl = null): bool
     {
         $this->loadAllData();
         
         $this->data[$key] = $value;
         
-        $this->saveAllData();
+        return $this->saveAllData();
     }
     
-    public function delete($key)
+    public function delete($key): bool
     {
         $this->loadAllData();
         
         unset($this->data[$key]);
         
-        $this->saveAllData();
+        return $this->saveAllData();
     }
     
     public function getMultiple($keys, $default = null): array
@@ -81,16 +81,16 @@ class ArrayFileCache implements CacheInterface
         return $result;
     }
     
-    public function setMultiple($values, $ttl = null)
+    public function setMultiple($values, $ttl = null): bool
     {
         $this->loadAllData();
         
-        $this->data = array_merge($this->data, $values);
+        $this->data = array_merge($this->data, (array) $values);
         
-        $this->saveAllData();
+        return $this->saveAllData();
     }
     
-    public function deleteMultiple($keys)
+    public function deleteMultiple($keys): bool
     {
         $this->loadAllData();
         
@@ -98,10 +98,10 @@ class ArrayFileCache implements CacheInterface
             unset($this->data[$key]);
         }
         
-        $this->saveAllData();
+        return $this->saveAllData();
     }
     
-    public function clear(): void
+    public function clear(): bool
     {
         $this->data = [];
         
@@ -109,6 +109,8 @@ class ArrayFileCache implements CacheInterface
         if (file_exists($filePath)) {
             unlink($filePath);
         }
+        
+        return true;
     }
     
     public function has($key): bool
