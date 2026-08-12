@@ -2,7 +2,7 @@
 
 namespace Tochka\JsonRpc\Attributes;
 
-#[\Attribute(\Attribute::TARGET_PARAMETER)]
+#[\Attribute(\Attribute::TARGET_PARAMETER|\Attribute::TARGET_PROPERTY)]
 readonly class ApiValidation
 {
     /**

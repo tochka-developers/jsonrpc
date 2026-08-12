@@ -41,7 +41,6 @@ trait RequestValidation
 
     /**
      * @throws InvalidParametersException
-     * @noinspection PhpDocMissingThrowsInspection
      */
     protected function runValidation(
         array $rules,
@@ -59,7 +58,6 @@ trait RequestValidation
         }
 
         if ($this->errors->isEmpty()) {
-            /** @noinspection PhpUnhandledExceptionInspection В этом случае исключения не будет */
             $this->validated = $validator->validated();
         }
 

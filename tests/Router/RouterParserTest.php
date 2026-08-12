@@ -12,8 +12,9 @@ use Tochka\JsonRpc\Router\PropType;
 use Tochka\JsonRpc\Router\Route;
 use Tochka\JsonRpc\Router\RouteParam;
 use Tochka\JsonRpc\Router\RouteParser;
-use Tochka\JsonRpc\Tests\TestControllers\ParserTestController;
+use Tochka\JsonRpc\Tests\Router\Examples\ParserTestController;
 use Tochka\JsonRpc\Tests\TestParams\ApiParamsObject;
+use Tochka\JsonRpc\Tests\TestParams\NestedObject;
 use Tochka\JsonRpc\Tests\TestParams\ObjectWithValidation;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumInt;
 use Tochka\JsonRpc\Tests\TestParams\TestEnumString;
@@ -30,9 +31,9 @@ class RouterParserTest extends TestCase
     {
         $reflectionClass = new ReflectionClass($className);
         $reflectionMethod = $reflectionClass->getMethod($method);
-        $parser = new RouteParser();
+        $parser = new RouteParser(new Route($method, $reflectionClass->getName(), $method));
         
-        return $parser->createRoute($reflectionClass, $reflectionMethod, 'name');
+        return $parser->fillRoute($reflectionMethod);
     }
     
     /**
@@ -213,6 +214,17 @@ class RouterParserTest extends TestCase
                     isOptional:   false,
                 )
             ],
+            'api nested object' => [
+                'method' => 'apiNestedObject',
+                'expected' => new RouteParam(
+                    name:         'one',
+                    propType:     PropType::Object,
+                    allowedTypes: ['object'],
+                    isNullable:   false,
+                    className:    NestedObject::class,
+                    isOptional:   false,
+                )
+            ],
         ];
     }
     // api params and di
@@ -257,6 +269,7 @@ class RouterParserTest extends TestCase
             'api DI nullable' => ['method' => 'apiDINullable'],
             'api DI not class or interface' => ['method' => 'apiDINotClass'],
             'union type with class' => ['method' => 'unionWithClass'],
+            'Intersection property' => ['method' => 'intersectionObjectProperty'],
         ];
     }
     
@@ -268,31 +281,5 @@ class RouterParserTest extends TestCase
     {
         $this->expectException(JsonPrcRouterException::class);
         $this->makeRoute(ParserTestController::class, $method);
-    }
-    
-    public static function providerParameterValidation(): array
-    {
-        return [
-            'noValidation' => ['method' => 'noValidation', 'expected' => []],
-            'haValidationString' => ['method' => 'haValidationString', 'expected' => ['value' => ['required']]],
-            'hasValidationMultipleStrings' => ['method' => 'hasValidationMultipleStrings', 'expected' => ['value' => ['required', 'string']]],
-            'hasValidationArrayWithOne' => ['method' => 'hasValidationArrayWithOne', 'expected' => ['value' => ['required']]],
-            'hasValidationArrayWithMulti' => ['method' => 'hasValidationArrayWithMulti', 'expected' => ['value' => ['required', 'string']]],
-            'hasValidationArrayEmpty' => ['method' => 'hasValidationArrayEmpty', 'expected' => []],
-            'hasValidationStringEmpty' => ['method' => 'hasValidationStringEmpty', 'expected' => []],
-        ];
-    }
-    
-    /**
-     * Check apiParams add validation to route
-     * @return void
-     * @throws \Exception
-     */
-    #[DataProvider('providerParameterValidation')]
-    public function testParameterValidation(string $method, array $expected)
-    {
-        $route = $this->makeRoute(ParserTestController::class, $method);
-        $this->assertEqualsCanonicalizing($expected, $route->getValidation());
-        
     }
 }

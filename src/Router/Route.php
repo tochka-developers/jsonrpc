@@ -6,13 +6,14 @@ class Route
 {
     /** @var array<string,RouteParam> */
     protected array $params = [];
-    protected array $validation = [];
+    protected RouteValidation $validation;
     
     public function __construct(
         public readonly string $name,
         public readonly string $controllerClass,
         public readonly string $controllerMethod,
     ) {
+        $this->validation = new RouteValidation();
     }
     
     public function addParam(RouteParam $param): void
@@ -25,16 +26,12 @@ class Route
         return $this->params;
     }
     
-    public function addValidation($fieldName, array $validation): void
+    public function setValidation(RouteValidation $validation): void
     {
-        if (count($validation) === 0) {
-            return;
-        }
-        
-        $this->validation[$fieldName] = $validation;
+        $this->validation = $validation;
     }
-    
-    public function getValidation(): array
+
+    public function getValidation(): RouteValidation
     {
         return $this->validation;
     }

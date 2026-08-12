@@ -6,100 +6,205 @@ use Tochka\JsonRpc\Attributes\ApiDI;
 use Tochka\JsonRpc\Attributes\ApiParams;
 use Tochka\JsonRpc\Attributes\ApiValidation;
 use Tochka\JsonRpc\Exceptions\JsonPrcRouterException;
+use Tochka\JsonRpc\Traits\WithValidation;
 
 class RouteParser
 {
+    protected Route $route;
+    protected RouteValidation $validation;
+    protected array $path = [];
+    
+    public function __construct(Route $route)
+    {
+        $this->route = $route;
+        $this->validation = new RouteValidation();
+    }
+    
+    protected function pathAdd(string $chunk): void
+    {
+        $this->path[] = $chunk;
+    }
+    
+    protected function pathRm(): void
+    {
+        array_pop($this->path);
+    }
+    
+    protected function pathGet(string $propName): string
+    {
+        return implode('.', [...$this->path, $propName]);
+    }
+    
     /**
      * @throws \Exception
      */
-    public function createRoute(\ReflectionClass $class, \ReflectionMethod $method, string $name): Route
+    public function fillRoute(\ReflectionMethod $method): Route
     {
-        $route = new Route(
-            $name,
-            $class->getName(),
-            $method->getName(),
-        );
+        $this->parseMethodParameters($method);
+        $this->route->setValidation($this->validation);
         
-        foreach ($method->getParameters() as $param) {
-            $apiValidation = $param->getAttributes(ApiValidation::class)[0] ?? null;
+        return $this->route;
+    }
+    
+    /**
+     * @return RouteParam[]
+     * @throws \ReflectionException
+     * @throws JsonPrcRouterException
+     */
+    protected function parseClassProperties(\ReflectionClass $class): array
+    {
+        /** @var RouteParam[] $result */
+        $result = [];
+        $this->addValidationFromTrait($class);
+        
+        
+        $properties = $class->getProperties(\ReflectionProperty::IS_PUBLIC);
+        foreach ($properties as $prop) {
+            if ($prop->isStatic()) {
+                continue;
+            }
             
-            $types = $param->getType();
-            // тип не определён считаем его mixed и даём пихать что угодно
-            if (!$types) {
-                $route->addParam($this->paramTypeMixed($param));
-                $this->addValidationFromAttribute($route, $param->getName(), $apiValidation);
-                continue;
-            }
-            $apiParamsAttr = $param->getAttributes(ApiParams::class);
-            if ($apiParamsAttr) {
-                $route->addParam($this->paramTypeApiParams($param, $types));
-                continue;
-            }
-            
-            $apiDIAttr = $param->getAttributes(ApiDI::class);
-            if ($apiDIAttr) {
-                $route->addParam($this->paramTypeDI($param, $types));
-                continue;
-            }
+            $apiValidation = $prop->getAttributes(ApiValidation::class)[0] ?? null;
+            $types = $prop->getType();
             
             if ($types instanceof \ReflectionIntersectionType) {
                 throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for property');
             }
             
+            $this->addValidationFromAttribute($prop->getName(), $apiValidation);
+            
+            // тип не определён считаем его mixed и даём пихать что угодно
+            if (!$types) {
+                $result[$prop->getName()] = $this->paramTypeMixed($prop->getName(), $prop->hasDefaultValue());
+                continue;
+            }
+            
             if ($types instanceof \ReflectionUnionType) {
-                $route->addParam($this->paramTypeUnion($param, $types));
-                $this->addValidationFromAttribute($route, $param->getName(), $apiValidation);
+                $result[$prop->getName()] = $this->paramTypeUnion($prop->getName(), $types, $prop->hasDefaultValue());
                 continue;
             }
             
             if ($types instanceof \ReflectionNamedType) {
-                $route->addParam($this->paramTypeSingular($param, $types));
-                $this->addValidationFromAttribute($route, $param->getName(), $apiValidation);
+                $result[$prop->getName()] = $this->paramTypeSingular(
+                    $prop->getName(),
+                    $types,
+                    $prop->hasDefaultValue()
+                );
             }
         }
         
-        return $route;
+        return $result;
     }
     
-    protected function addValidationFromAttribute(
-        Route $route,
-        string $name,
-        \ReflectionAttribute|null $attribute
-    ): void {
+    /**
+     * @throws JsonPrcRouterException
+     * @throws \ReflectionException
+     */
+    protected function parseMethodParameters(\ReflectionMethod $method): void
+    {
+        foreach ($method->getParameters() as $param) {
+            $this->path = [];
+            
+            $types = $param->getType();
+            
+            if ($types instanceof \ReflectionIntersectionType) {
+                throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for property');
+            }
+            
+            $apiParamsAttr = $param->getAttributes(ApiParams::class);
+            if ($apiParamsAttr) {
+                $this->route->addParam($this->paramTypeApiParams($param->getName(), $types, $param->isOptional()));
+                continue;
+            }
+            
+            $apiDIAttr = $param->getAttributes(ApiDI::class);
+            if ($apiDIAttr) {
+                $this->route->addParam($this->paramTypeDI($param->getName(), $types, $param->isOptional()));
+                continue;
+            }
+            
+            $apiValidation = $param->getAttributes(ApiValidation::class)[0] ?? null;
+            $this->addValidationFromAttribute($param->getName(), $apiValidation);
+            
+            // тип не определён считаем его mixed и даём пихать что угодно
+            if (!$types) {
+                $this->route->addParam($this->paramTypeMixed($param->getName()));
+                continue;
+            }
+            
+            if ($types instanceof \ReflectionUnionType) {
+                $this->route->addParam($this->paramTypeUnion($param->getName(), $types));
+                continue;
+            }
+            
+            if ($types instanceof \ReflectionNamedType) {
+                $this->route->addParam($this->paramTypeSingular($param->getName(), $types, $param->isOptional()));
+            }
+        }
+    }
+    
+    
+    protected function addValidationFromAttribute(string $name, \ReflectionAttribute|null $attribute): void
+    {
         if (!$attribute) {
             return;
         }
-        
         $args = $attribute->getArguments();
         /** @var string|array $rules */
         $rules = $args[0] ?? $args['rules'] ?? [];
-        if (is_string($rules)) {
-            if ($rules !== '') {
-                $route->addValidation($name, explode('|', $rules));
+        if (empty($rules)) {
+            return;
+        }
+        
+        $this->validation->rules[$this->pathGet($name)] = $rules;
+    }
+    
+    /**
+     *
+     * @param \ReflectionClass $reflectionClass
+     * @return void
+     */
+    protected function addValidationFromTrait(\ReflectionClass $reflectionClass): void
+    {
+        $className = $reflectionClass->getName();
+        $uses = class_uses_recursive($className);
+        if (\in_array(WithValidation::class, $uses)) {
+            /** @var WithValidation $className */
+            
+            $rules = [];
+            foreach ($className::rules() as $name => $rule) {
+                $rules[$this->pathGet($name)] = $rule;
             }
-        } else {
-            $route->addValidation($name, $rules);
+            $this->validation->rules = [...$this->validation->rules, ...$rules];
+            
+            $messages = [];
+            foreach ($className::messages() as $name => $message) {
+                $messages[$this->pathGet($name)] = $message;
+            }
+            $this->validation->messages = [...$this->validation->messages, ...$messages];
+            
+            $attributes = [];
+            foreach ($className::attributes() as $name => $attribute) {
+                $attributes[$this->pathGet($name)] = $attribute;
+            }
+            $this->validation->attributes = [...$this->validation->attributes, ...$attributes];
         }
     }
     
     /**
      * @throws JsonPrcRouterException
      */
-    protected function paramTypeDI(\ReflectionParameter $param, \ReflectionType $type): RouteParam
+    protected function paramTypeDI(string $name, \ReflectionType $type, bool $isOptional = false): RouteParam
     {
         if ($type instanceof \ReflectionUnionType) {
             throw new JsonPrcRouterException('Not supported ReflectionUnionType for ApiDI');
         }
         
-        if ($type instanceof \ReflectionIntersectionType) {
-            throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for ApiDI');
-        }
-        
-        if ($param->isOptional()) {
+        if ($isOptional) {
             throw new JsonPrcRouterException('ApiDI can`t be optional');
         }
         
-        if ($param->allowsNull()) {
+        if ($type->allowsNull()) {
             throw new JsonPrcRouterException('ApiDI can`t be nullable');
         }
         
@@ -110,7 +215,7 @@ class RouteParser
         }
         
         return new RouteParam(
-            name:         $param->getName(),
+            name:         $name,
             propType:     PropType::DI,
             allowedTypes: [],
             isNullable:   false,
@@ -121,22 +226,19 @@ class RouteParser
     
     /**
      * @throws \Tochka\JsonRpc\Exceptions\JsonPrcRouterException
+     * @throws \ReflectionException
      */
-    protected function paramTypeApiParams(\ReflectionParameter $param, \ReflectionType $type): RouteParam
+    protected function paramTypeApiParams(string $name, \ReflectionType $type, bool $isOptional = false): RouteParam
     {
         if ($type instanceof \ReflectionUnionType) {
             throw new JsonPrcRouterException('Not supported ReflectionUnionType for ApiParams');
         }
         
-        if ($type instanceof \ReflectionIntersectionType) {
-            throw new JsonPrcRouterException('Not supported ReflectionIntersectionType for ApiParams');
-        }
-        
-        if ($param->isOptional()) {
+        if ($isOptional) {
             throw new JsonPrcRouterException('ApiParams can`t be optional');
         }
         
-        if ($param->allowsNull()) {
+        if ($type->allowsNull()) {
             throw new JsonPrcRouterException('ApiParams can`t be nullable');
         }
         
@@ -151,33 +253,41 @@ class RouteParser
             throw new JsonPrcRouterException('ApiParams class must be instantiable');
         }
         
+        $this->addValidationFromTrait(new \ReflectionClass($type->getName()));
+        
         return new RouteParam(
-            name:         $param->getName(),
+            name:         $name,
             propType:     PropType::RequestObject,
             allowedTypes: [],
             isNullable:   false,
             className:    $class,
             isOptional:   false,
+            params:       $this->parseClassProperties($reflectionClass),
         );
     }
     
-    protected function paramTypeMixed(\ReflectionParameter $param): RouteParam
-    {
+    protected function paramTypeMixed(
+        string $name,
+        bool $isOptional = false,
+    ): RouteParam {
         return new RouteParam(
-            name:         $param->getName(),
+            name:         $name,
             propType:     PropType::Mixed,
             allowedTypes: [],
             isNullable:   true,
             className:    null,
-            isOptional:   $param->isOptional(),
+            isOptional:   $isOptional,
         );
     }
     
     /**
      * @throws JsonPrcRouterException
      */
-    protected function paramTypeUnion(\ReflectionParameter $param, \ReflectionUnionType $type): RouteParam
-    {
+    protected function paramTypeUnion(
+        string $name,
+        \ReflectionUnionType $type,
+        bool $isOptional = false
+    ): RouteParam {
         $allowedTypes = [];
         $isBuiltinCheck = [];
         foreach ($type->getTypes() as $typeItem) {
@@ -190,12 +300,12 @@ class RouteParser
         }
         
         return new RouteParam(
-            name:         $param->getName(),
+            name:         $name,
             propType:     PropType::Primitive,
             allowedTypes: $allowedTypes,
             isNullable:   $type->allowsNull(),
             className:    null,
-            isOptional:   $param->isOptional()
+            isOptional:   $isOptional,
         );
     }
     
@@ -203,11 +313,11 @@ class RouteParser
      * @throws \ReflectionException
      * @throws JsonPrcRouterException
      */
-    protected function paramTypeSingular(\ReflectionParameter $param, \ReflectionNamedType $type): RouteParam
+    protected function paramTypeSingular(string $name, \ReflectionNamedType $type, bool $isOptional): RouteParam
     {
         // mixed type
         if ($type->getName() === 'mixed') {
-            return $this->paramTypeMixed($param);
+            return $this->paramTypeMixed($name, $isOptional);
         }
         
         // primitive type
@@ -217,12 +327,12 @@ class RouteParser
             }
             
             return new RouteParam(
-                name:         $param->getName(),
+                name:         $name,
                 propType:     PropType::Primitive,
                 allowedTypes: [$type->getName()],
-                isNullable:   $param->allowsNull(),
+                isNullable:   $type->allowsNull(),
                 className:    null,
-                isOptional:   $param->isOptional(),
+                isOptional:   $isOptional,
             );
         }
         
@@ -235,23 +345,29 @@ class RouteParser
             }
             
             return new RouteParam(
-                name:         $param->getName(),
+                name:         $name,
                 propType:     PropType::Enum,
                 allowedTypes: [$enumType],
-                isNullable:   $param->allowsNull(),
+                isNullable:   $type->allowsNull(),
                 className:    $type->getName(),
-                isOptional:   $param->isOptional(),
+                isOptional:   $isOptional,
             );
         }
         
-        // structured type
-        return new RouteParam(
-            name:         $param->getName(),
+        $this->pathAdd($name);
+        
+        $param = new RouteParam(
+            name:         $name,
             propType:     PropType::Object,
             allowedTypes: ['object'],
-            isNullable:   $param->allowsNull(),
+            isNullable:   $type->allowsNull(),
             className:    $type->getName(),
-            isOptional:   $param->isOptional(),
+            isOptional:   $isOptional,
+            params:       $this->parseClassProperties(new \ReflectionClass($type->getName())),
         );
+        
+        $this->pathRm();
+        
+        return $param;
     }
 }

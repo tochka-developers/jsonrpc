@@ -12,12 +12,6 @@ use Tochka\JsonRpc\Middleware\TokenAuthMiddleware;
 
 return [
     'default' => [
-        // Краткое описание сервера
-        'summary' => 'Основная точка входа',
-        
-        // Полное описание сервера
-        'description' => 'JsonRpc Server',
-
         // Пространство имен, в котором находятся контроллеры
         'namespace'   => 'App\Http\Controllers',
 
@@ -26,15 +20,6 @@ return [
 
         // Разделитель для имен методов
         'methodDelimiter' => '_',
-        
-        // Использовать методы родителя при наследовании (Будет удалено)
-        'allowParentMethods' => false,
-        
-        // Список дополнительный обработчиков типов. Будут выполняться перед встроенными.
-        // Должны наследовать AbstractPropertyCaster
-        'customCasters' => [
-        
-        ],
 
         // Обработчики запросов
         'middleware'  => [

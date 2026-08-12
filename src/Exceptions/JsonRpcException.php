@@ -4,17 +4,17 @@ namespace Tochka\JsonRpc\Exceptions;
 
 class JsonRpcException extends \Exception
 {
-    public const CODE_PARSE_ERROR = -32700;
-    public const CODE_INVALID_REQUEST = -32600;
-    public const CODE_METHOD_NOT_FOUND = -32601;
-    public const CODE_INVALID_PARAMS = -32602;
-    public const CODE_INTERNAL_ERROR = -32603;
-    public const CODE_INVALID_PARAMETERS = 6000;
-    public const CODE_VALIDATION_ERROR = 6001;
-    public const CODE_UNAUTHORIZED = 7000;
-    public const CODE_FORBIDDEN = 7001;
-    public const CODE_EXTERNAL_INTEGRATION_ERROR = 8000;
-    public const CODE_INTERNAL_INTEGRATION_ERROR = 8001;
+    public const int CODE_PARSE_ERROR = -32700;
+    public const int CODE_INVALID_REQUEST = -32600;
+    public const int CODE_METHOD_NOT_FOUND = -32601;
+    public const int CODE_INVALID_PARAMS = -32602;
+    public const int CODE_INTERNAL_ERROR = -32603;
+    public const int CODE_INVALID_PARAMETERS = 6000;
+    public const int CODE_VALIDATION_ERROR = 6001;
+    public const int CODE_UNAUTHORIZED = 7000;
+    public const int CODE_FORBIDDEN = 7001;
+    public const int CODE_EXTERNAL_INTEGRATION_ERROR = 8000;
+    public const int CODE_INTERNAL_INTEGRATION_ERROR = 8001;
 
     public array $jsonrpc_messages = [
         self::CODE_PARSE_ERROR                => 'Parse error',

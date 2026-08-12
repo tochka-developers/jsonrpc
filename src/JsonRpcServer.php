@@ -3,18 +3,13 @@
 namespace Tochka\JsonRpc;
 
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\SimpleCache\InvalidArgumentException;
 use Tochka\JsonRpc\Contracts\JsonRpcParserInterface;
 use Tochka\JsonRpc\Exceptions\JsonRpcException;
 use Tochka\JsonRpc\Facades\ExceptionHandler;
-use Tochka\JsonRpc\Resolvers\JsonRpcParamsResolver;
-use Tochka\JsonRpc\Resolvers\Handlers\DIResolver;
-use Tochka\JsonRpc\Resolvers\Handlers\EnumResolver;
-use Tochka\JsonRpc\Resolvers\Handlers\MixedResolver;
-use Tochka\JsonRpc\Resolvers\Handlers\ObjectResolver;
-use Tochka\JsonRpc\Resolvers\Handlers\ParamsResolver;
-use Tochka\JsonRpc\Resolvers\Handlers\PrimitiveResolver;
-use Tochka\JsonRpc\Resolvers\ParamsResolverInterface;
+use Tochka\JsonRpc\Resolvers\ControllerResolver;
+use Tochka\JsonRpc\Resolvers\ParamsResolver;
 use Tochka\JsonRpc\Router\Router;
 use Tochka\JsonRpc\Support\JsonRpcParser;
 use Tochka\JsonRpc\Support\JsonRpcRequest;
@@ -30,32 +25,31 @@ class JsonRpcServer
 {
     private ServerConfig $config;
     private JsonRpcParserInterface $parser;
-    private ParamsResolverInterface $resolver;
+    /** @var \Closure(JsonRpcRequest $request): ParamsResolver */
+    private \Closure $resolver;
     private Router $router;
+    private ControllerResolver $controllerResolver;
     
     /**
-     * @throws JsonRpcException
+     * @param ServerConfig $config
+     * @param JsonRpcParserInterface|null $parser
+     * @param \Closure(JsonRpcRequest $request): ParamsResolver|null $resolver
+     * @param ControllerResolver|null $controllerResolver
+     * @param Router|null $router
      */
     public function __construct(
         ServerConfig $config,
         ?JsonRpcParserInterface $parser = null,
-        ?ParamsResolverInterface $resolver = null,
+        /** @var \Closure(JsonRpcRequest $request): ParamsResolver|null */
+        ?\Closure $resolver = null,
+        ?ControllerResolver $controllerResolver = null,
         ?Router $router = null,
     ) {
         $this->config = $config;
         $this->parser = $parser ?: new JsonRpcParser();
-        $this->resolver = $resolver ?: new JsonRpcParamsResolver(
-            [
-                DIResolver::class,
-                EnumResolver::class,
-                MixedResolver::class,
-                ObjectResolver::class,
-                PrimitiveResolver::class,
-                ParamsResolver::class,
-            ],
-            $config->customCasters,
-        );
+        $this->resolver = $resolver ?: fn(JsonRpcRequest $request) => new ParamsResolver($request);
         $this->router = $router ?: new Router($config);
+        $this->controllerResolver = $controllerResolver ?: new ControllerResolver();
     }
     
     public function handle(string $content): ResponseCollection
@@ -91,7 +85,11 @@ class JsonRpcServer
     }
     
     /**
+     * @param JsonRpcRequest $request
+     * @return JsonRpcResponse|null
      * @throws InvalidArgumentException
+     * @throws BindingResolutionException
+     * @throws \Throwable
      */
     public function handleRequest(JsonRpcRequest $request): ?JsonRpcResponse
     {
@@ -110,7 +108,12 @@ class JsonRpcServer
                 ->via('handle')
                 ->then(
                     function (JsonRpcRequest $request) {
-                        $result = $this->resolver->handle($request);
+                        $controller = $this->controllerResolver->resolve($request);
+                        $params = ($this->resolver)($request)->resolve(
+                            $request->getRoute()->getParams(),
+                            $request->params
+                        );
+                        $result = $controller->{$request->getRoute()->controllerMethod}(...$params);
                         
                         if ($request->id === null) {
                             return null;
