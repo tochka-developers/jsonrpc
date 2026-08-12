@@ -18,9 +18,7 @@ class Router
     protected string $namespace;
     protected string $controllerSuffix;
     protected string $methodDelimiter;
-    protected bool $allowParentMethods;
     protected CacheInterface $cache;
-    protected RouteParser $routeParser;
     
     public function __construct(ServerConfig $config, ?RouterCacheContract $cache = null)
     {
@@ -28,9 +26,7 @@ class Router
         $this->namespace = $config->namespace;
         $this->methodDelimiter = $config->methodDelimiter;
         $this->controllerSuffix = $config->controllerSuffix;
-        $this->allowParentMethods = $config->allowParentMethods;
         $this->cache = $cache ?? new FileCacheBlob();
-        $this->routeParser = new RouteParser();
     }
     
     /**
@@ -101,15 +97,19 @@ class Router
             $reflectionClass = new \ReflectionClass($class);
             $methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
             foreach ($methods as $method) {
-                if ($this->checkIsIgnored($reflectionClass, $method)) {
+                if ($method->isStatic()) {
                     continue;
                 }
                 $apiMethodAttribute = $method->getAttributes(ApiMethod::class)[0] ?? null;
+                if (!$apiMethodAttribute) {
+                    continue;
+                }
                 $methodName = $this->getMethodName($reflectionClass, $method, $apiMethodAttribute);
                 if (array_key_exists($methodName, $routes)) {
                     throw new JsonPrcRouterException('route with name ' . $methodName . ' already exists.');
                 }
-                $route = $this->routeParser->createRoute($reflectionClass, $method, $methodName);
+                $routeParser = new RouteParser(new Route($methodName, $reflectionClass->getName(), $method->getName()));
+                $route = $routeParser->fillRoute($method);;
                 $routes[$route->name] = $route;
             }
         }
@@ -120,40 +120,18 @@ class Router
     protected function getMethodName(
         \ReflectionClass $reflectionClass,
         \ReflectionMethod $method,
-        ?\ReflectionAttribute $attribute
+        \ReflectionAttribute $attribute
     ): string {
         // try get from attribute
-        if ($attribute) {
-            $args = $attribute->getArguments();
-            $methodName = $args[0] ?? $args['name'] ?? null;
-            if ($methodName) {
-                return $methodName;
-            }
+        $args = $attribute->getArguments();
+        $methodName = $args[0] ?? $args['name'] ?? null;
+        if ($methodName) {
+            return $methodName;
         }
         // get from struct
         $shortName = $reflectionClass->getShortName();
         $prefix = lcfirst(str_replace($this->controllerSuffix, '', $shortName));
         
         return $prefix . $this->methodDelimiter . $method->getName();
-    }
-    
-    // пока проверяем по старому, для обратной совместимости, потом уберём
-    protected function checkIsIgnored(\ReflectionClass $class, \ReflectionMethod $method): bool
-    {
-        $methodName = $method->getName();
-        if (str_starts_with($methodName, '__')) {
-            return true;
-        }
-        if (!$this->allowParentMethods && $method->getDeclaringClass()->getName() !== $class->getName()) {
-            return true;
-        }
-        if (str_contains($method->getDocComment(), '@ApiIgnore')) {
-            return true;
-        }
-        if (!$method->isPublic() || $method->isStatic()) {
-            return true;
-        }
-        
-        return false;
     }
 }
