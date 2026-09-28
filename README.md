@@ -473,3 +473,9 @@ Route::post('/api/v1/public/jsonrpc', function (Request $request) {
 Breaking changes
 - убрана зависимость bensampo/laravel-enum, если она вам нужна, поставьте самостоятельно, если этот
 тип объект используется как параметр апи, вам нужно сделать свой PropertyCaster
+
+# Обновление с v5 до v6
+- удалить из конфигурации поля: summary, description, allowParentMethods, customCasters
+- все методы api необходимо пометить атрибутом #[ApiMethod], @ApiIgnore удалён и больше не поддерживается
+- использование трейта JsonRpcController нужно удалить
+- Обновляем версию

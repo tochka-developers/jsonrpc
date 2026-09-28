@@ -5,7 +5,7 @@ namespace Tochka\JsonRpc\Tests\TestParams;
 use Tochka\JsonRpc\Attributes\ApiValidation;
 use Tochka\JsonRpc\Traits\WithValidation;
 
-class ObjectWithValidation
+class ObjectWithValidationChild
 {
     use WithValidation;
     
@@ -14,9 +14,6 @@ class ObjectWithValidation
     public bool $bool;
     #[ApiValidation('string')]
     public string $rewrite;
-    public ObjectWithValidationChild $child;
-    #[ApiValidation('required')]
-    public TestEnumInt $enumInt;
     
     public static function rules(): array
     {
@@ -41,8 +38,8 @@ class ObjectWithValidation
     public static function attributes(): array
     {
         return [
-            'int' => 'number',
-            'string' => 'real string',
+            'int' => 'child number',
+            'string' => 'child string',
         ];
     }
 }
