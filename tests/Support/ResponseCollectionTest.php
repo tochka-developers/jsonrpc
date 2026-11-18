@@ -41,9 +41,6 @@ class ResponseCollectionTest extends TestCase
         $this->assertFalse($collection->empty());
     }
 
-    /**
-     * @covers \Tochka\JsonRpc\Support\ResponseCollection::toArray
-     */
     public function testToArraySingle(): void
     {
         $response = JsonRpcResponse::result(['method' => 'foo'], '11111');
