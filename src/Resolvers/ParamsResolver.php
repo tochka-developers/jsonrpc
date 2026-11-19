@@ -45,7 +45,7 @@ class ParamsResolver
                 $rawValue = self::getValue($parameter, $rawData);
                 match ($parameter->propType) {
                     PropType::DI => $value = $this->resolveDI($parameter),
-                    PropType::RequestObject => $value = $this->resolveRequestObject($parameter, $rawValue),
+                    PropType::RequestObject => $value = $this->resolveRequestObject($parameter, $rawData),
                     PropType::Mixed => $value = $this->resolveMixed($parameter, $rawValue),
                     
                     PropType::Object => $value = $this->resolveObject($parameter, $rawValue),
@@ -206,9 +206,9 @@ class ParamsResolver
         if (is_array($input)) {
             if (array_key_exists($param->name, $input)) {
                 return $input[$param->name];
-            } else {
-                return new VoidValue();
             }
+
+            return new VoidValue();
         }
         
         if (property_exists($input, $param->name)) {
@@ -262,11 +262,11 @@ class ParamsResolver
         if ($value instanceof VoidValue) {
             if ($param->isOptional) {
                 return true;
-            } else {
-                throw new JsonRpcInvalidParameterException(
-                    JsonRpcInvalidParameterError::PARAMETER_ERROR_REQUIRED, $param->name
-                );
             }
+
+            throw new JsonRpcInvalidParameterException(
+                JsonRpcInvalidParameterError::PARAMETER_ERROR_REQUIRED, $param->name
+            );
         }
         
         return false;

@@ -3,6 +3,7 @@
 namespace Tochka\JsonRpc\Tests\Support;
 
 use Illuminate\Container\Container;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tochka\JsonRpc\Support\MiddlewarePipeline;
 use Tochka\JsonRpc\Tests\TestHelpers\BarMiddleware;
@@ -11,6 +12,7 @@ use Tochka\JsonRpc\Tests\TestHelpers\FooMiddleware;
 use Tochka\JsonRpc\Tests\TestHelpers\ReflectionTrait;
 use Tochka\JsonRpc\Tests\TestHelpers\TestClass;
 
+#[CoversClass(className: MiddlewarePipeline::class)]
 class MiddlewarePipelineTest extends TestCase
 {
     use ReflectionTrait;
@@ -25,7 +27,6 @@ class MiddlewarePipelineTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\MiddlewarePipeline::parseAssociatedParams
      * @throws \ReflectionException
      */
     public function testEmptyParams(): void
@@ -39,7 +40,6 @@ class MiddlewarePipelineTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\MiddlewarePipeline::parseAssociatedParams
      * @throws \ReflectionException
      */
     public function testExtraParams(): void
@@ -59,7 +59,6 @@ class MiddlewarePipelineTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\MiddlewarePipeline::parseAssociatedParams
      * @throws \ReflectionException
      */
     public function testNotRequiredParams(): void
@@ -77,7 +76,6 @@ class MiddlewarePipelineTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\MiddlewarePipeline::parseAssociatedParams
      * @throws \ReflectionException
      */
     public function testNotDefaultParams(): void
@@ -95,7 +93,6 @@ class MiddlewarePipelineTest extends TestCase
     }
 
     /**
-     * @covers \Tochka\JsonRpc\Support\MiddlewarePipeline::parseAssociatedParams
      * @throws \ReflectionException
      */
     public function testDIParams(): void

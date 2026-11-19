@@ -32,7 +32,7 @@ class JsonRpcException extends \Exception
 
     protected $data;
 
-    public function __construct($code = 0, $message = null, $data = null, \Exception $previous = null)
+    public function __construct($code = 0, $message = null, $data = null, ?\Exception $previous = null)
     {
         if ($message === null && !empty($this->jsonrpc_messages[$code])) {
             $message = $this->jsonrpc_messages[$code];
